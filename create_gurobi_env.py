@@ -1,8 +1,13 @@
-def create_gurobi_env():
-    import os
-    from dotenv import load_dotenv
-    import gurobipy as gp
+"""
+gurobipyの環境を作成する関数
+"""
 
+import os
+from dotenv import load_dotenv
+import gurobipy as gp
+
+
+def create_gurobi_env():
     load_dotenv()
 
     return gp.Env(

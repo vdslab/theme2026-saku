@@ -1,17 +1,18 @@
+"""
+トーラスを描画する関数
+
+Args:
+    V: ノード集合 int[]
+    A: エッジ集合 [int, int][]
+    L: レイヤー集合 dict(layer: node[])
+"""
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 
 
 def draw_torus(V, A, L):
-    """
-    トーラスを描画する関数
-
-    Args:
-        V: ノード集合 int[]
-        A: エッジ集合 [int, int][]
-        L: レイヤー集合 dict(layer: node[])
-    """
     # ノードの位置を決定
     pos = {}
 
