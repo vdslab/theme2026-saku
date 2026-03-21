@@ -72,6 +72,9 @@ def torus(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
     n = len(V)
     M = n  # Big-M定数（十分大きな値）
 
+    alpha = max(10, n * 0.5)  # ノード数に応じて調整
+    beta = n  # エッジスパンの重要度を上げる
+
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Layout", env=env) as m:
@@ -165,4 +168,6 @@ def torus(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
                 if c.IISConstr:
                     print(f"  {c.constrName}")
 
-        return y_val, t_val, layer_dict
+        run_time = m.Runtime
+
+    return y_val, t_val, layer_dict, run_time

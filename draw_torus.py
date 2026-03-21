@@ -12,15 +12,31 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 
 
-def draw_torus(V, A, L):
+def draw_torus(V, A, L, t_val=None, order=None):
+    """
+    トーラスグラフを描画
+
+    Args:
+        V: ノード集合
+        A: エッジ集合
+        L: レイヤー集合
+        t_val: 各エッジがトーラス辺かどうか（オプション）
+        order: 各階層内のノード順序（オプション）dict[layer: list[nodes]]
+    """
     # ノードの位置を決定
     pos = {}
 
-    # Lを使って各ノードの座標を設定
-    for layer_num, nodes in L.items():
+    # orderが指定されている場合はそれを使用、なければLの順序を使用
+    if order is not None:
+        node_order = order
+    else:
+        node_order = L
+
+    # 各ノードの座標を設定
+    for layer_num, nodes in node_order.items():
         for idx, node in enumerate(nodes):
             # x座標：レイヤーの値
-            # y座標：各レイヤーの配列の添字
+            # y座標：各レイヤーの配列の添字（最適化された順序）
             pos[node] = (layer_num, idx)
 
     # 各ノードがどのレイヤーに属するかを記録
@@ -41,20 +57,24 @@ def draw_torus(V, A, L):
     min_layer = min(L.keys()) if L else 0
     max_layer = max(L.keys()) if L else 0
 
-    # エッジを通常エッジと逆方向エッジに分類
+    # エッジを通常エッジとトーラス辺に分類
     normal_edges = []
-    reverse_edges = []
+    torus_edges = []
 
     for u, v in A:
         u_layer = node_to_layer.get(u)
         v_layer = node_to_layer.get(v)
         if u_layer is not None and v_layer is not None:
-            if u_layer < v_layer:
-                # 通常エッジ（小さいレイヤー → 大きいレイヤー）
-                normal_edges.append((u, v))
+            # t_valが指定されている場合はそれを使用
+            if t_val is not None and t_val.get((u, v), False):
+                # トーラス辺
+                torus_edges.append((u, v))
+            elif t_val is None and u_layer > v_layer:
+                # t_valが指定されていない場合は、逆方向エッジをトーラス辺として扱う
+                torus_edges.append((u, v))
             else:
-                # 逆方向エッジ（大きいレイヤー → 小さいレイヤー）
-                reverse_edges.append((u, v))
+                # 通常エッジ
+                normal_edges.append((u, v))
 
     # 描画
     fig, ax = plt.subplots(figsize=(width * 2, height * 2))
@@ -92,8 +112,8 @@ def draw_torus(V, A, L):
         )
         ax.add_patch(arrow)
 
-    # 逆方向エッジをトーラス接続で描画（視認性向上のため赤色）
-    for u, v in reverse_edges:
+    # トーラス辺をトーラス接続で描画（視認性向上のため赤色）
+    for u, v in torus_edges:
         u_pos = pos[u]
         v_pos = pos[v]
 
@@ -124,6 +144,7 @@ def draw_torus(V, A, L):
             arrowstyle="->",
             mutation_scale=20,
             shrinkB=node_radius * 100,
+            color="Red",
         )
         ax.add_patch(arrow2)
 
