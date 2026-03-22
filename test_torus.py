@@ -4,7 +4,7 @@
 手動で定義されたテストケースと自動生成されたテストケースの両方を含む
 """
 
-from torus import torus
+from torus_iqp import torus_iqp
 from draw_torus import draw_torus
 from generate_torus_graph import (
     generate_random_connected_graph,
@@ -56,7 +56,7 @@ def run_test(test_name, V, A, draw=False, verbose=True, store_results=None):
         analyze_graph(V, A)
 
     try:
-        y_val, t_val, L = torus(V, A)
+        y_val, t_val, L = torus_iqp(V, A)
 
         if y_val:
             if verbose:

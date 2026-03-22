@@ -7,7 +7,9 @@
 4. draw_torus.pyで描画
 """
 
+from torus_iqp import torus_iqp
 from torus import torus
+from torus_ilp import torus_ilp
 from minimize_crossings import minimize_crossings
 from draw_torus import draw_torus
 from generate_torus_graph import generate_cyclic_graph
@@ -25,7 +27,7 @@ def main():
     n = 20  # ノード数
     num_cycles = 1  # サイクル数
     edge_prob = 0.1  # エッジ確率
-    seed = 20  # シード値
+    seed = 1  # シード値
 
     V, A = generate_cyclic_graph(
         n=n, num_cycles=num_cycles, edge_prob=edge_prob, seed=seed
@@ -38,7 +40,7 @@ def main():
 
     # 2. 階層割当
     print("\n2. 階層割当（torus.py）...")
-    y_val, t_val, L, run_time = torus(V, A)
+    y_val, t_val, L, run_time = torus_ilp(V, A)
 
     if not y_val:
         print("階層割当に失敗しました。")

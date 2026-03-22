@@ -144,7 +144,6 @@ def draw_torus(V, A, L, t_val=None, order=None):
             arrowstyle="->",
             mutation_scale=20,
             shrinkB=node_radius * 100,
-            color="Red",
         )
         ax.add_patch(arrow2)
 

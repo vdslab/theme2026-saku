@@ -5,10 +5,10 @@ from create_gurobi_env import create_gurobi_env
 from collections import defaultdict
 
 
-def torus(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
+def torus_iqp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
     """
     トーラスを含む階層グラフの階層割当を最適化
-    目的関数の分散を利用しない式
+    目的関数で分散を利用する式
 
     Args:
         V: ノード集合 list[int]
@@ -86,15 +86,15 @@ def torus(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
         # 階層数を最小化しつつ、エッジスパンの分散とトーラス辺数も考慮
         obj = (
             alpha * L_max  # 階層数を最小化
-            + beta
-            * gp.quicksum(
-                w[(u, v)] * (y[v] - y[u] + M * t[u, v]) for (u, v) in A
-            )  # エッジスパン
             # + beta
             # * gp.quicksum(
-            #     w[(u, v)] * (y[v] - y[u] + M * t[u, v]) * (y[v] - y[u] + M * t[u, v])
-            #     for (u, v) in A
-            # )  # エッジスパンの2乗（分散）
+            #     w[(u, v)] * (y[v] - y[u] + M * t[u, v]) for (u, v) in A
+            # )  # エッジスパン
+            + beta
+            * gp.quicksum(
+                w[(u, v)] * (y[v] - y[u] + M * t[u, v]) * (y[v] - y[u] + M * t[u, v])
+                for (u, v) in A
+            )  # エッジスパンの2乗（分散）
             + gamma
             * gp.quicksum(t[u, v] for (u, v) in A)  # トーラス辺の数を直接ペナルティ
         )
