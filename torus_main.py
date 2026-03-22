@@ -24,10 +24,10 @@ def main():
 
     # 1. ランダムなグラフを生成
     print("\n1. グラフ生成...")
-    n = 20  # ノード数
+    n = 30  # ノード数
     num_cycles = 1  # サイクル数
     edge_prob = 0.1  # エッジ確率
-    seed = 1  # シード値
+    seed = 3  # シード値
 
     V, A = generate_cyclic_graph(
         n=n, num_cycles=num_cycles, edge_prob=edge_prob, seed=seed
@@ -40,6 +40,8 @@ def main():
 
     # 2. 階層割当
     print("\n2. 階層割当（torus.py）...")
+    # y_val, t_val, L, run_time = torus(V, A)
+    # y_val, t_val, L, run_time = torus_iqp(V, A)
     y_val, t_val, L, run_time = torus_ilp(V, A)
 
     if not y_val:
@@ -67,7 +69,7 @@ def main():
     # 4. 描画
     print("\n4. 描画（draw_torus.py）...")
     print("  グラフを描画します...")
-    print(f"実行時間: {run_time}")
+    print(f"実行時間: {round(run_time, 5)}")
 
     # 順序を反映した描画（draw_torus.pyが順序を受け取れるように拡張が必要）
     # 現状はデフォルトの順序で描画
