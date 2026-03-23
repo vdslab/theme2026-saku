@@ -52,6 +52,8 @@ def torus_ilp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_ILP", env=env) as m:
+        m.Params.Heuristics = 0
+        m.Params.MIPFocus = 3
 
         # ========== 変数定義 (ILP) ==========
 
@@ -72,6 +74,10 @@ def torus_ilp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
             x = {}
 
         # ========== 制約 ==========
+
+        # 対称性除去
+        if len(V) > 0:
+            m.addConstr(y[V[0]] == 0, name="symmetry_break_y0")
 
         # (1) 各ノードの階層は L_max 以下
         m.addConstrs((y[v] <= L_max for v in V), name="max_layer")

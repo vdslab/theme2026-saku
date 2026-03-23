@@ -44,6 +44,10 @@ def torus_iqp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
 
     with gp.Model(name="Torus_Layout", env=env) as m:
 
+        # ========== パラメータ設定 ==========
+        m.Params.Heuristics = 0
+        m.Params.MIPFocus = 3
+
         # ========== 変数定義 ==========
 
         # y[v]: ノードvの階層（0からn-1の整数）
@@ -56,6 +60,10 @@ def torus_iqp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
         L_max = m.addVar(vtype=GRB.INTEGER, lb=0, ub=n - 1, name="L_max")
 
         # ========== 制約 ==========
+
+        # 対称性除去
+        if len(V) > 0:
+            m.addConstr(y[V[0]] == 0, name="symmetry_break_y0")
 
         # 1. 最大階層の定義
         m.addConstrs((y[v] <= L_max for v in V), name="max_layer")

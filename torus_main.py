@@ -24,10 +24,10 @@ def main():
 
     # 1. ランダムなグラフを生成
     print("\n1. グラフ生成...")
-    n = 30  # ノード数
-    num_cycles = 1  # サイクル数
-    edge_prob = 0.1  # エッジ確率
-    seed = 3  # シード値
+    n = 60  # ノード数
+    num_cycles = 3  # サイクル数
+    edge_prob = 0.001  # エッジ確率
+    seed = 15  # シード値
 
     V, A = generate_cyclic_graph(
         n=n, num_cycles=num_cycles, edge_prob=edge_prob, seed=seed
@@ -60,7 +60,7 @@ def main():
 
     # 3. 交差削減
     print("\n3. 交差削減（minimize_crossings.py）...")
-    order = minimize_crossings(V, A, L, t_val)
+    order, L, A, t_val = minimize_crossings(V, A, L, t_val)
 
     print(f"\n最適化されたノード順序:")
     for k in sorted(order.keys()):
