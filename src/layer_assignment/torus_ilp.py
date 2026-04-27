@@ -1,8 +1,8 @@
 import gurobipy as gp
 from gurobipy import GRB
-from src.lib.create_gurobi_env import create_gurobi_env
 
 from collections import defaultdict
+from lib.create_gurobi_env import create_gurobi_env
 
 
 def torus_ilp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
