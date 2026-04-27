@@ -1,9 +1,9 @@
 import gurobipy as gp
 from gurobipy import GRB
 
-from longest_path import longest_path
+from archive.longest_path import longest_path
 
-from create_gurobi_env import create_gurobi_env
+from src.lib.create_gurobi_env import create_gurobi_env
 
 
 def pl(label, V, A, w, lam, V0, Vl):

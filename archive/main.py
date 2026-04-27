@@ -5,12 +5,14 @@ from gurobipy import GRB
 
 from collections import defaultdict
 
-from create_gurobi_env import create_gurobi_env
+from archive import p_l
+from archive import p_g, p_g2
+from src.lib.create_gurobi_env import create_gurobi_env
 
-from formulas import p_g, p_g2, p_q, p_l
-from formulas.intersection_reduction import intersection_reduction
+from archive import p_q
+from archive.intersection_reduction import intersection_reduction
 
-from draw import draw
+from archive.draw import draw
 
 
 def generate_dag(n, edge_prob=0.4, weight_range=(1, 5)):

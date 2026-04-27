@@ -2,7 +2,7 @@ import itertools
 import gurobipy as gp
 from gurobipy import GRB
 
-from create_gurobi_env import create_gurobi_env
+from src.lib.create_gurobi_env import create_gurobi_env
 
 
 def intersection_reduction(V_layers, E_layers, w):

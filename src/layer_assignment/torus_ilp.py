@@ -1,6 +1,6 @@
 import gurobipy as gp
 from gurobipy import GRB
-from create_gurobi_env import create_gurobi_env
+from src.lib.create_gurobi_env import create_gurobi_env
 
 from collections import defaultdict
 

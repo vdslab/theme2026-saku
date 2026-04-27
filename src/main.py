@@ -7,12 +7,12 @@
 4. draw_torus.pyで描画
 """
 
-from torus_iqp import torus_iqp
-from torus import torus
-from torus_ilp import torus_ilp
-from minimize_crossings import minimize_crossings
-from draw_torus import draw_torus
-from generate_torus_graph import generate_cyclic_graph
+from layer_assignment.torus_iqp import torus_iqp
+from layer_assignment.torus import torus
+from layer_assignment.torus_ilp import torus_ilp
+from crossing_redution.minimize_crossings import minimize_crossings
+from drawing.draw_torus import draw_torus
+from lib.generate_torus_graph import generate_cyclic_graph
 
 
 def main():

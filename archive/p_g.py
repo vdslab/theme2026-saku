@@ -1,7 +1,7 @@
 import gurobipy as gp
 from gurobipy import GRB
 
-from create_gurobi_env import create_gurobi_env
+from src.lib.create_gurobi_env import create_gurobi_env
 
 
 def pg(label, V, A, w, lam, V0, Vl):

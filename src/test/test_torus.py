@@ -1,12 +1,10 @@
 """
-トーラス階層割当のテストスイート
-
-手動で定義されたテストケースと自動生成されたテストケースの両方を含む
+トーラス階層割当のテストコード
 """
 
-from torus_iqp import torus_iqp
-from draw_torus import draw_torus
-from generate_torus_graph import (
+from layer_assignment.torus_iqp import torus_iqp
+from drawing.draw_torus import draw_torus
+from lib.generate_torus_graph import (
     generate_random_connected_graph,
     generate_dag,
     generate_cyclic_graph,

@@ -1,4 +1,8 @@
-from draw_torus import draw_torus
+"""
+draw_torusのテストコード
+"""
+
+from drawing.draw_torus import draw_torus
 
 
 def test_draw_torus():

@@ -1,12 +1,12 @@
 import gurobipy as gp
 from gurobipy import GRB
 
-from longest_path import longest_path
+from archive.longest_path import longest_path
 
-from create_gurobi_env import create_gurobi_env
+from src.lib.create_gurobi_env import create_gurobi_env
 
 
-def pq(label, V, A, w, lam, V0, Vl):
+def pg2(label, V, A, w, lam, V0, Vl):
     env = create_gurobi_env()
     val = {}
 
@@ -24,7 +24,7 @@ def pq(label, V, A, w, lam, V0, Vl):
         m.addConstrs((x[v] == l for v in Vl), name="Vl_constraint")
 
         m.setObjective(
-            gp.quicksum(w[(u, v)] * ((x[v] - x[u]) ** 2) for (u, v) in A), GRB.MINIMIZE
+            gp.quicksum(w[(u, v)] * (x[v] - x[u]) for (u, v) in A), GRB.MINIMIZE
         )
         m.optimize()
 

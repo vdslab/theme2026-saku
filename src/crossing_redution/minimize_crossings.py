@@ -6,7 +6,7 @@
 
 import gurobipy as gp
 from gurobipy import GRB
-from create_gurobi_env import create_gurobi_env
+from src.lib.create_gurobi_env import create_gurobi_env
 
 
 def minimize_crossings(V, A, L, t_val, w=None):
