@@ -5,7 +5,7 @@ from collections import defaultdict
 from lib.create_gurobi_env import create_gurobi_env
 
 
-def torus_ilp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
+def torus_ilp(V, A, w=None, lam=None):
     """
     トーラスを含む階層グラフの階層割当を最適化
     目的関数で利用する分散をILP化した式
@@ -15,9 +15,6 @@ def torus_ilp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
         A: エッジ集合 list[tuple(int, int)]
         w: エッジ重み dict[(int,int): float] (デフォルト: すべて1)
         lam: エッジの最小階層差 dict[(int,int): int] (デフォルト: すべて1)
-        alpha: 階層数の重み (デフォルト: 100)
-        beta: エッジスパンの重み (デフォルト: 1)
-        gamma: トーラス辺数の重み (デフォルト: 1000)
 
     Returns:
         y_val: 各ノードの階層 dict[int: int]
@@ -37,8 +34,9 @@ def torus_ilp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
     n = len(V)
     M = n  # Big-M定数（ここではノード数）
 
-    alpha = max(10, n * 0.5)  # ノード数に応じて調整
-    beta = n  # エッジスパンの重要度を上げる
+    alpha = 1000  # ノード数に応じて調整
+    beta = 1  # エッジスパンの重要度を上げる
+    gamma = 1000
 
     # エッジごとの離散化距離集合 K_{uv} = {lambda_{uv}, lambda_{uv}+1, ..., M-1}
     K_uv = {}

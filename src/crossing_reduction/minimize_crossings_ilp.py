@@ -9,7 +9,7 @@ from gurobipy import GRB
 from lib.create_gurobi_env import create_gurobi_env
 
 
-def minimize_crossings(V, A, L, t_val, w=None):
+def minimize_crossings_ilp(V, A, L, t_val, w=None):
     """
     階層グラフの交差を最小化するノード順序を計算
 
@@ -79,7 +79,7 @@ def minimize_crossings(V, A, L, t_val, w=None):
             new_t[(u, v)] = t_uv
             continue
 
-        # 長距離辺を分解：トーラス（環状）経路に基づき隣接セグメントへ分割
+        # 長距離辺を分解：階層の増減に基づいて経路を選択
         prev = u
         M = len(layers)
 
@@ -87,13 +87,18 @@ def minimize_crossings(V, A, L, t_val, w=None):
         forward_steps = (i_v - i_u) % M
         backward_steps = (i_u - i_v) % M
 
-        # 最短経路を選択（短い方を使う）。同数なら forward を選ぶ。
-        if forward_steps <= backward_steps:
-            steps = forward_steps
-            direction = 1
-        else:
+        # 階層の増減に基づいて経路を選択
+        # 階層が減少する辺（i_u > i_v）→ トーラス経由（backward）
+        # 階層が増加する辺（i_u < i_v）→ 通常経路（forward）
+        # 同一階層（i_u == i_v）→ forward（実際には隣接層判定で除外済み）
+        if i_u > i_v:
+            # 階層が減少：backward経路を選択（トーラス経由）
             steps = backward_steps
             direction = -1
+        else:
+            # 階層が増加または同一：forward経路を選択
+            steps = forward_steps
+            direction = 1
 
         # 各ステップで中間レイヤーにダミーを挿入
         for s in range(1, steps + 1):
@@ -262,7 +267,7 @@ def minimize_crossings(V, A, L, t_val, w=None):
 
         if m.status == GRB.OPTIMAL:
             print(f"\n交差削減最適化成功!")
-            print(f"交差数（重み付き）: {m.objVal:.2f}")
+            print(f"交差数: {m.objVal:.2f}")
 
             # 各階層のノード順序を復元
             for k in layers:
@@ -283,12 +288,5 @@ def minimize_crossings(V, A, L, t_val, w=None):
             print(f"交差削減最適化失敗: ステータス = {m.status}")
             # フォールバック: 元の順序を返す
             order = {k: list(nodes) for k, nodes in L.items()}
-
-        # L, A, t_val は関数内でダミー挿入により上書き済み
-        # デバッグ情報: トーラスフラグが付与されたエッジ数を表示
-        torus_edges = [e for e, flag in t_val.items() if flag]
-        print(f"[minimize_crossings] torus edges after split: {len(torus_edges)}")
-        if len(torus_edges) <= 20:
-            print(f"[minimize_crossings] torus edge list: {torus_edges}")
 
         return order, L, A, t_val
