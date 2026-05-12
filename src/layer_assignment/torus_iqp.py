@@ -44,10 +44,6 @@ def torus_iqp(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
 
     with gp.Model(name="Torus_Layout", env=env) as m:
 
-        # ========== パラメータ設定 ==========
-        m.Params.Heuristics = 0
-        m.Params.MIPFocus = 3
-
         # ========== 変数定義 ==========
 
         # y[v]: ノードvの階層（0からn-1の整数）
