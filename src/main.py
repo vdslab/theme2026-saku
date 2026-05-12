@@ -46,8 +46,8 @@ def main():
     print("\n2. 階層割当")
     # y_val, t_val, L, run_time = torus(V, A)
     # y_val, t_val, L, run_time = torus_iqp(V, A)
-    y_val, t_val, L, run_time = torus_ilp(V, A)
-    # y_val, t_val, L, run_time = torus_heuristic(V, A)
+    # y_val, t_val, L, run_time = torus_ilp(V, A)
+    y_val, t_val, L, run_time = torus_heuristic(V, A)
 
     if not y_val:
         print("階層割当に失敗しました。")
@@ -68,7 +68,6 @@ def main():
         d[v].append(k)
     for k, v in sorted(d.items()):
         print(f"    {k}: {v}")
-    print(f"  エッジ: {t_val}")
 
     # 3. 交差削減
     print("\n3. 交差削減")

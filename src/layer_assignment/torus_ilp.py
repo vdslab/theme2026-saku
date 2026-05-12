@@ -34,9 +34,9 @@ def torus_ilp(V, A, w=None, lam=None):
     n = len(V)
     M = n  # Big-M定数（ここではノード数）
 
-    alpha = 1000  # ノード数に応じて調整
+    alpha = 100  # ノード数に応じて調整
     beta = 1  # エッジスパンの重要度を上げる
-    gamma = 1000
+    gamma = 100
 
     # エッジごとの離散化距離集合 K_{uv} = {lambda_{uv}, lambda_{uv}+1, ..., M-1}
     K_uv = {}

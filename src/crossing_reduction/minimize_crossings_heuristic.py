@@ -7,6 +7,7 @@
 
 from typing import Dict, List, Tuple
 import copy
+from lib.insert_dummy_node import insert_dummy_node
 
 
 def count_crossings(
@@ -292,109 +293,8 @@ def minimize_crossings_heuristic(V, A, L, t_val, w=None, max_iterations=50):
             - t_val: ダミー挿入後のトーラスフラグ dict[(int,int): bool]
     """
 
-    # エッジ重みのデフォルト値（今回は使用しないが互換性のため保持）
-    if w is None:
-        w = {(u, v): 1 for (u, v) in A}
-
-    # 階層のリスト
-    layers = sorted(L.keys())
-
-    # ========== ダミーノードの挿入（ILP版と同じロジック） ==========
-    new_L = {k: list(L.get(k, [])) for k in layers}
-    new_A = []
-    new_w = {}
-    new_t = {}
-
-    # 次のダミーノードID
-    int_nodes = [n for n in V if isinstance(n, int)]
-    next_dummy = max(int_nodes) + 1 if int_nodes else 0
-
-    # レイヤーのインデックスマップ
-    layer_index = {k: i for i, k in enumerate(layers)}
-
-    for u, v in A:
-        w_uv = w.get((u, v), 1) if w is not None else 1
-        t_uv = t_val.get((u, v), False)
-
-        # ノードのレイヤーを探す
-        u_layer = None
-        v_layer = None
-        for k in layers:
-            if u in L.get(k, []):
-                u_layer = k
-            if v in L.get(k, []):
-                v_layer = k
-
-        if u_layer is None or v_layer is None:
-            # レイヤー不明なら元の辺を追加
-            new_A.append((u, v))
-            new_w[(u, v)] = w_uv
-            new_t[(u, v)] = t_uv
-            continue
-
-        i_u = layer_index[u_layer]
-        i_v = layer_index[v_layer]
-
-        if abs(i_v - i_u) <= 1:
-            # 隣接層または同層はそのまま保持
-            new_A.append((u, v))
-            new_w[(u, v)] = w_uv
-            new_t[(u, v)] = t_uv
-            continue
-
-        # 長距離辺を分解：階層の増減に基づいて経路を選択
-        prev = u
-        M = len(layers)
-
-        # モジュラー上の前方ステップ数
-        forward_steps = (i_v - i_u) % M
-        backward_steps = (i_u - i_v) % M
-
-        # 階層の増減に基づいて経路を選択
-        # 階層が減少する辺（i_u > i_v）→ トーラス経由（backward）
-        # 階層が増加する辺（i_u < i_v）→ 通常経路（forward）
-        # 同一階層（i_u == i_v）→ forward（実際には隣接層判定で除外済み）
-        if i_u > i_v:
-            # 階層が減少：backward経路を選択（トーラス経由）
-            steps = backward_steps
-            direction = -1
-        else:
-            # 階層が増加または同一：forward経路を選択
-            steps = forward_steps
-            direction = 1
-
-        # 各ステップで中間レイヤーにダミーを挿入
-        for s in range(1, steps + 1):
-            next_idx = (i_u + direction * s) % M
-            layer_k = layers[next_idx]
-            dummy = next_dummy
-            next_dummy += 1
-            new_L[layer_k].append(dummy)
-            new_A.append((prev, dummy))
-            new_w[(prev, dummy)] = w_uv
-
-            # トーラス境界をまたぐか判定
-            cur_idx = (i_u + direction * (s - 1)) % M
-            wrap_segment = (cur_idx == M - 1 and next_idx == 0) or (
-                cur_idx == 0 and next_idx == M - 1
-            )
-            new_t[(prev, dummy)] = bool(wrap_segment)
-            prev = dummy
-
-        # 最後のセグメント
-        new_A.append((prev, v))
-        new_w[(prev, v)] = w_uv
-        last_from_idx = (i_u + direction * steps) % M if steps > 0 else i_u
-        last_wrap = (last_from_idx == M - 1 and i_v % M == 0) or (
-            last_from_idx == 0 and i_v % M == M - 1
-        )
-        new_t[(prev, v)] = bool(last_wrap or (steps == 0 and t_uv))
-
-    # 置換
-    L = new_L
-    A = new_A
-    w = new_w
-    t_val = new_t
+    # ========== ダミーノードの挿入（共通関数を呼び出し） ==========
+    V, A, L, t_val, w = insert_dummy_node(V, A, L, t_val, w)
     layers = sorted(L.keys())
 
     # ========== 重心法による交差削減（トーラス対応） ==========
@@ -608,7 +508,7 @@ def minimize_crossings_heuristic(V, A, L, t_val, w=None, max_iterations=50):
 
     # 最終結果
     print(f"\n重心法最適化完了!")
-    print(f"最終交差数: {best_crossings}")
+    print(f"交差数: {best_crossings}")
 
     # 各階層のノード順序を出力
     order = {}
