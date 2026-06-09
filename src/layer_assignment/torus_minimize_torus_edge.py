@@ -1,0 +1,117 @@
+import gurobipy as gp
+from gurobipy import GRB
+from lib.create_gurobi_env import create_gurobi_env
+
+from collections import defaultdict
+
+
+def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
+    """
+    トーラスを含む階層グラフの階層割当を最適化
+    目的関数の分散を利用しない式
+
+    Args:
+        V: ノード集合 list[int]
+        A: エッジ集合 list[tuple(int, int)]
+        L: レイヤー数 int
+        w: エッジ重み dict[(int,int): float] (デフォルト: すべて1)
+        lam: エッジの最小階層差 dict[(int,int): int] (デフォルト: すべて1)
+
+    Returns:
+        y_val: 各ノードの階層 dict[int: int]
+        t_val: 各エッジがトーラス辺か dict[(int,int): bool]
+        layer_dict: レイヤー集合 dict[int: list[int]]
+    """
+
+    # エッジの重複を除去
+    A = list(set(A))
+
+    # デフォルト値の設定
+    if w is None:
+        w = {(u, v): 1 for (u, v) in A}
+    if lam is None:
+        lam = {(u, v): 1 for (u, v) in A}
+
+    n = len(V)
+    M = n  # Big-M定数（十分大きな値）
+
+    env = create_gurobi_env()
+
+    with gp.Model(name="Torus_Layout", env=env) as m:
+
+        # ========== 変数定義 ==========
+
+        # y[v]: ノードvの階層（0からn-1の整数）
+        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=n - 1, name="y")
+
+        # t[u,v]: エッジ(u,v)がトーラス辺なら1、通常辺なら0
+        t = m.addVars(A, vtype=GRB.BINARY, name="t")
+
+        # ========== 制約 ==========
+
+        # 1. 最大階層の定義
+        m.addConstrs((y[v] <= L for v in V), name="max_layer")
+
+        # 2. トーラス辺の定義（Big-M法）
+        # t[u,v] = 1 ⇔ y[u] > y[v]
+
+        # (a) y[u] - y[v] <= M * t[u,v]
+        # t=0のとき y[u] <= y[v]、t=1のとき制約は緩い
+        m.addConstrs((y[u] - y[v] <= M * t[u, v] for (u, v) in A), name="torus_def_a")
+
+        # (b) y[u] - y[v] >= 1 - M * (1 - t[u,v])
+        # t=1のとき y[u] >= y[v] + 1、t=0のとき制約は緩い
+        m.addConstrs(
+            (y[u] - y[v] >= lam[(u, v)] - M * (1 - t[u, v]) for (u, v) in A),
+            name="torus_def_b",
+        )
+
+        # 3. 通常辺の階層制約
+        # t[u,v] = 0のとき、y[v] >= y[u] + lam[(u,v)]
+        m.addConstrs(
+            (y[v] - y[u] >= lam[(u, v)] - M * t[u, v] for (u, v) in A),
+            name="normal_edge_constraint",
+        )
+
+        # ========== 目的関数 ==========
+
+        # トーラス辺数の最小化
+        obj = gp.quicksum(t[u, v] for (u, v) in A)
+
+        m.setObjective(obj, GRB.MINIMIZE)
+
+        # ========== 最適化実行 ==========
+
+        m.optimize()
+
+        # ========== 結果の取得 ==========
+
+        y_val = {}
+        t_val = {}
+
+        if m.status == GRB.OPTIMAL:
+            # 各ノードの階層を取得
+            for v in V:
+                y_val[v] = int(y[v].X)
+
+            # 各エッジがトーラス辺かを取得
+            for u, v in A:
+                t_val[(u, v)] = t[u, v].X > 0.5
+
+            # レイヤー集合を構築
+            layer_dict = defaultdict(list)
+            for v in V:
+                layer_dict[y_val[v]].append(v)
+
+        else:
+            print(f"最適化失敗: ステータス = {m.status}")
+            # デバッグ用に実行不可能な制約を計算
+            m.computeIIS()
+            print("実行不可能な制約:")
+            for c in m.getConstrs():
+                if c.IISConstr:
+                    print(f"  {c.constrName}")
+
+        run_time = m.Runtime
+
+    return y_val, t_val, layer_dict, run_time

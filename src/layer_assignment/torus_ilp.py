@@ -5,7 +5,7 @@ from collections import defaultdict
 from lib.create_gurobi_env import create_gurobi_env
 
 
-def torus_ilp(V, A, w=None, lam=None):
+def torus_ilp(V, A, L=None, w=None, lam=None):
     """
     トーラスを含む階層グラフの階層割当を最適化
     目的関数で利用する分散をILP化した式
@@ -13,6 +13,7 @@ def torus_ilp(V, A, w=None, lam=None):
     Args:
         V: ノード集合 list[int]
         A: エッジ集合 list[tuple(int, int)]
+        L: 固定レイヤー数 int
         w: エッジ重み dict[(int,int): float] (デフォルト: すべて1)
         lam: エッジの最小階層差 dict[(int,int): int] (デフォルト: すべて1)
 
@@ -57,7 +58,8 @@ def torus_ilp(V, A, w=None, lam=None):
         y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=n - 1, name="y")
 
         # L_max: 使用される最大階層数
-        L_max = m.addVar(vtype=GRB.INTEGER, lb=0, ub=n - 1, name="L_max")
+        if L == None:
+            L_max = m.addVar(vtype=GRB.INTEGER, lb=0, ub=n - 1, name="L_max")
 
         # t[u,v]: wrap (トーラスをまたぐ) フラグ
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
@@ -72,7 +74,10 @@ def torus_ilp(V, A, w=None, lam=None):
         # ========== 制約 ==========
 
         # (1) 各ノードの階層は L_max 以下
-        m.addConstrs((y[v] <= L_max for v in V), name="max_layer")
+        if L == None:
+            m.addConstrs((y[v] <= L_max for v in V), name="max_layer")
+        else:
+            m.addConstrs((y[v] <= L for v in V), name="max_layer")
 
         # (2) one-hot: 各エッジで距離選択はちょうど1つ（K_{uv} に対して）
         for u, v in A:
@@ -129,7 +134,7 @@ def torus_ilp(V, A, w=None, lam=None):
         )
 
         obj = (
-            alpha * L_max
+            (alpha * L_max if L == None else 0)
             + beta * edge_span_term
             + gamma * gp.quicksum(t[u, v] for (u, v) in A)
         )
@@ -145,6 +150,7 @@ def torus_ilp(V, A, w=None, lam=None):
         y_val = {}
         t_val = {}
         chosen_k = {}
+        layer_dict = {}
 
         if (
             m.status == GRB.OPTIMAL

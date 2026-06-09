@@ -4,9 +4,11 @@
 サンキーダイアグラムの交差削減手法を適用し、各階層内でのノード順序を最適化する。
 """
 
+import itertools
 import gurobipy as gp
 from gurobipy import GRB
 from lib.create_gurobi_env import create_gurobi_env
+from lib.insert_dummy_node import insert_dummy_node
 
 
 def minimize_crossings_ilp(V, A, L, t_val, w=None):
@@ -28,233 +30,167 @@ def minimize_crossings_ilp(V, A, L, t_val, w=None):
             - t_val: ダミー挿入後のトーラスフラグ dict[(int,int): bool]
     """
 
-    # エッジ重みのデフォルト値
-    if w is None:
-        w = {(u, v): 1 for (u, v) in A}
-
-    # 階層のリスト
+    # ========== ダミーノードの挿入（共通関数を呼び出し） ==========
+    V, A, L, t_val, w = insert_dummy_node(V, A, L, t_val, w)
     layers = sorted(L.keys())
 
-    # ダミーノードの挿入
-    # new_L: レイヤーごとのノードリストのコピー
-    new_L = {k: list(L.get(k, [])) for k in layers}
-    new_A = []
-    new_w = {}
-    new_t = {}
-
-    # 次のダミーノードID（既存が整数ならその次の整数を使う）
-    int_nodes = [n for n in V if isinstance(n, int)]
-    next_dummy = max(int_nodes) + 1 if int_nodes else 0
-
-    # レイヤーのインデックスマップ
-    layer_index = {k: i for i, k in enumerate(layers)}
-
-    for u, v in A:
-        w_uv = w.get((u, v), 1) if w is not None else 1
-        t_uv = t_val.get((u, v), False)
-
-        # ノードのレイヤーを探す
-        u_layer = None
-        v_layer = None
-        for k in layers:
-            if u in L.get(k, []):
-                u_layer = k
-            if v in L.get(k, []):
-                v_layer = k
-
-        if u_layer is None or v_layer is None:
-            # レイヤー不明なら元の辺を追加
-            new_A.append((u, v))
-            new_w[(u, v)] = w_uv
-            new_t[(u, v)] = t_uv
-            continue
-
-        i_u = layer_index[u_layer]
-        i_v = layer_index[v_layer]
-
-        if abs(i_v - i_u) <= 1:
-            # 隣接層または同層はそのまま保持（元向き）
-            new_A.append((u, v))
-            new_w[(u, v)] = w_uv
-            new_t[(u, v)] = t_uv
-            continue
-
-        # 長距離辺を分解：階層の増減に基づいて経路を選択
-        prev = u
-        M = len(layers)
-
-        # モジュラー上の前方ステップ数（u -> v）
-        forward_steps = (i_v - i_u) % M
-        backward_steps = (i_u - i_v) % M
-
-        # 階層の増減に基づいて経路を選択
-        # 階層が減少する辺（i_u > i_v）→ トーラス経由（backward）
-        # 階層が増加する辺（i_u < i_v）→ 通常経路（forward）
-        # 同一階層（i_u == i_v）→ forward（実際には隣接層判定で除外済み）
-        if i_u > i_v:
-            # 階層が減少：backward経路を選択（トーラス経由）
-            steps = backward_steps
-            direction = -1
-        else:
-            # 階層が増加または同一：forward経路を選択
-            steps = forward_steps
-            direction = 1
-
-        # 各ステップで中間レイヤーにダミーを挿入
-        for s in range(1, steps + 1):
-            next_idx = (i_u + direction * s) % M
-            layer_k = layers[next_idx]
-            dummy = next_dummy
-            next_dummy += 1
-            new_L[layer_k].append(dummy)
-            new_A.append((prev, dummy))
-            new_w[(prev, dummy)] = w_uv
-
-            # このセグメントがトーラス境界をまたぐか判定
-            # 前層インデックスと次層インデックスの差で判定
-            cur_idx = (i_u + direction * (s - 1)) % M
-            wrap_segment = (cur_idx == M - 1 and next_idx == 0) or (
-                cur_idx == 0 and next_idx == M - 1
-            )
-            # トーラス境界をまたぐセグメントのみ t=True
-            new_t[(prev, dummy)] = bool(wrap_segment)
-            prev = dummy
-
-        # 最後のセグメント prev -> v
-        new_A.append((prev, v))
-        new_w[(prev, v)] = w_uv
-        # 最後のセグメントがトーラス境界かどうかも判定
-        last_from_idx = (i_u + direction * steps) % M if steps > 0 else i_u
-        last_wrap = (last_from_idx == M - 1 and i_v % M == 0) or (
-            last_from_idx == 0 and i_v % M == M - 1
-        )
-        new_t[(prev, v)] = bool(last_wrap or (steps == 0 and t_uv))
-
-    # 置換
-    L = new_L
-    A = new_A
-    w = new_w
-    t_val = new_t
-    layers = sorted(L.keys())
-
+    # ========== Gurobiモデルの構築（新しい平坦トーラス用定式化） ==========
     env = create_gurobi_env()
 
-    with gp.Model(name="Crossing_Minimization", env=env) as m:
+    with gp.Model(name="Crossing_Minimization_Torus", env=env) as m:
 
         # ========== 変数定義 ==========
 
-        # x[k, u1, u2]: 階層k内でノードu1がu2の「上」にあるかどうか
+        # x[k, u, v]: 階層k内でノードuがvより局所的に「上」にあるか
+        # ※対称性を利用し、常に u < v の場合のみ変数を生成して探索空間を半減
         x = {}
         for k in layers:
             nodes = L[k]
-            for u1 in nodes:
-                for u2 in nodes:
-                    if u1 != u2:
-                        x[k, u1, u2] = m.addVar(
-                            vtype=GRB.BINARY, name=f"x_{k}_{u1}_{u2}"
-                        )
+            for i in range(len(nodes)):
+                for j in range(i + 1, len(nodes)):
+                    u, v = nodes[i], nodes[j]
+                    if u > v:
+                        u, v = v, u  # 必ず u < v の順にする
 
-        # c[e1, e2]: エッジe1とe2が交差するかどうか
+                    if (k, u, v) not in x:
+                        x[k, u, v] = m.addVar(vtype=GRB.BINARY, name=f"x_{k}_{u}_{v}")
+
+        # x[k, u, v] を安全に取得するためのヘルパー関数（逆順の場合は 1 - x で返す）
+        def get_x(k, u, v):
+            if u < v:
+                return x[k, u, v]
+            else:
+                return 1 - x[k, v, u]
+
+        # alpha[e]: エッジeがY軸の境界をまたぐ回数（巻き付き数）
+        # 下限-1、上限1の整数変数
+        alpha = {}
+        for e in A:
+            alpha[e] = m.addVar(
+                vtype=GRB.INTEGER, lb=-1, ub=1, name=f"alpha_{e[0]}_{e[1]}"
+            )
+
+        # alpha_abs[e]: alpha[e]の絶対値（連続変数、0以上）
+        alpha_abs = {}
+        for e in A:
+            alpha_abs[e] = m.addVar(
+                vtype=GRB.CONTINUOUS, lb=0.0, name=f"alpha_abs_{e[0]}_{e[1]}"
+            )
+
+        # c[e1, e2]: エッジe1とe2の交差数
+        # 多重交差が起きるため連続変数（0以上）とする
         c = {}
-        for idx, k in enumerate(layers[:-1]):  # 最後の層を除く
-            next_k = layers[idx + 1]
+        # 環状構造: 最後の階層の次は最初の階層
+        num_layers = len(layers)
+        for idx in range(num_layers):
+            k = layers[idx]
+            next_k = layers[(idx + 1) % num_layers]  # 環状にする
+
+            # k層から next_k層へのエッジを取得
             edges_k = [(u, v) for (u, v) in A if u in L[k] and v in L.get(next_k, [])]
-            for e1 in edges_k:
-                for e2 in edges_k:
-                    if e1 != e2:
-                        c[e1, e2] = m.addVar(vtype=GRB.BINARY, name=f"c_{e1}_{e2}")
 
-        # ========== 制約 ==========
-
-        # 1. 相対位置の一意性: u1とu2のどちらかが上
-        for k in layers:
-            nodes = L[k]
-            for u1 in nodes:
-                for u2 in nodes:
-                    if u1 < u2:  # 重複を避けるため u1 < u2 のみ
-                        m.addConstr(
-                            x[k, u1, u2] + x[k, u2, u1] == 1,
-                            name=f"unique_{k}_{u1}_{u2}",
-                        )
-
-        # 2. 推移性: u3が上、u2が上 → u3がu1の上
-        for k in layers:
-            nodes = L[k]
-            for u1 in nodes:
-                for u2 in nodes:
-                    for u3 in nodes:
-                        if u1 != u2 and u2 != u3 and u1 != u3:
-                            m.addConstr(
-                                x[k, u3, u1] >= x[k, u3, u2] + x[k, u2, u1] - 1,
-                                name=f"trans_{k}_{u1}_{u2}_{u3}",
+            # 独立した（端点を共有しない）エッジペアについて交差変数を作成
+            for i, e1 in enumerate(edges_k):
+                for j, e2 in enumerate(edges_k):
+                    if i < j:  # 重複を避ける（e1 < e2）
+                        u1, v1 = e1
+                        u2, v2 = e2
+                        # 端点を共有しないエッジペアのみ
+                        if u1 != u2 and v1 != v2:
+                            c[e1, e2] = m.addVar(
+                                vtype=GRB.CONTINUOUS, lb=0.0, name=f"c_{e1}_{e2}"
                             )
 
-        # 3. 交差の定義（通常辺のみ）
-        for idx, k in enumerate(layers[:-1]):
-            next_k = layers[idx + 1]
-            edges_k = [
-                (u, v)
-                for (u, v) in A
-                if u in L[k] and v in L.get(next_k, []) and not t_val.get((u, v), False)
-            ]
+        # ========== 制約条件の定義 ==========
 
-            for e1 in edges_k:
-                for e2 in edges_k:
-                    if e1 != e2:
+        # 1. 相対位置の一意性 (Consistency):
+        #    -> ヘルパー関数 get_x により構造的に保証されたため、この制約ブロックは不要！
+
+        # 2. 推移律 (Transitivity):
+        #    u < v < w_node の組み合わせのみループすることで、制約数を約1/6に削減
+        for k in layers:
+            # ノードをID順にソートして、確実に u < v < w_node の順で取り出す
+            sorted_nodes = sorted(L[k])
+            for u, v, w_node in itertools.combinations(sorted_nodes, 3):
+                # 3サイクルを禁止する制約（0 <= x_uv + x_vw - x_uw <= 1）
+                m.addConstr(
+                    x[k, u, v] + x[k, v, w_node] - x[k, u, w_node] >= 0,
+                    name=f"trans1_{k}_{u}_{v}_{w_node}",
+                )
+                m.addConstr(
+                    x[k, u, v] + x[k, v, w_node] - x[k, u, w_node] <= 1,
+                    name=f"trans2_{k}_{u}_{v}_{w_node}",
+                )
+
+        # 3. 巻き付き数の絶対値 (Absolute Winding Number):
+        #    alpha_abs[e] >= alpha[e] かつ alpha_abs[e] >= -alpha[e]
+        for e in A:
+            m.addConstr(alpha_abs[e] >= alpha[e], name=f"abs_pos_{e[0]}_{e[1]}")
+            m.addConstr(alpha_abs[e] >= -alpha[e], name=f"abs_neg_{e[0]}_{e[1]}")
+
+        # 4. 交差の定義 (Crossing Calculation):
+        #    注意: 旧実装の not t_val.get(e) という除外条件は削除
+        #    （横方向の境界をまたぐ辺同士も交差計算の対象）
+        for idx in range(num_layers):
+            k = layers[idx]
+            next_k = layers[(idx + 1) % num_layers]  # 環状構造
+
+            edges_k = [(u, v) for (u, v) in A if u in L[k] and v in L.get(next_k, [])]
+
+            # 独立した（端点を共有しない）エッジペア (e1, e2) について
+            for i, e1 in enumerate(edges_k):
+                for j, e2 in enumerate(edges_k):
+                    if i < j:  # e1 < e2
                         u1, v1 = e1
                         u2, v2 = e2
 
-                        # u1 != u2 かつ v1 != v2 の場合のみ交差判定
-                        if (
-                            u1 != u2
-                            and v1 != v2
-                            and v1 in L.get(next_k, [])
-                            and v2 in L.get(next_k, [])
-                        ):
-                            # 交差条件1: u1が上、v2が上
+                        # 端点を共有しないエッジペアのみ交差判定
+                        if u1 != u2 and v1 != v2:
+                            # 交差数の制約（2つの不等式）:
+                            # c[e1, e2] >= (alpha[e1] - alpha[e2]) - get_x(next_k, v1, v2) + get_x(k, u1, u2)
                             m.addConstr(
-                                c[e1, e2] + x[k, u2, u1] + x[next_k, v1, v2] >= 1,
-                                name=f"cross1_{e1}_{e2}",
+                                c[e1, e2]
+                                >= (alpha[e1] - alpha[e2])
+                                - get_x(next_k, v1, v2)
+                                + get_x(k, u1, u2),
+                                name=f"crossing1_{e1}_{e2}",
+                            )
+                            # c[e1, e2] >= -(alpha[e1] - alpha[e2]) + get_x(next_k, v1, v2) - get_x(k, u1, u2)
+                            m.addConstr(
+                                c[e1, e2]
+                                >= -(alpha[e1] - alpha[e2])
+                                + get_x(next_k, v1, v2)
+                                - get_x(k, u1, u2),
+                                name=f"crossing2_{e1}_{e2}",
                             )
 
-                            # 交差条件2: u2が上、v1が上
-                            m.addConstr(
-                                c[e1, e2] + x[k, u1, u2] + x[next_k, v2, v1] >= 1,
-                                name=f"cross2_{e1}_{e2}",
-                            )
+        # ========== 目的関数の設定 ==========
+        # 最小化: Sum(w[e1] * w[e2] * c[e1, e2]) + 0.001 * Sum(alpha_abs[e])
+        #
+        # 第1項: 重み付き交差数の総和
+        # 第2項: 無駄な境界またぎを抑制するペナルティ（視覚的スパゲッティ化防止）
 
-        # 4. 対称性制約（パフォーマンス向上）
-        for idx, k in enumerate(layers[:-1]):
-            next_k = layers[idx + 1]
-            edges_k = [
-                (u, v)
-                for (u, v) in A
-                if u in L[k] and v in L.get(next_k, []) and not t_val.get((u, v), False)
-            ]
+        crossing_terms = []
+        for idx in range(num_layers):
+            k = layers[idx]
+            next_k = layers[(idx + 1) % num_layers]
+            edges_k = [(u, v) for (u, v) in A if u in L[k] and v in L.get(next_k, [])]
 
-            for e1 in edges_k:
-                for e2 in edges_k:
-                    if e1 < e2:  # 重複を避ける
-                        m.addConstr(c[e1, e2] == c[e2, e1], name=f"sym_{e1}_{e2}")
+            for i, e1 in enumerate(edges_k):
+                for j, e2 in enumerate(edges_k):
+                    if i < j:
+                        u1, v1 = e1
+                        u2, v2 = e2
+                        if u1 != u2 and v1 != v2:
+                            w1 = w.get(e1, 1)
+                            w2 = w.get(e2, 1)
+                            crossing_terms.append(w1 * w2 * c[e1, e2])
 
-        # ========== 目的関数 ==========
+        # 巻き付き数ペナルティ項
+        winding_penalty_terms = [0.001 * alpha_abs[e] for e in A]
 
-        # 交差領域の合計を最小化
-        terms = []
-        for idx, k in enumerate(layers[:-1]):
-            next_k = layers[idx + 1]
-            edges_k = [
-                (u, v)
-                for (u, v) in A
-                if u in L[k] and v in L.get(next_k, []) and not t_val.get((u, v), False)
-            ]
-            for e1 in edges_k:
-                for e2 in edges_k:
-                    if e1 != e2:
-                        terms.append(w.get(e1, 1) * w.get(e2, 1) * c[e1, e2])
-
-        obj = gp.quicksum(terms)
-
+        # 目的関数を設定
+        obj = gp.quicksum(crossing_terms) + gp.quicksum(winding_penalty_terms)
         m.setObjective(obj, GRB.MINIMIZE)
 
         # ========== 最適化実行 ==========
@@ -265,17 +201,35 @@ def minimize_crossings_ilp(V, A, L, t_val, w=None):
 
         order = {}
 
-        if m.status == GRB.OPTIMAL:
-            print(f"\n交差削減最適化成功!")
-            print(f"交差数: {m.objVal:.2f}")
+        if m.status == GRB.OPTIMAL or m.status == GRB.TIME_LIMIT:
+            if m.status == GRB.OPTIMAL:
+                print(f"\n=== 平坦トーラス交差削減最適化成功 ===")
+            else:
+                print(f"\n=== タイムリミット到達（最良解を使用） ===")
+
+            total_crossings = round(sum(c[e1, e2].X for (e1, e2) in c.keys()))
+            print(f"交差数: {total_crossings} 回")
 
             # 各階層のノード順序を復元
             for k in layers:
                 nodes = L[k]
-                # ノードのスコアを計算（上にあるノードの数）
+                # 各ノードのスコアを計算
+                # スコア = そのノードより下にあるノードの数（get_x を使って計算）
                 scores = {}
                 for u in nodes:
-                    score = sum(x[k, u, v].X for v in nodes if v != u)
+                    score = 0
+                    for v in nodes:
+                        if v != u:
+                            # get_x の返り値が式（LinExpr）または変数（Var）
+                            x_val = get_x(k, u, v)
+                            if isinstance(x_val, (int, float)):
+                                score += x_val
+                            elif hasattr(x_val, "getValue"):
+                                # 線形式の場合
+                                score += x_val.getValue()
+                            else:
+                                # 変数の場合
+                                score += x_val.X
                     scores[u] = score
 
                 # スコアの降順でソート（スコアが高い = より上）

@@ -13,7 +13,7 @@ from matplotlib.patches import FancyArrowPatch
 from collections import defaultdict, deque
 
 
-def draw_torus(V, A, L, t_val=None, order=None):
+def draw_torus(V, A, L, t_val=None, order=None, save_path=None, show=True):
     """
     トーラスグラフを描画
 
@@ -23,6 +23,8 @@ def draw_torus(V, A, L, t_val=None, order=None):
         L: レイヤー集合
         t_val: 各エッジがトーラス辺かどうか（オプション）
         order: 各階層内のノード順序（オプション）dict[layer: list[nodes]]
+        save_path: 画像の保存先パス（オプション）
+        show: 画面表示するかどうか（デフォルト: True）
     """
     # ノードの位置を決定
     pos = {}
@@ -208,4 +210,8 @@ def draw_torus(V, A, L, t_val=None, order=None):
     ax.invert_yaxis()
 
     plt.tight_layout()
-    plt.show()
+    if save_path:
+        plt.savefig(save_path, dpi=200)
+    if show:
+        plt.show()
+    plt.close(fig)

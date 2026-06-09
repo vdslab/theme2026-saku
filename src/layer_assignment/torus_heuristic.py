@@ -83,7 +83,7 @@ def tarjan_scc(V, A):
     return sccs, node_to_scc
 
 
-def build_scc_dag(sccs, node_to_scc, A):
+def build_scc_dag(node_to_scc, A):
     """
     SCC DAGを構築
 
@@ -451,7 +451,7 @@ def torus_heuristic(V, A, w=None, lam=None):
     sccs, node_to_scc = tarjan_scc(V, A)
 
     # Step 2: SCC DAGを構築
-    scc_edges = build_scc_dag(sccs, node_to_scc, A)
+    scc_edges = build_scc_dag(node_to_scc, A)
 
     # Step 3: SCC DAGにlongest-path layeringを適用
     scc_layers = longest_path_layering_scc(sccs, scc_edges)
