@@ -49,7 +49,7 @@ def assign_layer_length_func(layer, l, V, A):
         return l
 
     if layer == None:
-        layer = "diameter"
+        layer = "cycle_length"
 
     d = {
         # "fas": estimate_layer_count_via_fas,
@@ -80,7 +80,6 @@ def main(
     num_cycles = 1  # サイクル数
     edge_prob = 0.005  # エッジ確率
     seed = 14  # シード値
-    L = None
 
     """引数取得"""
 
@@ -193,7 +192,7 @@ def main(
     print(f"実行時間: {round(run_time, 5)}")
 
     # 交差削減で最適化された順序を反映した描画
-    draw_torus(V=V, A=A, L=layer_dict, t_val=t_val, order=order)
+    draw_torus(V=V, A=A, L=layer_dict, t_val=t_val, order=order, draw_dummy_nodes=True)
 
     print("\n" + "=" * 60)
     print("完了！")

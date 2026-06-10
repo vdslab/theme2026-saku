@@ -13,7 +13,16 @@ from matplotlib.patches import FancyArrowPatch
 from collections import defaultdict, deque
 
 
-def draw_torus(V, A, L, t_val=None, order=None, save_path=None, show=True):
+def draw_torus(
+    V,
+    A,
+    L,
+    t_val=None,
+    order=None,
+    save_path=None,
+    show=True,
+    draw_dummy_nodes=False,
+):
     """
     トーラスグラフを描画
 
@@ -25,6 +34,7 @@ def draw_torus(V, A, L, t_val=None, order=None, save_path=None, show=True):
         order: 各階層内のノード順序（オプション）dict[layer: list[nodes]]
         save_path: 画像の保存先パス（オプション）
         show: 画面表示するかどうか（デフォルト: True）
+        draw_dummy_nodes: V に含まれないノードを黒点で描画するかどうか
     """
     # ノードの位置を決定
     pos = {}
@@ -68,68 +78,82 @@ def draw_torus(V, A, L, t_val=None, order=None, save_path=None, show=True):
             y = y_min + seg_h * (idx + 0.5)
             pos[node] = (x, y)
 
-    # ダミーノードは描画しない。ダミー経由のチェインを原点間の表示エッジに折り畳む。
     V_set = set(V)
-    succ = defaultdict(list)
-    for u, v in A:
-        succ[u].append(v)
+    dummy_nodes = [node for node in pos if node not in V_set]
 
-    display_edges = {}  # (u,v) -> combined_t
+    # ダミーノード表示時は、長距離エッジを折り畳まずに実エッジ列をそのまま描画する。
+    if draw_dummy_nodes:
+        normal_edges = []
+        torus_edges = []
+        for u, v in A:
+            if bool(t_val.get((u, v), False)) if t_val is not None else False:
+                torus_edges.append((u, v))
+            else:
+                normal_edges.append((u, v))
+    else:
+        # ダミーノードは描画しない。ダミー経由のチェインを原点間の表示エッジに折り畳む。
+        succ = defaultdict(list)
+        for u, v in A:
+            succ[u].append(v)
 
-    # 探索して start(元ノード) -> end(元ノード) のパスを見つける
-    for start in V:
-        if start not in succ:
-            continue
-        for nxt in succ[start]:
-            # BFS/DFS along successors until reach an original node (in V_set)
-            stack = deque()
-            combined_t = (
-                bool(t_val.get((start, nxt), False))
-                if t_val is not None
-                else (False if start <= nxt else True)
-            )
-            stack.append((nxt, combined_t, {(start, nxt)}))
-            while stack:
-                cur, cur_t, visited_edges = stack.pop()
-                if cur in V_set:
-                    if cur != start:
-                        key = (start, cur)
-                        display_edges[key] = display_edges.get(key, False) or cur_t
+        display_edges = {}  # (u,v) -> combined_t
+
+        # 探索して start(元ノード) -> end(元ノード) のパスを見つける
+        for start in V:
+            if start not in succ:
+                continue
+            for nxt in succ[start]:
+                # BFS/DFS along successors until reach an original node (in V_set)
+                stack = deque()
+                combined_t = (
+                    bool(t_val.get((start, nxt), False))
+                    if t_val is not None
+                    else (False if start <= nxt else True)
+                )
+                stack.append((nxt, combined_t, {(start, nxt)}))
+                while stack:
+                    cur, cur_t, visited_edges = stack.pop()
+                    if cur in V_set:
+                        if cur != start:
+                            key = (start, cur)
+                            display_edges[key] = display_edges.get(key, False) or cur_t
+                        continue
+
+                    # cur is dummy; follow its successors
+                    for s in succ.get(cur, []):
+                        edge_t = (
+                            bool(t_val.get((cur, s), False))
+                            if t_val is not None
+                            else False
+                        )
+                        new_t = cur_t or edge_t
+                        edge = (cur, s)
+                        if edge in visited_edges:
+                            continue
+                        if len(visited_edges) > 1000:
+                            # safety guard
+                            continue
+                        new_visited = set(visited_edges)
+                        new_visited.add(edge)
+                        stack.append((s, new_t, new_visited))
+
+        normal_edges = []
+        torus_edges = []
+        for (u, v), flag in display_edges.items():
+            # レイヤー順序を確認し、end が start より前の層にある場合はトーラス経由とみなす
+            u_layer = node_to_layer.get(u)
+            v_layer = node_to_layer.get(v)
+            if u_layer is not None and v_layer is not None:
+                u_idx = layer_index.get(u_layer)
+                v_idx = layer_index.get(v_layer)
+                if u_idx is not None and v_idx is not None and v_idx < u_idx:
+                    torus_edges.append((u, v))
                     continue
 
-                # cur is dummy; follow its successors
-                for s in succ.get(cur, []):
-                    edge_t = (
-                        bool(t_val.get((cur, s), False)) if t_val is not None else False
-                    )
-                    new_t = cur_t or edge_t
-                    edge = (cur, s)
-                    if edge in visited_edges:
-                        continue
-                    if len(visited_edges) > 1000:
-                        # safety guard
-                        continue
-                    new_visited = set(visited_edges)
-                    new_visited.add(edge)
-                    stack.append((s, new_t, new_visited))
-
-    normal_edges = []
-    torus_edges = []
-    for (u, v), flag in display_edges.items():
-        # レイヤー順序を確認し、end が start より前の層にある場合はトーラス経由とみなす
-        u_layer = node_to_layer.get(u)
-        v_layer = node_to_layer.get(v)
-        if u_layer is not None and v_layer is not None:
-            u_idx = layer_index.get(u_layer)
-            v_idx = layer_index.get(v_layer)
-            if u_idx is not None and v_idx is not None and v_idx < u_idx:
+            if flag:
                 torus_edges.append((u, v))
-                continue
-
-        if flag:
-            torus_edges.append((u, v))
-        else:
-            normal_edges.append((u, v))
+            else:
+                normal_edges.append((u, v))
 
     # 描画領域サイズ（表示の見やすさのため最低1を確保）
     width = max(1, num_layers + 1)
@@ -154,8 +178,26 @@ def draw_torus(V, A, L, t_val=None, order=None, save_path=None, show=True):
     node_radius = 0.15
 
     # ノードと通常エッジを描画
-    nx.draw_networkx_nodes(G, pos, ax=ax, node_size=400, node_color="lightblue")
-    nx.draw_networkx_labels(G, pos, ax=ax, font_size=10)
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=V,
+        ax=ax,
+        node_size=400,
+        node_color="lightblue",
+    )
+    nx.draw_networkx_labels(G, pos, labels={v: v for v in V}, ax=ax, font_size=10)
+
+    if draw_dummy_nodes and dummy_nodes:
+        nx.draw_networkx_nodes(
+            G,
+            pos,
+            nodelist=dummy_nodes,
+            ax=ax,
+            node_size=120,
+            node_color="black",
+            node_shape="o",
+        )
 
     # 通常エッジを描画（ノードとの重なりを避けるため、FancyArrowPatchを使用）
     for u, v in normal_edges:
