@@ -113,5 +113,4 @@ def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
                     print(f"  {c.constrName}")
 
         run_time = m.Runtime
-
     return y_val, t_val, layer_dict, run_time
