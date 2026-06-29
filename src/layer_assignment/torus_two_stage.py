@@ -37,7 +37,7 @@ def minimize_torus_edges(V, A, L, w=None, lam=None):
     A = list(set(A))
     w, lam = _prepare_edge_params(A, w, lam)
     n = len(V)
-    M = n
+    M = L  # Big-M定数: y[v]の範囲が[0,L]なので、Lで十分
 
     env = create_gurobi_env()
 
@@ -90,7 +90,7 @@ def balance_with_fixed_torus_edges(V, A, L, torus_count, w=None, lam=None):
     A = list(set(A))
     w, lam = _prepare_edge_params(A, w, lam)
     n = len(V)
-    M = n
+    M = L  # Big-M定数: y[v]の範囲が[0,L]なので、Lで十分
 
     K_uv = {}
     for u, v in A:
