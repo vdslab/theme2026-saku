@@ -13,6 +13,8 @@ from layer_assignment.torus_ilp import torus_ilp
 from layer_assignment.torus_heuristic import torus_heuristic
 from layer_assignment.torus_two_stage import torus_two_stage_with_diameter
 from layer_assignment.torus_minimize_torus_edge import torus_minimize_torus_edge
+from layer_assignment.torus_balance import balance_layer_assignment
+from layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
 from crossing_reduction.minimize_crossings_ilp import minimize_crossings_ilp
 from crossing_reduction.minimize_crossings_heuristic import minimize_crossings_heuristic
@@ -64,7 +66,14 @@ def assign_layer_length_func(layer, l, V, A):
 
 
 def main(
-    node=None, cycle=None, prob=None, _seed=None, layer=None, assigner="ilp", l=None
+    node=None,
+    cycle=None,
+    prob=None,
+    _seed=None,
+    layer=None,
+    assigner="ilp",
+    l=None,
+    func_type=None,
 ):
     n = 50  # ノード数
     num_cycles = 2  # サイクル数
@@ -81,6 +90,8 @@ def main(
         edge_prob = float(prob)
     if _seed is not None:
         seed = int(_seed)
+    if func_type is None:
+        func_type = "diff_square"  # デフォルト値
 
     """ メイン処理 """
 
@@ -102,27 +113,49 @@ def main(
 
     # 2. 階層割当
     print("\n2. 階層割当")
-    L = assign_layer_length_func(layer, l, V, A)
 
-    if assigner == "two_stage":
-        result = torus_two_stage_with_diameter(V, A, L)
-        if not result["success"]:
-            print("階層割当に失敗しました。")
+    if assigner == "binary_balance":
+        # Binary Search + Balance の2段階アプローチ
+        print(f"  Binary Searchでトーラス辺数とレイヤー数を探索中...")
+        optimal_L, min_torus_count, search_time = find_minimum_torus_configuration(V, A)
+
+        if optimal_L is None:
+            print("Binary Search失敗: 最適なレイヤー数が見つかりませんでした。")
             return
-        y_val = result["y_val"]
-        t_val = result["t_val"]
-        layer_dict = result["layer_dict"]
-        run_time = result["step1_runtime"] + result["step2_runtime"]
-    elif assigner == "torus":
-        y_val, t_val, layer_dict, run_time = torus(V, A)
-    elif assigner == "iqp":
-        y_val, t_val, layer_dict, run_time = torus_iqp(V, A)
-    elif assigner == "torus_edge":
-        y_val, t_val, layer_dict, run_time = torus_minimize_torus_edge(V, A, L)
-    elif assigner == "heuristic":
-        y_val, t_val, layer_dict, run_time = torus_heuristic(V, A)
+
+        print(f"  最適レイヤー数: {optimal_L}, 最小トーラス辺数: {min_torus_count}")
+        print(f"  Binary Search実行時間: {round(search_time, 5)}秒")
+
+        # balanceで階層割当を完成
+        print(f"  {func_type}手法でバランスを取った階層割当を実行中...")
+        y_val, t_val, layer_dict, balance_time = balance_layer_assignment(
+            V, A, min_torus_count, optimal_L, func_type
+        )
+
+        L = optimal_L
+        run_time = search_time + balance_time
     else:
-        y_val, t_val, layer_dict, run_time = torus_ilp(V, A, L)
+        L = assign_layer_length_func(layer, l, V, A)
+
+        if assigner == "two_stage":
+            result = torus_two_stage_with_diameter(V, A, L)
+            if not result["success"]:
+                print("階層割当に失敗しました。")
+                return
+            y_val = result["y_val"]
+            t_val = result["t_val"]
+            layer_dict = result["layer_dict"]
+            run_time = result["step1_runtime"] + result["step2_runtime"]
+        elif assigner == "torus":
+            y_val, t_val, layer_dict, run_time = torus(V, A)
+        elif assigner == "iqp":
+            y_val, t_val, layer_dict, run_time = torus_iqp(V, A)
+        elif assigner == "torus_edge":
+            y_val, t_val, layer_dict, run_time = torus_minimize_torus_edge(V, A, L)
+        elif assigner == "heuristic":
+            y_val, t_val, layer_dict, run_time = torus_heuristic(V, A)
+        else:
+            y_val, t_val, layer_dict, run_time = torus_ilp(V, A, L)
 
     if not y_val:
         print("階層割当に失敗しました。")
@@ -179,10 +212,24 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--assigner",
-        choices=["ilp", "two_stage", "torus", "iqp", "torus_edge", "heuristic"],
+        choices=[
+            "ilp",
+            "two_stage",
+            "torus",
+            "iqp",
+            "torus_edge",
+            "heuristic",
+            "binary_balance",
+        ],
         default="ilp",
     )
     parser.add_argument("--l", type=int)
+    parser.add_argument(
+        "--func_type",
+        choices=["diff", "diff_square", "qp", "barycenter"],
+        default="diff_square",
+        help="階層割当のバランス手法 (binary_balanceで使用、デフォルト: diff_square)",
+    )
     args = parser.parse_args()
 
     main(
@@ -193,4 +240,5 @@ if __name__ == "__main__":
         layer=args.layer,
         assigner=args.assigner,
         l=args.l,
+        func_type=args.func_type,
     )

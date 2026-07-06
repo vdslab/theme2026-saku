@@ -264,7 +264,6 @@ def _optimize_barycenter(V, A, torus_count, layer_count, w, lam):
                 continue
 
             # 移動可能範囲内で走査し、最も重心が整っている位置を探す
-            # 重心が整っている = 隣接ノードとの階層差の2乗和が最小
 
             # 全隣接ノードを取得（チェックに使用）
             all_neighbors = []
@@ -276,32 +275,43 @@ def _optimize_barycenter(V, A, torus_count, layer_count, w, lam):
             if len(all_neighbors) == 0:
                 continue
 
-            # 範囲内の各位置について重心評価値を計算
-            best_layer = y_val[v]
-            best_score = float("inf")
+            # 重心（隣接ノードの平均階層）を直接計算
+            # 数学的に、Σ(y_val[u] - c)² を最小化する c は平均値
+            center = sum(y_val[u] for u in all_neighbors) / len(all_neighbors)
 
-            for candidate_layer in range(min_layer, max_layer + 1):
-                # この位置に移動すると同一階層のエッジが発生しないかチェック
-                # 全隣接ノードと同じ階層になってはいけない
-                if any(y_val[u] == candidate_layer for u in all_neighbors):
-                    continue
+            # 整数に丸める
+            candidate_layer = round(center)
 
-                # この位置に移動した場合の重心評価値（距離の2乗和）
-                # 評価には現在の階層と異なるノードのみを使用
-                neighbors_for_score = [
-                    u for u in all_neighbors if y_val[u] != candidate_layer
-                ]
+            # 移動可能範囲でクランプ
+            candidate_layer = max(min_layer, min(max_layer, candidate_layer))
 
-                if len(neighbors_for_score) == 0:
-                    continue
+            # 同一階層チェック：隣接ノードと同じ階層になる場合は調整
+            if any(y_val[u] == candidate_layer for u in all_neighbors):
+                # 候補位置から上下に探索して、同一階層にならない最も近い位置を探す
+                found = False
+                for offset in range(1, max_layer - min_layer + 2):
+                    # 上方向を試す
+                    upper = candidate_layer + offset
+                    if upper <= max_layer and not any(
+                        y_val[u] == upper for u in all_neighbors
+                    ):
+                        candidate_layer = upper
+                        found = True
+                        break
+                    # 下方向を試す
+                    lower = candidate_layer - offset
+                    if lower >= min_layer and not any(
+                        y_val[u] == lower for u in all_neighbors
+                    ):
+                        candidate_layer = lower
+                        found = True
+                        break
 
-                score = sum(
-                    (y_val[u] - candidate_layer) ** 2 for u in neighbors_for_score
-                )
+                # 見つからない場合は現在位置を維持
+                if not found:
+                    candidate_layer = y_val[v]
 
-                if score < best_score:
-                    best_score = score
-                    best_layer = candidate_layer
+            best_layer = candidate_layer
 
             # 変化量を記録
             total_change += abs(best_layer - y_val[v])
