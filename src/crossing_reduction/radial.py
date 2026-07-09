@@ -404,7 +404,7 @@ def _run_sifting(order, psi, layers, edges, rounds, fixed_zero_edges):
 
         for layer in layers:
             for node in list(order[layer]):
-                improved |= _sift_vertex(
+                improved |= _sift_vertex_incremental(
                     node, layer, order, psi, layers, edges, fixed_zero_edges
                 )
 
@@ -470,6 +470,153 @@ def _sift_vertex(node, layer, order, psi, layers, edges, fixed_zero_edges):
     return True
 
 
+def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_edges):
+    """
+    1ノードを隣接交換で円周上に流し、影響するレイヤーペアだけを差分評価する。
+
+    既存のradial siftingに近い形で、nodeを境界直後から1位置ずつ動かす。
+    交差数はnodeが属するレイヤーの前後ペアだけを再計算し、psiはnodeの
+    incident edgeだけを改善する。
+
+    Args:
+        node: 移動対象ノード。
+        layer: nodeが属するレイヤー。
+        order: 更新対象のorder。
+        psi: 更新対象の巻き数辞書。
+        layers: レイヤーキー列。
+        edges: エッジ集合。
+        fixed_zero_edges: psi=0に固定するエッジ集合。
+
+    Returns:
+        bool: orderまたはpsiが改善された場合True。
+    """
+    nodes = order[layer]
+    if len(nodes) <= 1 or node not in nodes:
+        return False
+
+    current_score = _score(order, psi, layers, edges)
+    best_score = current_score
+    best_nodes = list(nodes)
+    best_psi = dict(psi)
+
+    working_order = _copy_order(order)
+    working_psi = dict(psi)
+    working_nodes = working_order[layer]
+    working_nodes.remove(node)
+    working_nodes.insert(0, node)
+    working_score = _score_after_local_change(
+        order, working_order, psi, working_psi, layers, edges, layer, current_score
+    )
+
+    working_score = _optimize_incident_offsets_incremental(
+        node, layer, working_order, working_psi, layers, edges, fixed_zero_edges, working_score
+    )
+    if working_score < best_score:
+        best_score = working_score
+        best_nodes = list(working_order[layer])
+        best_psi = dict(working_psi)
+
+    for position in range(1, len(nodes)):
+        before_order = _copy_order(working_order)
+        before_psi = dict(working_psi)
+        working_nodes = working_order[layer]
+        node_index = working_nodes.index(node)
+        working_nodes[node_index], working_nodes[node_index + 1] = (
+            working_nodes[node_index + 1],
+            working_nodes[node_index],
+        )
+
+        working_score = _score_after_local_change(
+            before_order,
+            working_order,
+            before_psi,
+            working_psi,
+            layers,
+            edges,
+            layer,
+            working_score,
+        )
+        working_score = _optimize_incident_offsets_incremental(
+            node,
+            layer,
+            working_order,
+            working_psi,
+            layers,
+            edges,
+            fixed_zero_edges,
+            working_score,
+        )
+
+        if working_score < best_score:
+            best_score = working_score
+            best_nodes = list(working_order[layer])
+            best_psi = dict(working_psi)
+
+    if best_score >= current_score:
+        return False
+
+    order[layer] = best_nodes
+    psi.clear()
+    psi.update(best_psi)
+    return True
+
+
+def _optimize_incident_offsets_incremental(
+    node, layer, order, psi, layers, edges, fixed_zero_edges, current_score
+):
+    """
+    nodeに接続するpsiだけを、影響レイヤーペアの差分評価で改善する。
+
+    Args:
+        node: 移動対象ノード。
+        layer: nodeが属するレイヤー。
+        order: 現在のorder。
+        psi: 更新対象の巻き数辞書。
+        layers: レイヤーキー列。
+        edges: 全エッジ集合。
+        fixed_zero_edges: psi=0に固定するエッジ集合。
+        current_score: 現在の全体スコア。
+
+    Returns:
+        tuple: 改善後の全体スコア。
+    """
+    candidates = _offset_candidate_edges(
+        edges, psi, _incident_edges(edges, node), fixed_zero_edges
+    )
+    if not candidates:
+        return current_score
+
+    improved = True
+    while improved:
+        improved = False
+        for edge in candidates:
+            old_value = psi.get(edge, 0)
+            best_value = old_value
+            best_score = current_score
+
+            for value in OFFSET_VALUES:
+                if value == old_value:
+                    continue
+
+                psi[edge] = old_value
+                before_psi = dict(psi)
+                psi[edge] = value
+                score = _score_after_edge_offset_change(
+                    order, before_psi, psi, layers, edges, edge, current_score
+                )
+                if score < best_score:
+                    best_score = score
+                    best_value = value
+
+            psi[edge] = best_value
+            if best_score < current_score:
+                current_score = best_score
+                improved = True
+
+    _force_zero_offsets(psi, fixed_zero_edges)
+    return current_score
+
+
 def _optimize_offsets(
     order, psi, layers, edges, candidate_edges=None, fixed_zero_edges=None
 ):
@@ -520,6 +667,169 @@ def _force_zero_offsets(psi, fixed_zero_edges):
     for edge in fixed_zero_edges:
         if edge in psi:
             psi[edge] = 0
+
+
+def _score_after_local_change(
+    before_order,
+    after_order,
+    before_psi,
+    after_psi,
+    layers,
+    edges,
+    changed_layer,
+    current_score,
+):
+    """
+    changed_layerの順序変更後スコアを、前後レイヤーペアの交差差分で更新する。
+
+    Args:
+        before_order: 変更前のorder。
+        after_order: 変更後のorder。
+        before_psi: 変更前のpsi。
+        after_psi: 変更後のpsi。
+        layers: レイヤーキー列。
+        edges: 全エッジ集合。
+        changed_layer: 順序を変えたレイヤー。
+        current_score: 変更前の全体スコア。
+
+    Returns:
+        tuple: 変更後の全体スコア。
+    """
+    pair_keys = _incident_layer_pairs(changed_layer, layers)
+    return _score_after_pair_changes(
+        before_order,
+        after_order,
+        before_psi,
+        after_psi,
+        layers,
+        edges,
+        pair_keys,
+        current_score,
+    )
+
+
+def _score_after_edge_offset_change(
+    order, before_psi, after_psi, layers, edges, changed_edge, current_score
+):
+    """
+    1本のpsi変更後スコアを、そのエッジが属するレイヤーペアの交差差分で更新する。
+
+    Args:
+        order: 現在のorder。
+        before_psi: 変更前のpsi。
+        after_psi: 変更後のpsi。
+        layers: レイヤーキー列。
+        edges: 全エッジ集合。
+        changed_edge: psiを変えたエッジ。
+        current_score: 変更前の全体スコア。
+
+    Returns:
+        tuple: 変更後の全体スコア。
+    """
+    pair_key = _edge_layer_pair(changed_edge, order, layers)
+    if pair_key is None:
+        return (
+            current_score[0],
+            _vertical_torus_cost(edges, after_psi),
+            _horizontal_cost(order, after_psi, edges),
+        )
+
+    return _score_after_pair_changes(
+        order,
+        order,
+        before_psi,
+        after_psi,
+        layers,
+        edges,
+        [pair_key],
+        current_score,
+    )
+
+
+def _score_after_pair_changes(
+    before_order,
+    after_order,
+    before_psi,
+    after_psi,
+    layers,
+    edges,
+    pair_keys,
+    current_score,
+):
+    """
+    指定レイヤーペアだけ交差数を数え直し、全体スコアを差分更新する。
+
+    Args:
+        before_order: 変更前のorder。
+        after_order: 変更後のorder。
+        before_psi: 変更前のpsi。
+        after_psi: 変更後のpsi。
+        layers: レイヤーキー列。
+        edges: 全エッジ集合。
+        pair_keys: 再計算する (fixed_layer, free_layer) の列。
+        current_score: 変更前の全体スコア。
+
+    Returns:
+        tuple: 変更後の全体スコア。
+    """
+    before_crossings = 0
+    after_crossings = 0
+    for fixed_layer, free_layer in set(pair_keys):
+        before_crossings += _count_layer_pair_crossings(
+            before_order, before_psi, fixed_layer, free_layer, edges
+        )
+        after_crossings += _count_layer_pair_crossings(
+            after_order, after_psi, fixed_layer, free_layer, edges
+        )
+
+    return (
+        current_score[0] - before_crossings + after_crossings,
+        _vertical_torus_cost(edges, after_psi),
+        _horizontal_cost(after_order, after_psi, edges),
+    )
+
+
+def _incident_layer_pairs(layer, layers):
+    """
+    layerの順序変更で交差数が変わり得る前後レイヤーペアを返す。
+
+    Args:
+        layer: 対象レイヤー。
+        layers: レイヤーキー列。
+
+    Returns:
+        list[tuple]: (fixed_layer, free_layer) の列。
+    """
+    layer_index = layers.index(layer)
+    previous_layer = layers[(layer_index - 1) % len(layers)]
+    next_layer = layers[(layer_index + 1) % len(layers)]
+    return [(previous_layer, layer), (layer, next_layer)]
+
+
+def _edge_layer_pair(edge, order, layers):
+    """
+    edgeが属する循環隣接レイヤーペアを返す。
+
+    Args:
+        edge: 対象エッジ。
+        order: 現在のorder。
+        layers: レイヤーキー列。
+
+    Returns:
+        tuple | None: (fixed_layer, free_layer)。隣接前進エッジでなければNone。
+    """
+    node_to_layer = _node_to_layer(order)
+    u, v = edge
+    u_layer = node_to_layer.get(u)
+    v_layer = node_to_layer.get(v)
+    if u_layer is None or v_layer is None:
+        return None
+
+    u_index = layers.index(u_layer)
+    v_index = layers.index(v_layer)
+    if (v_index - u_index) % len(layers) != 1:
+        return None
+    return (u_layer, v_layer)
 
 
 def _offset_candidate_edges(edges, psi, candidate_edges, fixed_zero_edges):

@@ -2,12 +2,12 @@
 トーラス階層割当と交差削減のメインスクリプト（Radial版）
 
 1. ランダムなグラフを生成
-2. Heuristicで階層割当（Gurobi不要）
+2. Binary Search + Balanceで階層割当
 3. Radial Siftingで交差削減
 4. draw_radial_torus.pyで描画
 """
 
-from layer_assignment.torus_heuristic import torus_heuristic
+import time
 
 from crossing_reduction.radial import (
     cartesian_barycenter_heuristic,
@@ -21,15 +21,28 @@ from collections import defaultdict
 import argparse
 
 
-def assign_layers_heuristic(V, A):
+def assign_layers_binary_balance(V, A, func_type="diff_square"):
     """
-    Gurobiを使わずに、ヒューリスティック実装で平坦トーラスの階層を割り当てる。
+    Binary Search + Balance の2段階アプローチで平坦トーラスの階層を割り当てる。
 
     Returns:
         (y_val, t_val, layer_dict, run_time)
     """
-    print("  Heuristicで階層割当を実行中...")
-    y_val, t_val, layer_dict, run_time = torus_heuristic(V, A)
+    from layer_assignment.torus_balance import balance_layer_assignment
+    from layer_assignment.torus_binary_search import find_minimum_torus_configuration
+
+    print("  Binary Searchで最小トーラス構成を探索中...")
+    optimal_L, min_torus_count, search_time = find_minimum_torus_configuration(V, A)
+
+    if optimal_L is None:
+        print("Binary Search失敗: 最適なレイヤー数が見つかりませんでした。")
+        return None
+
+    print(f"  {func_type}手法でバランスを取った階層割当を実行中...")
+    y_val, t_val, layer_dict, balance_time = balance_layer_assignment(
+        V, A, min_torus_count, optimal_L, func_type
+    )
+    run_time = search_time + balance_time
 
     if not y_val:
         print("階層割当に失敗しました。")
@@ -42,7 +55,9 @@ def assign_layers_heuristic(V, A):
 
     print(f"\n階層割当結果:")
     print(f"  最大階層: {max(y_val.values())}")
+    print(f"  レイヤー数初期値: {optimal_L}")
     print(f"  レイヤー数: {len(layer_dict)}")
+    print(f"  最小トーラス辺数: {min_torus_count}")
     print(f"  トーラス辺数: {len(torus_edges)}")
     print(f"  通常辺数: {len(normal_edges)}")
     print(f"  トーラス辺: {torus_edges}")
@@ -82,11 +97,12 @@ def main(
     method=None,
     rounds=3,
     vertical_torus_penalty=0.0,
+    func_type="diff_square",
 ):
-    n = 10  # ノード数
+    n = 20  # ノード数
     num_cycles = 2  # サイクル数
     edge_prob = 0.005  # エッジ確率
-    seed = 1  # シード値
+    seed = 11  # シード値
 
     """引数取得"""
 
@@ -119,10 +135,10 @@ def main(
     print(f"  ノード: {V}")
     print(f"  エッジ: {A}")
 
-    # 2. 階層割当（Heuristic）
+    # 2. 階層割当（Binary Search + Balance）
     print("\n2. 階層割当")
 
-    layer_result = assign_layers_heuristic(V, A)
+    layer_result = assign_layers_binary_balance(V, A, func_type=func_type)
     if layer_result is None:
         return
 
@@ -130,6 +146,8 @@ def main(
 
     # 3. Radial交差削減
     print("\n3. Radial交差削減")
+
+    t = time.time()
 
     order, layer_dict, A, t_val, psi = reduce_crossings_radial(
         V,
@@ -184,6 +202,8 @@ def main(
     if normal and len(normal) <= 10:
         print(f"      {normal}")
 
+    print(f"    交差削減実行時間 : {time.time() - t}")
+
     # 4. 描画
     print("\n4. 描画（draw_radial_torus.py）...")
     print("  グラフを描画します...")
@@ -231,6 +251,12 @@ if __name__ == "__main__":
         default=0.0,
         help="上下トーラス通過数を減らす副目的重み。0なら交差数を増やさない範囲で削減",
     )
+    parser.add_argument(
+        "--func_type",
+        choices=["diff", "diff_square", "qp", "barycenter"],
+        default="diff_square",
+        help="階層割当のバランス手法 (デフォルト: diff_square)",
+    )
     args = parser.parse_args()
 
     main(
@@ -241,4 +267,5 @@ if __name__ == "__main__":
         method=args.method,
         rounds=args.rounds,
         vertical_torus_penalty=args.vertical_torus_penalty,
+        func_type=args.func_type,
     )
