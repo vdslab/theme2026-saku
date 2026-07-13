@@ -4,7 +4,8 @@
 1. ランダムなグラフを生成
 2. Binary Search + Balanceで階層割当
 3. Radial Siftingで交差削減
-4. draw_radial_torus.pyで描画
+4. Brandes-Köpf系の座標割当
+5. draw_radial_torus.pyで描画
 """
 
 import time
@@ -14,6 +15,8 @@ from crossing_reduction.radial import (
     count_radial_crossings,
     radial_sifting_heuristic,
 )
+from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
+from drawing.draw_radial_torus import draw_radial_torus
 from lib.generate_torus_graph import generate_cyclic_graph
 
 from collections import defaultdict
@@ -71,9 +74,7 @@ def assign_layers_binary_balance(V, A, func_type="diff_square"):
     return y_val, t_val, layer_dict, run_time
 
 
-def reduce_crossings_radial(
-    V, A, layer_dict, t_val, method="sifting", rounds=3, vertical_torus_penalty=0.0
-):
+def reduce_crossings_radial(V, A, layer_dict, t_val, method="sifting", rounds=3):
     if method == "barycenter":
         print("  Cartesian Barycenterで順序を最適化中...")
         return cartesian_barycenter_heuristic(V, A, layer_dict, t_val)
@@ -85,7 +86,26 @@ def reduce_crossings_radial(
         layer_dict,
         t_val,
         rounds=rounds,
-        vertical_torus_penalty=vertical_torus_penalty,
+    )
+
+
+def assign_coordinates_radial(
+    order, layer_dict, edges, t_val, psi, original_nodes=None
+):
+    """
+    Radial交差削減後の順序を保ったまま、平坦トーラス用の座標を割り当てる。
+
+    Returns:
+        dict[node, (x, y)]
+    """
+    print("  4方向Brandes-Köpf系 + torus smoothingで座標を割当中...")
+    return assign_torus_brandes_koepf_coordinates(
+        order=order,
+        layer_dict=layer_dict,
+        edges=edges,
+        t_val=t_val,
+        psi=psi,
+        original_nodes=original_nodes,
     )
 
 
@@ -96,13 +116,15 @@ def main(
     _seed=None,
     method=None,
     rounds=3,
-    vertical_torus_penalty=0.0,
     func_type="diff_square",
+    save_path=None,
+    show=True,
+    draw_dummy_nodes=True,
 ):
     n = 20  # ノード数
     num_cycles = 2  # サイクル数
     edge_prob = 0.005  # エッジ確率
-    seed = 11  # シード値
+    seed = None  # シード値
 
     """引数取得"""
 
@@ -114,8 +136,12 @@ def main(
         edge_prob = float(prob)
     if _seed is not None:
         seed = int(_seed)
+    if func_type is None:
+        func_type = "diff_square"  # デフォルト: diff_square
     if method is None:
         method = "sifting"  # デフォルト: sifting
+    if save_path is not None and seed is None:
+        raise ValueError("再現可能な図を保存するには --seed を指定してください。")
 
     """ メイン処理 """
 
@@ -156,7 +182,6 @@ def main(
         t_val,
         method=method,
         rounds=rounds,
-        vertical_torus_penalty=vertical_torus_penalty,
     )
 
     # 巻き数の統計
@@ -165,9 +190,9 @@ def main(
         psi_counts[s] += 1
 
     print(f"  巻き数の分布:")
-    print(f"    ψ = -1 (下側トーラス・緑): {psi_counts[-1]}エッジ")
-    print(f"    ψ =  0 (通常エッジ・黒): {psi_counts[0]}エッジ")
-    print(f"    ψ = +1 (上側トーラス・青): {psi_counts[1]}エッジ")
+    print(f"    ψ = -1 (上端→下端): {psi_counts[-1]}エッジ")
+    print(f"    ψ =  0 (通常エッジ): {psi_counts[0]}エッジ")
+    print(f"    ψ = +1 (下端→上端): {psi_counts[1]}エッジ")
     print(f"  交差数: {count_radial_crossings(order, psi, layer_dict, A)}")
 
     # 交差削減後のグラフ構造を出力
@@ -181,45 +206,62 @@ def main(
     # エッジの詳細情報
     print(f"\n  エッジの分類:")
     left_right_torus = [(u, v) for (u, v) in A if t_val.get((u, v), False)]
-    top_torus = [(u, v) for (u, v) in A if psi.get((u, v), 0) > 0]
-    bottom_torus = [(u, v) for (u, v) in A if psi.get((u, v), 0) < 0]
+    positive_wrap = [(u, v) for (u, v) in A if psi.get((u, v), 0) > 0]
+    negative_wrap = [(u, v) for (u, v) in A if psi.get((u, v), 0) < 0]
     normal = [
         (u, v)
         for (u, v) in A
         if not t_val.get((u, v), False) and psi.get((u, v), 0) == 0
     ]
 
-    print(f"    左右トーラス（赤）: {len(left_right_torus)}エッジ")
+    print(f"    左右トーラス（橙破線）: {len(left_right_torus)}エッジ")
     if left_right_torus:
         print(f"      {left_right_torus}")
-    print(f"    上側トーラス（青・ψ=+1）: {len(top_torus)}エッジ")
-    if top_torus and len(top_torus) <= 10:
-        print(f"      {top_torus}")
-    print(f"    下側トーラス（緑・ψ=-1）: {len(bottom_torus)}エッジ")
-    if bottom_torus and len(bottom_torus) <= 10:
-        print(f"      {bottom_torus}")
-    print(f"    通常エッジ（黒・ψ=0）: {len(normal)}エッジ")
+    print(f"    下端→上端（青・ψ=+1）: {len(positive_wrap)}エッジ")
+    if positive_wrap and len(positive_wrap) <= 10:
+        print(f"      {positive_wrap}")
+    print(f"    上端→下端（紫・ψ=-1）: {len(negative_wrap)}エッジ")
+    if negative_wrap and len(negative_wrap) <= 10:
+        print(f"      {negative_wrap}")
+    print(f"    通常エッジ（濃灰実線・ψ=0）: {len(normal)}エッジ")
     if normal and len(normal) <= 10:
         print(f"      {normal}")
 
     print(f"    交差削減実行時間 : {time.time() - t}")
 
-    # 4. 描画
-    print("\n4. 描画（draw_radial_torus.py）...")
+    # 4. 座標割当
+    print("\n4. 座標割当")
+    pos = assign_coordinates_radial(
+        order, layer_dict, A, t_val, psi, original_nodes=V
+    )
+
+    # 5. 描画
+    print("\n5. 描画（draw_radial_torus.py）...")
     print("  グラフを描画します...")
     print(f"  描画色の説明:")
-    print(f"    - 赤: 左右のトーラス（最右レイヤー→最左レイヤー）")
-    print(f"    - 青: 上側トーラス（ray上端を通過、ψ=+1）")
-    print(f"    - 緑: 下側トーラス（ray下端を通過、ψ=-1）")
-    print(f"    - 黒: 通常エッジ（ψ=0）")
-    print("  ※ 描画ウィンドウを閉じるまでプログラムは待機します。")
+    print(f"    - 橙破線: 左右のトーラス（最右レイヤー→最左レイヤー）")
+    print(f"    - 青一点鎖線: 下端→上端（ψ=+1）")
+    print(f"    - 紫点線: 上端→下端（ψ=-1）")
+    print(f"    - 濃灰実線: 通常エッジ（ψ=0）")
+    if show:
+        print("  ※ 描画ウィンドウを閉じるまでプログラムは待機します。")
+    if save_path:
+        print(f"  保存先: {save_path}")
+    if not show:
+        print("  show=False のため描画ウィンドウは表示しません。")
     print(f"\n実行時間: {round(run_time, 5)}秒")
 
-    # Radial交差削減で最適化された順序を反映した描画
-    from drawing.draw_radial_torus import draw_radial_torus
-
     draw_radial_torus(
-        V=V, A=A, L=layer_dict, order=order, psi=psi, t_val=t_val, draw_dummy_nodes=True
+        V=V,
+        A=A,
+        L=layer_dict,
+        order=order,
+        psi=psi,
+        t_val=t_val,
+        pos=pos,
+        save_path=save_path,
+        show=show,
+        draw_dummy_nodes=draw_dummy_nodes,
     )
 
     print("\n" + "=" * 60)
@@ -236,7 +278,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--method",
         choices=["barycenter", "sifting"],
-        default="sifting",
         help="交差削減手法 (barycenter: Cartesian Barycenter, sifting: Radial Sifting, デフォルト: sifting)",
     )
     parser.add_argument(
@@ -246,16 +287,22 @@ if __name__ == "__main__":
         help="Radial Siftingの反復回数 (デフォルト: 3)",
     )
     parser.add_argument(
-        "--vertical_torus_penalty",
-        type=float,
-        default=0.0,
-        help="上下トーラス通過数を減らす副目的重み。0なら交差数を増やさない範囲で削減",
-    )
-    parser.add_argument(
         "--func_type",
         choices=["diff", "diff_square", "qp", "barycenter"],
-        default="diff_square",
         help="階層割当のバランス手法 (デフォルト: diff_square)",
+    )
+    parser.add_argument(
+        "--save_path", type=str, help="描画画像の保存先（論文用はPDF/SVG推奨）"
+    )
+    parser.add_argument(
+        "--no_show",
+        action="store_true",
+        help="描画ウィンドウを表示しない",
+    )
+    parser.add_argument(
+        "--hide_dummy_nodes",
+        action="store_true",
+        help="ダミーノードを表示しない",
     )
     args = parser.parse_args()
 
@@ -266,6 +313,8 @@ if __name__ == "__main__":
         _seed=args.seed,
         method=args.method,
         rounds=args.rounds,
-        vertical_torus_penalty=args.vertical_torus_penalty,
         func_type=args.func_type,
+        save_path=args.save_path,
+        show=not args.no_show,
+        draw_dummy_nodes=not args.hide_dummy_nodes,
     )

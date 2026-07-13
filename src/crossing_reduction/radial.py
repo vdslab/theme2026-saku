@@ -509,7 +509,14 @@ def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_
     )
 
     working_score = _optimize_incident_offsets_incremental(
-        node, layer, working_order, working_psi, layers, edges, fixed_zero_edges, working_score
+        node,
+        layer,
+        working_order,
+        working_psi,
+        layers,
+        edges,
+        fixed_zero_edges,
+        working_score,
     )
     if working_score < best_score:
         best_score = working_score

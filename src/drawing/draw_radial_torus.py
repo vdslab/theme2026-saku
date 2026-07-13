@@ -1,14 +1,40 @@
-"""
-平坦トーラス（Radial Layout）を描画する関数
+"""平坦トーラス（Radial Layout）の切開図を描画する関数。
 
 通常の階層レイアウト + Radial Layoutの組み合わせ:
 - 左右のトーラス: 最右レイヤーから最左レイヤーへの逆辺（既存実装と同じ）
 - 上下のトーラス: ray（各レイヤーの上下境界）をまたぐエッジ（ψ≠0）
 """
 
-import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch
 from collections import defaultdict, deque
+import math
+
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import FancyArrowPatch, Rectangle
+
+
+EDGE_STYLES = {
+    "normal": {
+        "color": "#333333",
+        "linestyle": "-",
+        "label": "Ordinary",
+    },
+    "horizontal_wrap": {
+        "color": "#D55E00",
+        "linestyle": (0, (5, 2)),
+        "label": "Horizontal wrap",
+    },
+    "positive_wrap": {
+        "color": "#0072B2",
+        "linestyle": (0, (3, 1.5, 1, 1.5)),
+        "label": r"$\psi=+1$: bottom-to-top",
+    },
+    "negative_wrap": {
+        "color": "#CC79A7",
+        "linestyle": (0, (1.5, 1.5)),
+        "label": r"$\psi=-1$: top-to-bottom",
+    },
+}
 
 
 def draw_radial_torus(
@@ -18,11 +44,21 @@ def draw_radial_torus(
     order=None,
     psi=None,
     t_val=None,
+    pos=None,
     save_path=None,
     show=True,
     draw_dummy_nodes=False,
     align_edges=True,
     alignment_iterations=8,
+    figsize=None,
+    dpi=300,
+    show_legend=True,
+    show_layer_labels=True,
+    node_size=260,
+    dummy_node_size=28,
+    font_size=8,
+    edge_width=0.9,
+    vertical_period=None,
 ):
     """
     平坦トーラスグラフを描画（階層レイアウト + Radial境界）
@@ -34,17 +70,37 @@ def draw_radial_torus(
         order: 各階層内のノード順序 dict[layer: list[nodes]] (オプション)
         psi: 各エッジの巻き数 dict[(u,v): int] (オプション、-1/0/+1)
         t_val: 各エッジがトーラス辺か dict[(int,int): bool] (オプション、左右のトーラス用)
+        pos: 各ノードの描画座標 dict[node: (x,y)] (オプション)
         save_path: 画像の保存先パス (オプション)
         show: 画面表示するかどうか (デフォルト: True)
-        draw_dummy_nodes: Vに含まれないノードを黒点で描画するかどうか
+        draw_dummy_nodes: Vに含まれないノードを小さな灰色点で描画するかどうか
         align_edges: 層内順序を保ったまま、エッジが横軸に近づくようy座標を調整するか
         alignment_iterations: align_edges=True のときの反復回数
+        figsize: 図の大きさ(inch)。Noneなら論文の2段幅内に収まる値を自動設定
+        dpi: ラスター画像の保存解像度（デフォルト: 300）
+        show_legend: 図中に辺種別の凡例を表示するか
+        show_layer_labels: x方向にレイヤーラベルを表示するか
+        node_size: 元ノードの面積(points^2)
+        dummy_node_size: ダミーノードの面積(points^2)
+        font_size: ノードラベルの文字サイズ(points)
+        edge_width: エッジの線幅(points)
+        vertical_period: y方向の周期。Noneなら最大レイヤーサイズを使用。
+            座標割当でmin_gapを変更した場合は max_layer_size * min_gap を指定
     """
-    # orderが指定されている場合はそれを使用、なければLの順序を使用
-    if order is not None:
-        node_order = order
-    else:
-        node_order = L
+    _validate_drawing_parameters(
+        dpi=dpi,
+        node_size=node_size,
+        dummy_node_size=dummy_node_size,
+        font_size=font_size,
+        edge_width=edge_width,
+        alignment_iterations=alignment_iterations,
+    )
+    if not L:
+        raise ValueError("L must contain at least one layer")
+
+    t_val = {} if t_val is None else t_val
+    psi = {} if psi is None else psi
+    node_order = _complete_node_order(order, L)
 
     # レイヤーキーをソートして連番インデックスにマップ
     sorted_layers = sorted(L.keys())
@@ -58,30 +114,36 @@ def draw_radial_torus(
 
     # 描画域のサイズを計算
     num_layers = len(sorted_layers)
-    max_layer_size = max(len(nodes) for nodes in L.values()) if L else 0
+    max_layer_size = max(len(nodes) for nodes in L.values())
 
-    # 描画域の物理的な幅・高さ
+    period = float(max_layer_size if vertical_period is None else vertical_period)
+    if not math.isfinite(period) or period <= 0:
+        raise ValueError("vertical_period must be a finite positive number")
+    coordinate_gap = period / max(max_layer_size, 1)
+
+    # 描画域の物理的な幅・高さ（境界間の距離がトーラス周期）
     x_min, x_max = -0.5, num_layers - 0.5
-    y_min, y_max = -0.5, max_layer_size - 0.5
+    y_min, y_max = -coordinate_gap / 2.0, period - coordinate_gap / 2.0
 
-    # 分割幅（レイヤーごとの幅）
-    seg_w = (x_max - x_min) / num_layers if num_layers > 0 else 1.0
+    if pos is None:
+        pos = _assign_positions(
+            A=A,
+            psi=psi,
+            node_order=node_order,
+            sorted_layers=sorted_layers,
+            layer_index=layer_index,
+            vertical_period=period,
+            coordinate_gap=coordinate_gap,
+            align_edges=align_edges,
+            alignment_iterations=alignment_iterations,
+        )
 
-    pos = _assign_positions(
-        A=A,
-        L=L,
-        node_order=node_order,
-        sorted_layers=sorted_layers,
-        layer_index=layer_index,
-        x_min=x_min,
-        seg_w=seg_w,
-        max_layer_size=max_layer_size,
-        align_edges=align_edges,
-        alignment_iterations=alignment_iterations,
-    )
+    _validate_positions(pos, L, A, x_min, x_max, y_min, y_max)
 
     V_set = set(V)
-    dummy_nodes = [node for node in pos if node not in V_set]
+    dummy_nodes = [
+        node for nodes in L.values() for node in nodes if node not in V_set
+    ]
 
     # エッジを分類
     # 1. 左右のトーラス辺（t_val=True）
@@ -91,20 +153,20 @@ def draw_radial_torus(
     if draw_dummy_nodes:
         # ダミーノード表示時は実エッジをそのまま描画
         left_right_torus = []  # 左右のトーラス
-        top_bottom_torus_up = []  # 上側のトーラス（psi > 0）
-        top_bottom_torus_down = []  # 下側のトーラス（psi < 0）
+        positive_wrap_edges = []  # 表示上の下端から上端へ継続（psi > 0）
+        negative_wrap_edges = []  # 表示上の上端から下端へ継続（psi < 0）
         normal_edges = []
 
         for u, v in A:
-            is_lr_torus = bool(t_val.get((u, v), False)) if t_val is not None else False
-            winding = psi.get((u, v), 0) if psi is not None else 0
+            is_lr_torus = bool(t_val.get((u, v), False))
+            winding = psi.get((u, v), 0)
 
             if is_lr_torus:
                 left_right_torus.append((u, v))
             elif winding > 0:
-                top_bottom_torus_up.append((u, v))
+                positive_wrap_edges.append((u, v))
             elif winding < 0:
-                top_bottom_torus_down.append((u, v))
+                negative_wrap_edges.append((u, v))
             else:
                 normal_edges.append((u, v))
     else:
@@ -120,10 +182,8 @@ def draw_radial_torus(
                 continue
             for nxt in succ[start]:
                 stack = deque()
-                combined_t = (
-                    bool(t_val.get((start, nxt), False)) if t_val is not None else False
-                )
-                combined_psi = psi.get((start, nxt), 0) if psi is not None else 0
+                combined_t = bool(t_val.get((start, nxt), False))
+                combined_psi = psi.get((start, nxt), 0)
                 stack.append((nxt, combined_t, combined_psi, {(start, nxt)}))
 
                 while stack:
@@ -139,12 +199,8 @@ def draw_radial_torus(
                         continue
 
                     for s in succ.get(cur, []):
-                        edge_t = (
-                            bool(t_val.get((cur, s), False))
-                            if t_val is not None
-                            else False
-                        )
-                        edge_psi = psi.get((cur, s), 0) if psi is not None else 0
+                        edge_t = bool(t_val.get((cur, s), False))
+                        edge_psi = psi.get((cur, s), 0)
                         new_t = cur_t or edge_t
                         new_psi = cur_psi + edge_psi
                         edge = (cur, s)
@@ -155,8 +211,8 @@ def draw_radial_torus(
                         stack.append((s, new_t, new_psi, new_visited))
 
         left_right_torus = []
-        top_bottom_torus_up = []
-        top_bottom_torus_down = []
+        positive_wrap_edges = []
+        negative_wrap_edges = []
         normal_edges = []
 
         for (u, v), (flag_t, flag_psi) in display_edges.items():
@@ -173,44 +229,65 @@ def draw_radial_torus(
             if flag_t:
                 left_right_torus.append((u, v))
             elif flag_psi > 0:
-                top_bottom_torus_up.append((u, v))
+                positive_wrap_edges.append((u, v))
             elif flag_psi < 0:
-                top_bottom_torus_down.append((u, v))
+                negative_wrap_edges.append((u, v))
             else:
                 normal_edges.append((u, v))
 
-    # 描画領域サイズ
-    width = max(1, num_layers + 1)
-    height = max(1, max_layer_size + 1)
+    if figsize is None:
+        figsize = _paper_figure_size(num_layers, max_layer_size, show_legend)
 
-    # 描画
-    fig, ax = plt.subplots(figsize=(width * 2, height * 2))
-    ax.set_xlim(-0.5, num_layers - 0.5)
-    ax.set_ylim(-0.5, max_layer_size - 0.5)
+    fig, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+    ax.set_facecolor("white")
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_yticks([])
+    if show_layer_labels:
+        ax.set_xticks(range(num_layers))
+        ax.set_xticklabels(
+            [f"L{layer}" for layer in sorted_layers], fontsize=max(6, font_size - 1)
+        )
+        ax.tick_params(axis="x", length=0, pad=3)
+    else:
+        ax.set_xticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
-    # ノードサイズの半径
-    node_radius = 0.15
+    # The rectangle is the fundamental domain; opposite sides are identified.
+    ax.add_patch(
+        Rectangle(
+            (x_min, y_min),
+            x_max - x_min,
+            y_max - y_min,
+            fill=False,
+            edgecolor="#8A8A8A",
+            linewidth=0.7,
+            zorder=0,
+            clip_on=False,
+        )
+    )
+
+    def node_shrink(node):
+        size = node_size if node in V_set else dummy_node_size
+        return math.sqrt(size / math.pi) + 0.8
 
     # 通常エッジを描画
     for u, v in normal_edges:
-        if u not in pos or v not in pos:
-            continue
-        u_pos = pos[u]
-        v_pos = pos[v]
-        arrow = FancyArrowPatch(
-            u_pos,
-            v_pos,
-            arrowstyle="->",
-            mutation_scale=20,
-            shrinkA=node_radius * 100,
-            shrinkB=node_radius * 100,
+        _add_edge_patch(
+            ax,
+            pos[u],
+            pos[v],
+            EDGE_STYLES["normal"],
+            edge_width,
+            arrow=True,
+            shrink_a=node_shrink(u),
+            shrink_b=node_shrink(v),
         )
-        ax.add_patch(arrow)
 
     # 左右のトーラス辺を描画（既存実装と同じ）
     for u, v in left_right_torus:
-        if u not in pos or v not in pos:
-            continue
         u_pos = pos[u]
         v_pos = pos[v]
 
@@ -221,103 +298,106 @@ def draw_radial_torus(
         boundary_y = u_pos[1] + slope * dist_to_right
 
         # uから右端の境界点へ
-        arrow1 = FancyArrowPatch(
+        _add_edge_patch(
+            ax,
             u_pos,
             (x_max, boundary_y),
-            arrowstyle="-",
-            color="red",
-            shrinkA=node_radius * 100,
+            EDGE_STYLES["horizontal_wrap"],
+            edge_width,
+            arrow=False,
+            shrink_a=node_shrink(u),
         )
-        ax.add_patch(arrow1)
 
         # 左端の境界点からvへ
-        arrow2 = FancyArrowPatch(
+        _add_edge_patch(
+            ax,
             (x_min, boundary_y),
             v_pos,
-            arrowstyle="->",
-            mutation_scale=20,
-            color="red",
-            shrinkB=node_radius * 100,
+            EDGE_STYLES["horizontal_wrap"],
+            edge_width,
+            arrow=True,
+            shrink_b=node_shrink(v),
         )
-        ax.add_patch(arrow2)
 
     # 上下のトーラス辺を描画（rayをまたぐ）
-    # 上側のトーラス（psi > 0）
-    for u, v in top_bottom_torus_up:
-        if u not in pos or v not in pos:
-            continue
+    # psi > 0: 表示上は下端から上端へ継続する。
+    for u, v in positive_wrap_edges:
         u_pos = pos[u]
         v_pos = pos[v]
 
-        # 上端を通る経路
+        # 座標系の y_max 側（invert後は下端）を通る経路
         dist_to_top = y_max - u_pos[1]
         dist_from_bottom = v_pos[1] - y_min
         total_y_dist = dist_to_top + dist_from_bottom
         slope = (v_pos[0] - u_pos[0]) / total_y_dist
         boundary_x = u_pos[0] + slope * dist_to_top
 
-        # uから上端の境界点へ
-        arrow1 = FancyArrowPatch(
+        _add_edge_patch(
+            ax,
             u_pos,
             (boundary_x, y_max),
-            arrowstyle="-",
-            color="blue",
-            shrinkA=node_radius * 100,
+            EDGE_STYLES["positive_wrap"],
+            edge_width,
+            arrow=False,
+            shrink_a=node_shrink(u),
         )
-        ax.add_patch(arrow1)
 
-        # 下端の境界点からvへ
-        arrow2 = FancyArrowPatch(
+        _add_edge_patch(
+            ax,
             (boundary_x, y_min),
             v_pos,
-            arrowstyle="->",
-            mutation_scale=20,
-            color="blue",
-            shrinkB=node_radius * 100,
+            EDGE_STYLES["positive_wrap"],
+            edge_width,
+            arrow=True,
+            shrink_b=node_shrink(v),
         )
-        ax.add_patch(arrow2)
 
-    # 下側のトーラス（psi < 0）
-    for u, v in top_bottom_torus_down:
-        if u not in pos or v not in pos:
-            continue
+    # psi < 0: 表示上は上端から下端へ継続する。
+    for u, v in negative_wrap_edges:
         u_pos = pos[u]
         v_pos = pos[v]
 
-        # 下端を通る経路
+        # 座標系の y_min 側（invert後は上端）を通る経路
         dist_to_bottom = u_pos[1] - y_min
         dist_from_top = y_max - v_pos[1]
         total_y_dist = dist_to_bottom + dist_from_top
         slope = (v_pos[0] - u_pos[0]) / total_y_dist
         boundary_x = u_pos[0] + slope * dist_to_bottom
 
-        # uから下端の境界点へ
-        arrow1 = FancyArrowPatch(
+        _add_edge_patch(
+            ax,
             u_pos,
             (boundary_x, y_min),
-            arrowstyle="-",
-            color="green",
-            shrinkA=node_radius * 100,
+            EDGE_STYLES["negative_wrap"],
+            edge_width,
+            arrow=False,
+            shrink_a=node_shrink(u),
         )
-        ax.add_patch(arrow1)
 
-        # 上端の境界点からvへ
-        arrow2 = FancyArrowPatch(
+        _add_edge_patch(
+            ax,
             (boundary_x, y_max),
             v_pos,
-            arrowstyle="->",
-            mutation_scale=20,
-            color="green",
-            shrinkB=node_radius * 100,
+            EDGE_STYLES["negative_wrap"],
+            edge_width,
+            arrow=True,
+            shrink_b=node_shrink(v),
         )
-        ax.add_patch(arrow2)
 
     # ノードを描画
     visible_nodes = [node for node in V if node in pos]
     if visible_nodes:
         xs = [pos[node][0] for node in visible_nodes]
         ys = [pos[node][1] for node in visible_nodes]
-        ax.scatter(xs, ys, s=400, c="lightblue", edgecolors="black", zorder=3)
+        ax.scatter(
+            xs,
+            ys,
+            s=node_size,
+            c="#F2F7FA",
+            edgecolors="#1A1A1A",
+            linewidths=0.8,
+            zorder=3,
+        )
         for node in visible_nodes:
             ax.text(
                 pos[node][0],
@@ -325,44 +405,249 @@ def draw_radial_torus(
                 str(node),
                 ha="center",
                 va="center",
-                fontsize=10,
+                fontsize=font_size,
+                color="#111111",
                 zorder=4,
             )
 
     if draw_dummy_nodes and dummy_nodes:
         xs = [pos[node][0] for node in dummy_nodes]
         ys = [pos[node][1] for node in dummy_nodes]
-        ax.scatter(xs, ys, s=120, c="black", marker="o", zorder=3)
+        ax.scatter(
+            xs,
+            ys,
+            s=dummy_node_size,
+            c="#777777",
+            edgecolors="white",
+            linewidths=0.35,
+            marker="o",
+            zorder=3,
+        )
+
+    if show_legend:
+        present_styles = []
+        if normal_edges:
+            present_styles.append("normal")
+        if left_right_torus:
+            present_styles.append("horizontal_wrap")
+        if positive_wrap_edges:
+            present_styles.append("positive_wrap")
+        if negative_wrap_edges:
+            present_styles.append("negative_wrap")
+        handles = [
+            _legend_handle(EDGE_STYLES[key], edge_width) for key in present_styles
+        ]
+        if draw_dummy_nodes and dummy_nodes:
+            handles.append(
+                Line2D(
+                    [0],
+                    [0],
+                    marker="o",
+                    linestyle="none",
+                    markerfacecolor="#777777",
+                    markeredgecolor="white",
+                    markersize=max(3.5, math.sqrt(dummy_node_size)),
+                    label="Dummy node",
+                )
+            )
+        if handles:
+            ax.legend(
+                handles=handles,
+                loc="lower center",
+                bbox_to_anchor=(0.5, 1.01),
+                ncol=min(2, len(handles)),
+                frameon=False,
+                fontsize=max(6, font_size - 1),
+                handlelength=2.8,
+                columnspacing=1.2,
+            )
 
     # y軸を反転（上から下に描画）
     ax.invert_yaxis()
 
-    plt.tight_layout()
     if save_path:
-        plt.savefig(save_path, dpi=200)
+        # Keep labels searchable/editable in paper-oriented vector output.
+        with plt.rc_context(
+            {"pdf.fonttype": 42, "ps.fonttype": 42, "svg.fonttype": "none"}
+        ):
+            fig.savefig(
+                save_path,
+                dpi=dpi,
+                bbox_inches="tight",
+                pad_inches=0.04,
+                facecolor="white",
+            )
     if show:
         plt.show()
     plt.close(fig)
 
 
+def _validate_drawing_parameters(
+    dpi,
+    node_size,
+    dummy_node_size,
+    font_size,
+    edge_width,
+    alignment_iterations,
+):
+    values = {
+        "dpi": dpi,
+        "node_size": node_size,
+        "dummy_node_size": dummy_node_size,
+        "font_size": font_size,
+        "edge_width": edge_width,
+    }
+    for name, value in values.items():
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(f"{name} must be a finite positive number")
+    if (
+        isinstance(alignment_iterations, bool)
+        or not isinstance(alignment_iterations, int)
+        or alignment_iterations < 0
+    ):
+        raise ValueError("alignment_iterations must be a non-negative integer")
+
+
+def _complete_node_order(order, layer_dict):
+    node_to_layer = {}
+    for layer, nodes in layer_dict.items():
+        if len(nodes) != len(set(nodes)):
+            raise ValueError(f"L[{layer!r}] contains duplicate nodes")
+        for node in nodes:
+            if node in node_to_layer:
+                raise ValueError(
+                    f"node {node!r} occurs in both layer "
+                    f"{node_to_layer[node]!r} and layer {layer!r}"
+                )
+            node_to_layer[node] = layer
+
+    if order is None:
+        return {layer: list(nodes) for layer, nodes in layer_dict.items()}
+
+    unknown_layers = [
+        layer for layer, nodes in order.items() if layer not in layer_dict and nodes
+    ]
+    if unknown_layers:
+        raise ValueError(f"order contains unknown layers: {unknown_layers!r}")
+
+    completed = {}
+    for layer, layer_nodes in layer_dict.items():
+        nodes = list(order.get(layer, []))
+        if len(nodes) != len(set(nodes)):
+            raise ValueError(f"order[{layer!r}] contains duplicate nodes")
+        unknown_nodes = [node for node in nodes if node not in layer_nodes]
+        if unknown_nodes:
+            raise ValueError(
+                f"order[{layer!r}] contains nodes outside the layer: {unknown_nodes!r}"
+            )
+        seen = set(nodes)
+        completed[layer] = nodes + [node for node in layer_nodes if node not in seen]
+    return completed
+
+
+def _validate_positions(pos, layer_dict, edges, x_min, x_max, y_min, y_max):
+    required_nodes = {node for nodes in layer_dict.values() for node in nodes}
+    for edge in edges:
+        if not isinstance(edge, tuple) or len(edge) != 2:
+            raise ValueError(f"invalid edge: {edge!r}")
+        if edge[0] not in required_nodes or edge[1] not in required_nodes:
+            raise ValueError(f"edge endpoint is missing from L: {edge!r}")
+
+    missing = required_nodes - set(pos)
+    if missing:
+        raise ValueError(
+            "pos is missing layered nodes: " f"{sorted(missing, key=repr)!r}"
+        )
+
+    tolerance = 1e-9
+    for node in required_nodes:
+        value = pos[node]
+        if not isinstance(value, (tuple, list)) or len(value) != 2:
+            raise ValueError(f"pos[{node!r}] must be an (x, y) pair")
+        x, y = value
+        if not all(
+            isinstance(item, (int, float)) and math.isfinite(item) for item in value
+        ):
+            raise ValueError(f"pos[{node!r}] must contain finite coordinates")
+        if not x_min + tolerance < x < x_max - tolerance:
+            raise ValueError(f"pos[{node!r}] lies outside the horizontal domain")
+        if not y_min + tolerance < y < y_max - tolerance:
+            raise ValueError(f"pos[{node!r}] lies outside the vertical domain")
+
+
+def _paper_figure_size(num_layers, max_layer_size, show_legend):
+    width = min(7.2, max(3.4, 0.72 * num_layers + 1.2))
+    data_ratio = num_layers / max(max_layer_size, 1)
+    height = width / max(data_ratio, 0.65)
+    height = min(5.4, max(2.4, height))
+    if show_legend:
+        height = min(5.8, height + 0.3)
+    return (width, height)
+
+
+def _add_edge_patch(
+    ax,
+    start,
+    end,
+    style,
+    edge_width,
+    *,
+    arrow,
+    shrink_a=0.0,
+    shrink_b=0.0,
+):
+    patch = FancyArrowPatch(
+        start,
+        end,
+        arrowstyle="-|>" if arrow else "-",
+        mutation_scale=9 if arrow else 1,
+        shrinkA=shrink_a,
+        shrinkB=shrink_b,
+        color=style["color"],
+        linestyle=style["linestyle"],
+        linewidth=edge_width,
+        alpha=0.86,
+        capstyle="round",
+        joinstyle="round",
+        zorder=1,
+        clip_on=False,
+    )
+    ax.add_patch(patch)
+
+
+def _legend_handle(style, edge_width):
+    return Line2D(
+        [0],
+        [0],
+        color=style["color"],
+        linestyle=style["linestyle"],
+        linewidth=edge_width,
+        label=style["label"],
+    )
+
+
 def _assign_positions(
     A,
-    L,
+    psi,
     node_order,
     sorted_layers,
     layer_index,
-    x_min,
-    seg_w,
-    max_layer_size,
+    vertical_period,
+    coordinate_gap,
     align_edges,
     alignment_iterations,
 ):
-    center_y = (max_layer_size - 1) / 2 if max_layer_size > 0 else 0.0
+    center_y = (vertical_period - coordinate_gap) / 2.0
     y_by_node = {}
 
     for layer_num in sorted_layers:
-        nodes = node_order.get(layer_num, L.get(layer_num, []))
-        centered_y = _centered_positions(len(nodes), center_y)
+        nodes = node_order[layer_num]
+        centered_y = _centered_positions(len(nodes), center_y, coordinate_gap)
         for node, y in zip(nodes, centered_y):
             y_by_node[node] = y
 
@@ -370,13 +655,14 @@ def _assign_positions(
         adjacency = defaultdict(list)
         for u, v in A:
             if u in y_by_node and v in y_by_node:
-                adjacency[u].append(v)
-                adjacency[v].append(u)
+                winding = psi.get((u, v), 0)
+                adjacency[u].append((v, winding * vertical_period))
+                adjacency[v].append((u, -winding * vertical_period))
 
-        for _ in range(max(0, alignment_iterations)):
+        for _ in range(alignment_iterations):
             next_y = dict(y_by_node)
             for layer_num in sorted_layers:
-                nodes = node_order.get(layer_num, L.get(layer_num, []))
+                nodes = node_order[layer_num]
                 if not nodes:
                     continue
 
@@ -384,13 +670,19 @@ def _assign_positions(
                 for node in nodes:
                     neighbors = adjacency.get(node, [])
                     if neighbors:
-                        neighbor_y = sum(y_by_node[n] for n in neighbors) / len(neighbors)
+                        neighbor_y = sum(
+                            y_by_node[neighbor] + offset
+                            for neighbor, offset in neighbors
+                        ) / len(neighbors)
                         targets.append(0.7 * neighbor_y + 0.3 * y_by_node[node])
                     else:
                         targets.append(y_by_node[node])
 
                 projected = _project_ordered_centered(
-                    targets, center_y, max_span=max(0, max_layer_size - 1)
+                    targets,
+                    center_y,
+                    min_gap=coordinate_gap,
+                    max_span=max(0.0, vertical_period - coordinate_gap),
                 )
                 for node, y in zip(nodes, projected):
                     next_y[node] = y
@@ -398,19 +690,19 @@ def _assign_positions(
 
     pos = {}
     for layer_num in sorted_layers:
-        x = x_min + seg_w * (layer_index[layer_num] + 0.5)
-        nodes = node_order.get(layer_num, L.get(layer_num, []))
+        x = float(layer_index[layer_num])
+        nodes = node_order[layer_num]
         for node in nodes:
             pos[node] = (x, y_by_node[node])
 
     return pos
 
 
-def _centered_positions(count, center_y):
+def _centered_positions(count, center_y, spacing=1.0):
     if count == 0:
         return []
-    start = center_y - (count - 1) / 2
-    return [start + idx for idx in range(count)]
+    start = center_y - (count - 1) * spacing / 2.0
+    return [start + idx * spacing for idx in range(count)]
 
 
 def _project_ordered_centered(targets, center_y, min_gap=1.0, max_span=None):
@@ -422,7 +714,7 @@ def _project_ordered_centered(targets, center_y, min_gap=1.0, max_span=None):
     positions = [value + idx * min_gap for idx, value in enumerate(fitted)]
 
     if max_span is not None and positions[-1] - positions[0] > max_span:
-        return _centered_positions(len(targets), center_y)
+        return _centered_positions(len(targets), center_y, min_gap)
 
     mean_y = sum(positions) / len(positions)
     shift = center_y - mean_y

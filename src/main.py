@@ -4,13 +4,15 @@
 1. ランダムなグラフを生成
 2. torus.pyで階層割当
 3. minimize_crossings.pyで交差削減
-4. draw_torus.pyで描画
+4. Brandes-Köpf系の座標割当
+5. 平坦トーラスの切開図を描画
 """
 
 from layer_assignment.torus_balance import balance_layer_assignment
 from layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
 from crossing_reduction.radial import radial_sifting_heuristic
+from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
 from drawing.draw_radial_torus import draw_radial_torus
 from lib.generate_torus_graph import generate_cyclic_graph
 
@@ -25,12 +27,16 @@ def parse_augment():
     parser.add_argument("--cycle", type=int)
     parser.add_argument("--prob", type=float)
     parser.add_argument("--seed", type=int)
-    parser.add_argument("--l", type=int)
     parser.add_argument(
         "--func_type",
         choices=["diff", "diff_square", "qp", "barycenter"],
         default="diff_square",
         help="階層割当のバランス手法 (binary_balanceで使用、デフォルト: diff_square)",
+    )
+    parser.add_argument("--save_path", type=str, help="描画画像の保存先（PDF/SVG推奨）")
+    parser.add_argument("--no_show", action="store_true", help="描画画面を表示しない")
+    parser.add_argument(
+        "--hide_dummy_nodes", action="store_true", help="ダミーノードを表示しない"
     )
     args = parser.parse_args()
 
@@ -52,7 +58,16 @@ def parse_augment():
     if args.func_type is not None:
         func_type = args.func_type
 
-    return n, num_cycles, edge_prob, seed, func_type
+    return (
+        n,
+        num_cycles,
+        edge_prob,
+        seed,
+        func_type,
+        args.save_path,
+        not args.no_show,
+        not args.hide_dummy_nodes,
+    )
 
 
 def generate_graph(n, num_cycles, edge_prob, seed):
@@ -115,13 +130,29 @@ def minimize_crossing(V, A, layer_dict, t_val):
     return radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=3)
 
 
-def coordinate_assignment():
-    pass
+def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=None):
+    return assign_torus_brandes_koepf_coordinates(
+        order=order,
+        layer_dict=layer_dict,
+        edges=A,
+        t_val=t_val,
+        psi=psi,
+        original_nodes=original_nodes,
+    )
 
 
 def main():
     """引数取得"""
-    n, num_cycles, edge_prob, seed, func_type = parse_augment()
+    (
+        n,
+        num_cycles,
+        edge_prob,
+        seed,
+        func_type,
+        save_path,
+        show,
+        draw_dummy_nodes,
+    ) = parse_augment()
 
     """ メイン処理 """
     # 1. ランダムなグラフを生成
@@ -135,10 +166,16 @@ def main():
     print("\n3. 交差削減")
     order, layer_dict, A, t_val, psi = minimize_crossing(V, A, layer_dict, t_val)
 
+    # 4. 座標割当
+    print("\n4. 座標割当（4方向Brandes-Köpf系 + torus smoothing）")
+    pos = coordinate_assignment(
+        order, layer_dict, A, t_val, psi, original_nodes=V
+    )
+
     print("実行時間:", run_time)
 
-    # 4. 描画
-    print("\n4. 描画（draw_radial_torus.py）...")
+    # 5. 描画
+    print("\n5. 描画（draw_radial_torus.py）...")
     draw_radial_torus(
         V=V,
         A=A,
@@ -146,7 +183,10 @@ def main():
         t_val=t_val,
         order=order,
         psi=psi,
-        draw_dummy_nodes=True,
+        pos=pos,
+        save_path=save_path,
+        show=show,
+        draw_dummy_nodes=draw_dummy_nodes,
     )
 
     print("\n" + "=" * 60)
