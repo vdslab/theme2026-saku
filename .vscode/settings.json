@@ -1,3 +1,5 @@
 {
-  "cSpell.words": ["gurobi", "gurobipy", "WLSSECRET"]
+  "cSpell.words": ["gurobi", "gurobipy", "WLSSECRET"],
+  "python.defaultInterpreterPath": "${workspaceFolder}/theme2026-saku/bin/python",
+  "python.terminal.activateEnvironment": true
 }

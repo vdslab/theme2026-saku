@@ -5,6 +5,13 @@
 - memory-bankを常に参照し、更新したらmemory-bankを更新するようにしてください。
 - archiveは不要なコードなので、読まなくていいです。
 - srcの中のコードを読んで実装をしてください。
+- Pythonの実行には、必ずプロジェクト内の
+  `./theme2026-saku/bin/python` を使用してください。システムの
+  `python` / `python3` は使用しないでください。
+- Pythonパッケージの確認やインストールには
+  `./theme2026-saku/bin/python -m pip` を使用してください。
+- `gurobipy` が見つからないと判断する前に、プロジェクト内のPythonで
+  importできるか確認してください。
 
 ## ディレクトリの意味（srcディレクトリ）
 
