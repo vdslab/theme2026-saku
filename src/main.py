@@ -3,7 +3,7 @@
 
 1. ランダムなグラフを生成
 2. torus.pyで階層割当
-3. minimize_crossings.pyで交差削減
+3. Radial Siftingで交差削減
 4. Brandes-Köpf系の座標割当
 5. 平坦トーラスの切開図を描画
 """
@@ -33,6 +33,12 @@ def parse_augment():
         default="diff_square",
         help="階層割当のバランス手法 (binary_balanceで使用、デフォルト: diff_square)",
     )
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=3,
+        help="Radial Siftingの反復回数 (デフォルト: 3)",
+    )
     parser.add_argument("--save_path", type=str, help="描画画像の保存先（PDF/SVG推奨）")
     parser.add_argument("--no_show", action="store_true", help="描画画面を表示しない")
     parser.add_argument(
@@ -41,10 +47,10 @@ def parse_augment():
     args = parser.parse_args()
 
     # 初期値
-    n = 50  # ノード数
+    n = 25  # ノード数
     num_cycles = 2  # サイクル数
     edge_prob = 0.005  # エッジ確率
-    seed = 10  # シード値
+    seed = None  # シード値
     func_type = "diff_square"
 
     if args.node is not None:
@@ -64,6 +70,7 @@ def parse_augment():
         edge_prob,
         seed,
         func_type,
+        args.rounds,
         args.save_path,
         not args.no_show,
         not args.hide_dummy_nodes,
@@ -126,8 +133,10 @@ def layer_assignment(V, A, func_type):
     return layer_dict, t_val, run_time
 
 
-def minimize_crossing(V, A, layer_dict, t_val):
-    return radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=3)
+def reduce_crossings_radial(V, A, layer_dict, t_val, rounds=3):
+    """Radial Siftingでレイヤー内順序とトーラスの巻き数を最適化する。"""
+    print("  Radial Siftingで順序を最適化中...")
+    return radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=rounds)
 
 
 def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=None):
@@ -149,6 +158,7 @@ def main():
         edge_prob,
         seed,
         func_type,
+        rounds,
         save_path,
         show,
         draw_dummy_nodes,
@@ -163,14 +173,14 @@ def main():
     layer_dict, t_val, run_time = layer_assignment(V, A, func_type)
 
     # 3. 交差削減
-    print("\n3. 交差削減")
-    order, layer_dict, A, t_val, psi = minimize_crossing(V, A, layer_dict, t_val)
+    print("\n3. Radial交差削減")
+    order, layer_dict, A, t_val, psi = reduce_crossings_radial(
+        V, A, layer_dict, t_val, rounds=rounds
+    )
 
     # 4. 座標割当
     print("\n4. 座標割当（4方向Brandes-Köpf系 + torus smoothing）")
-    pos = coordinate_assignment(
-        order, layer_dict, A, t_val, psi, original_nodes=V
-    )
+    pos = coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=V)
 
     print("実行時間:", run_time)
 
