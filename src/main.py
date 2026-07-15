@@ -11,7 +11,7 @@
 from layer_assignment.torus_balance import balance_layer_assignment
 from layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
-from crossing_reduction.radial import radial_sifting_heuristic
+from crossing_reduction.radial import count_radial_crossings, radial_sifting_heuristic
 from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
 from drawing.draw_radial_torus import draw_radial_torus
 from lib.generate_torus_graph import generate_cyclic_graph
@@ -150,19 +150,62 @@ def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=None)
     )
 
 
-def main():
-    """引数取得"""
-    (
-        n,
-        num_cycles,
-        edge_prob,
-        seed,
-        func_type,
-        rounds,
-        save_path,
-        show,
-        draw_dummy_nodes,
-    ) = parse_augment()
+def _print_crossing_details(order, layer_dict, edges, t_val, psi):
+    """交差削減後の交差数、巻き数、辺分類を表示する。"""
+    psi_counts = defaultdict(int)
+    for winding in psi.values():
+        psi_counts[winding] += 1
+
+    print("  巻き数の分布:")
+    print(f"    ψ = -1 (上端→下端): {psi_counts[-1]}エッジ")
+    print(f"    ψ =  0 (通常エッジ): {psi_counts[0]}エッジ")
+    print(f"    ψ = +1 (下端→上端): {psi_counts[1]}エッジ")
+    print(f"  交差数: {count_radial_crossings(order, psi, layer_dict, edges)}")
+
+    left_right_torus = [edge for edge in edges if t_val.get(edge, False)]
+    positive_wrap = [edge for edge in edges if psi.get(edge, 0) > 0]
+    negative_wrap = [edge for edge in edges if psi.get(edge, 0) < 0]
+    normal = [
+        edge for edge in edges if not t_val.get(edge, False) and psi.get(edge, 0) == 0
+    ]
+
+    print("\n  エッジの分類:")
+    print(f"    左右トーラス: {len(left_right_torus)}エッジ")
+    if left_right_torus:
+        print(f"      {left_right_torus}")
+    print(f"    下端→上端 (ψ=+1): {len(positive_wrap)}エッジ")
+    if positive_wrap and len(positive_wrap) <= 10:
+        print(f"      {positive_wrap}")
+    print(f"    上端→下端 (ψ=-1): {len(negative_wrap)}エッジ")
+    if negative_wrap and len(negative_wrap) <= 10:
+        print(f"      {negative_wrap}")
+    print(f"    通常辺 (ψ=0): {len(normal)}エッジ")
+    if normal and len(normal) <= 10:
+        print(f"      {normal}")
+
+
+def main(
+    node=None,
+    cycle=None,
+    prob=None,
+    seed=None,
+    rounds=3,
+    func_type="diff_square",
+    save_path=None,
+    show=True,
+    draw_dummy_nodes=True,
+):
+    """グラフ生成から平坦トーラス描画までの処理を実行する。"""
+    n = 25 if node is None else int(node)
+    num_cycles = 2 if cycle is None else int(cycle)
+    edge_prob = 0.005 if prob is None else float(prob)
+    seed = None if seed is None else int(seed)
+    rounds = int(rounds)
+    if func_type is None:
+        func_type = "diff_square"
+
+    if save_path is not None and seed is None:
+        raise ValueError("再現可能な図を保存するにはseedを指定してください。")
 
     """ メイン処理 """
     # 1. ランダムなグラフを生成
@@ -170,19 +213,21 @@ def main():
 
     # 2. 階層割当
     print("\n2. 階層割当")
-    layer_dict, t_val, run_time = layer_assignment(V, A, func_type)
+    layer_result = layer_assignment(V, A, func_type)
+    if layer_result is None:
+        return None
+    layer_dict, t_val, run_time = layer_result
 
     # 3. 交差削減
     print("\n3. Radial交差削減")
     order, layer_dict, A, t_val, psi = reduce_crossings_radial(
         V, A, layer_dict, t_val, rounds=rounds
     )
+    _print_crossing_details(order, layer_dict, A, t_val, psi)
 
     # 4. 座標割当
     print("\n4. 座標割当（4方向Brandes-Köpf系 + torus smoothing）")
     pos = coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=V)
-
-    print("実行時間:", run_time)
 
     # 5. 描画
     print("\n5. 描画（draw_radial_torus.py）...")
@@ -205,4 +250,25 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    (
+        n,
+        num_cycles,
+        edge_prob,
+        seed,
+        func_type,
+        rounds,
+        save_path,
+        show,
+        draw_dummy_nodes,
+    ) = parse_augment()
+    main(
+        node=n,
+        cycle=num_cycles,
+        prob=edge_prob,
+        seed=seed,
+        rounds=rounds,
+        func_type=func_type,
+        save_path=save_path,
+        show=show,
+        draw_dummy_nodes=draw_dummy_nodes,
+    )
