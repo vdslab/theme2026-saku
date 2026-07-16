@@ -18,12 +18,9 @@ def cartesian_barycenter_heuristic(V, A, layer_dict, t_val, w=None):
     """
     V, A, L, t_val, w = insert_dummy_node(V, A, layer_dict, t_val, w)
     layers = sorted(L.keys())
-    fixed_zero_edges = _fixed_zero_edges(A, t_val)
 
     order = _barycentric_order(_base_order(L, layers), layers, A)
-    psi = _compute_winding_numbers(
-        A, order, L, layers, fixed_zero_edges=fixed_zero_edges
-    )
+    psi = _compute_winding_numbers(A, order, L, layers)
 
     return order, L, A, t_val, psi
 
@@ -46,18 +43,15 @@ def radial_sifting_heuristic(
     """
     V, A, L, t_val, w = insert_dummy_node(V, A, layer_dict, t_val, w)
     layers = sorted(L.keys())
-    fixed_zero_edges = _fixed_zero_edges(A, t_val)
 
     best_order = None
     best_psi = None
     best_score = None
 
     for order in _initial_orders(L, layers, A):
-        psi = _compute_winding_numbers(
-            A, order, L, layers, fixed_zero_edges=fixed_zero_edges
-        )
-        _optimize_offsets(order, psi, layers, A, fixed_zero_edges=fixed_zero_edges)
-        _run_sifting(order, psi, layers, A, rounds, fixed_zero_edges)
+        psi = _compute_winding_numbers(A, order, L, layers)
+        _optimize_offsets(order, psi, layers, A)
+        _run_sifting(order, psi, layers, A, rounds)
 
         score = _score(order, psi, layers, A)
         if best_score is None or score < best_score:
@@ -72,7 +66,6 @@ def radial_sifting_heuristic(
         best_psi,
         layers,
         A,
-        fixed_zero_edges,
         rounds=POSTPROCESS_SWEEP_ROUNDS,
     )
     return best_order, L, A, t_val, best_psi
@@ -124,20 +117,6 @@ def _copy_order(order):
         dict: ノードリストを複製したorder。
     """
     return {layer: list(nodes) for layer, nodes in order.items()}
-
-
-def _fixed_zero_edges(edges, t_val):
-    """
-    上下巻き数を0に固定する辺集合を返す。
-
-    Args:
-        edges: ダミー挿入後のエッジ集合。
-        t_val: 左右トーラス辺フラグ。
-
-    Returns:
-        set: t_val=True のエッジ集合。
-    """
-    return {edge for edge in edges if t_val.get(edge, False)}
 
 
 def _node_to_layer(order):
@@ -390,7 +369,7 @@ def _dedupe_orders(orders, layers):
 # ---------------------------------------------------------------------------
 
 
-def _run_sifting(order, psi, layers, edges, rounds, fixed_zero_edges):
+def _run_sifting(order, psi, layers, edges, rounds):
     """
     全レイヤー・全ノードに対してlexicographic siftingを反復する。
 
@@ -400,8 +379,6 @@ def _run_sifting(order, psi, layers, edges, rounds, fixed_zero_edges):
         layers: レイヤーキー列。
         edges: エッジ集合。
         rounds: sifting反復回数。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
     Returns:
         None: orderとpsiを破壊的に更新する。
     """
@@ -411,15 +388,15 @@ def _run_sifting(order, psi, layers, edges, rounds, fixed_zero_edges):
         for layer in layers:
             for node in list(order[layer]):
                 improved |= _sift_vertex_incremental(
-                    node, layer, order, psi, layers, edges, fixed_zero_edges
+                    node, layer, order, psi, layers, edges
                 )
 
-        _optimize_offsets(order, psi, layers, edges, fixed_zero_edges=fixed_zero_edges)
+        _optimize_offsets(order, psi, layers, edges)
         if not improved:
             break
 
 
-def _sift_vertex(node, layer, order, psi, layers, edges, fixed_zero_edges):
+def _sift_vertex(node, layer, order, psi, layers, edges):
     """
     1ノードを同一レイヤー内の全位置へ試し、最良位置へ移動する。
 
@@ -430,8 +407,6 @@ def _sift_vertex(node, layer, order, psi, layers, edges, fixed_zero_edges):
         psi: 更新対象の巻き数辞書。
         layers: レイヤーキー列。
         edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
     Returns:
         bool: orderまたはpsiが改善された場合True。
     """
@@ -457,7 +432,6 @@ def _sift_vertex(node, layer, order, psi, layers, edges, fixed_zero_edges):
             layers,
             edges,
             candidate_edges=_incident_edges(edges, node),
-            fixed_zero_edges=fixed_zero_edges,
         )
 
         candidate_score = _score(candidate_order, candidate_psi, layers, edges)
@@ -476,7 +450,7 @@ def _sift_vertex(node, layer, order, psi, layers, edges, fixed_zero_edges):
     return True
 
 
-def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_edges):
+def _sift_vertex_incremental(node, layer, order, psi, layers, edges):
     """
     1ノードを隣接交換で円周上に流し、影響するレイヤーペアだけを差分評価する。
 
@@ -491,8 +465,6 @@ def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_
         psi: 更新対象の巻き数辞書。
         layers: レイヤーキー列。
         edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
     Returns:
         bool: orderまたはpsiが改善された場合True。
     """
@@ -521,7 +493,6 @@ def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_
         working_psi,
         layers,
         edges,
-        fixed_zero_edges,
         working_score,
     )
     if working_score < best_score:
@@ -556,7 +527,6 @@ def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_
             working_psi,
             layers,
             edges,
-            fixed_zero_edges,
             working_score,
         )
 
@@ -575,7 +545,7 @@ def _sift_vertex_incremental(node, layer, order, psi, layers, edges, fixed_zero_
 
 
 def _optimize_incident_offsets_incremental(
-    node, layer, order, psi, layers, edges, fixed_zero_edges, current_score
+    node, layer, order, psi, layers, edges, current_score
 ):
     """
     nodeに接続するpsiだけを、影響レイヤーペアの差分評価で改善する。
@@ -587,15 +557,12 @@ def _optimize_incident_offsets_incremental(
         psi: 更新対象の巻き数辞書。
         layers: レイヤーキー列。
         edges: 全エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
         current_score: 現在の全体スコア。
 
     Returns:
         tuple: 改善後の全体スコア。
     """
-    candidates = _offset_candidate_edges(
-        edges, psi, _incident_edges(edges, node), fixed_zero_edges
-    )
+    candidates = _offset_candidate_edges(edges, psi, _incident_edges(edges, node))
     if not candidates:
         return current_score
 
@@ -626,13 +593,10 @@ def _optimize_incident_offsets_incremental(
                 current_score = best_score
                 improved = True
 
-    _force_zero_offsets(psi, fixed_zero_edges)
     return current_score
 
 
-def _optimize_offsets(
-    order, psi, layers, edges, candidate_edges=None, fixed_zero_edges=None
-):
+def _optimize_offsets(order, psi, layers, edges, candidate_edges=None):
     """
     指定エッジ群のpsiを辞書順スコアが良くなるように調整する。
 
@@ -642,15 +606,10 @@ def _optimize_offsets(
         layers: レイヤーキー列。
         edges: 全エッジ集合。
         candidate_edges: 調整対象のエッジ集合。Noneなら全エッジ。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
     Returns:
         None: psiを破壊的に更新する。
     """
-    fixed_zero_edges = fixed_zero_edges or set()
-    _force_zero_offsets(psi, fixed_zero_edges)
-
-    candidates = _offset_candidate_edges(edges, psi, candidate_edges, fixed_zero_edges)
+    candidates = _offset_candidate_edges(edges, psi, candidate_edges)
     if not candidates:
         return
 
@@ -663,23 +622,6 @@ def _optimize_offsets(
     _optimize_offsets_coordinate_descent(
         order, psi, layers, edges, candidates, current_score
     )
-    _force_zero_offsets(psi, fixed_zero_edges)
-
-
-def _force_zero_offsets(psi, fixed_zero_edges):
-    """
-    固定対象エッジのpsiを0に戻す。
-
-    Args:
-        psi: 更新対象の巻き数辞書。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
-    Returns:
-        None: psiを破壊的に更新する。
-    """
-    for edge in fixed_zero_edges:
-        if edge in psi:
-            psi[edge] = 0
 
 
 def _score_after_local_change(
@@ -845,7 +787,7 @@ def _edge_layer_pair(edge, order, layers):
     return (u_layer, v_layer)
 
 
-def _offset_candidate_edges(edges, psi, candidate_edges, fixed_zero_edges):
+def _offset_candidate_edges(edges, psi, candidate_edges):
     """
     psi最適化の対象エッジを固定対象を除いて作る。
 
@@ -853,13 +795,11 @@ def _offset_candidate_edges(edges, psi, candidate_edges, fixed_zero_edges):
         edges: 全エッジ集合。
         psi: 巻き数辞書。
         candidate_edges: 呼び出し側が指定した候補。Noneなら全エッジ。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
     Returns:
         list: 実際にpsiを変更してよいエッジ集合。
     """
     source = edges if candidate_edges is None else candidate_edges
-    return [edge for edge in source if edge in psi and edge not in fixed_zero_edges]
+    return [edge for edge in source if edge in psi]
 
 
 def _optimize_offsets_exhaustive(order, psi, layers, edges, candidates, current_score):
@@ -934,7 +874,7 @@ def _optimize_offsets_coordinate_descent(
                 improved = True
 
 
-def _compute_winding_numbers(A, order, L, layers, fixed_zero_edges=None):
+def _compute_winding_numbers(A, order, L, layers):
     """
     現在のorderに対する各エッジの初期psiを計算する。
 
@@ -943,20 +883,14 @@ def _compute_winding_numbers(A, order, L, layers, fixed_zero_edges=None):
         order: 各レイヤー内のノード順序。
         L: レイヤー辞書。
         layers: レイヤーキー列。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
     Returns:
         dict: edge -> psi。
     """
     psi = {}
-    fixed_zero_edges = fixed_zero_edges or set()
     node_to_layer = _node_to_layer(L)
     layer_index = {layer: index for index, layer in enumerate(layers)}
 
     for edge in A:
-        if edge in fixed_zero_edges:
-            psi[edge] = 0
-            continue
         psi[edge] = _best_winding_for_edge(
             edge, order, node_to_layer, layer_index, layers
         )
@@ -1007,7 +941,7 @@ def _best_winding_for_edge(edge, order, node_to_layer, layer_index, layers):
 
 
 def _postprocess_layer_rotations(
-    order, psi, layers, edges, fixed_zero_edges, rounds=POSTPROCESS_SWEEP_ROUNDS
+    order, psi, layers, edges, rounds=POSTPROCESS_SWEEP_ROUNDS
 ):
     """
     交差数を変えず、各レイヤー全体を回転して辺のねじれを減らす。
@@ -1018,15 +952,12 @@ def _postprocess_layer_rotations(
     巡回順序と交差数を保つ。
 
     layers[0]は全体回転の不定性を除く基準レイヤーとして固定する。
-    また、現行モデルでは左右トーラス辺のpsi=0を保つため、
-    fixed_zero_edgesに接続するレイヤーは回転しない。
 
     Args:
         order: 更新対象のorder。
         psi: 更新対象の巻き数辞書。
         layers: レイヤーキー列。
         edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
         rounds: forward/backward sweepの反復回数。
 
     Returns:
@@ -1047,9 +978,6 @@ def _postprocess_layer_rotations(
             continue
         incident_by_layer[u_layer].append(edge)
         incident_by_layer[v_layer].append(edge)
-        if edge in fixed_zero_edges:
-            fixed_layers.add(u_layer)
-            fixed_layers.add(v_layer)
 
     positions = {
         layer: {node: index for index, node in enumerate(order[layer])}
@@ -1084,7 +1012,6 @@ def _postprocess_layer_rotations(
         if not changed:
             break
 
-    _force_zero_offsets(psi, fixed_zero_edges)
 
 
 def _average_rotation_steps(

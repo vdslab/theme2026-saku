@@ -167,6 +167,24 @@ def _print_phase_times(step1_time, step2_time, crossing_time, coordinate_time):
     print(f"  合計                                      : {total:.5f}秒")
 
 
+def _print_drawing_summary(
+    node_count, edge_count, order, layer_dict, edges, t_val, psi
+):
+    """描画対象グラフと交差削減結果の概要を表示する。"""
+    crossing_count = count_radial_crossings(order, psi, layer_dict, edges)
+    horizontal_torus_count = sum(
+        1 for edge in edges if t_val.get(edge, False)
+    )
+    vertical_torus_count = sum(1 for edge in edges if psi.get(edge, 0) != 0)
+
+    print("\n描画結果の情報:")
+    print(f"  ノード数        : {node_count}")
+    print(f"  エッジ数        : {edge_count}")
+    print(f"  交差数          : {crossing_count}")
+    print(f"  左右トーラス数  : {horizontal_torus_count}")
+    print(f"  上下トーラス数  : {vertical_torus_count}")
+
+
 def _print_crossing_details(order, layer_dict, edges, t_val, psi):
     """交差削減後の交差数、巻き数、辺分類を表示する。"""
     psi_counts = defaultdict(int)
@@ -227,6 +245,8 @@ def main(
     """ メイン処理 """
     # 1. ランダムなグラフを生成
     V, A = generate_graph(n, num_cycles, edge_prob, seed)
+    original_node_count = len(V)
+    original_edge_count = len(A)
 
     # 2. 階層割当
     print("\n2. 階層割当")
@@ -249,6 +269,15 @@ def main(
     )
 
     _print_phase_times(step1_time, step2_time, crossing_time, coordinate_time)
+    _print_drawing_summary(
+        original_node_count,
+        original_edge_count,
+        order,
+        layer_dict,
+        A,
+        t_val,
+        psi,
+    )
 
     # 5. 描画
     print("\n5. 描画（draw_radial_torus.py）...")

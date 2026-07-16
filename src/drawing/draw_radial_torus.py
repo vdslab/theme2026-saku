@@ -3,6 +3,7 @@
 通常の階層レイアウト + Radial Layoutの組み合わせ:
 - 左右のトーラス: 最右レイヤーから最左レイヤーへの逆辺（既存実装と同じ）
 - 上下のトーラス: ray（各レイヤーの上下境界）をまたぐエッジ（ψ≠0）
+- 複合トーラス: 左右・上下の境界をともにまたぐエッジ（t=True かつ ψ≠0）
 """
 
 from collections import defaultdict, deque
@@ -33,6 +34,16 @@ EDGE_STYLES = {
         "color": "#CC79A7",
         "linestyle": (0, (1.5, 1.5)),
         "label": r"$\psi=-1$: top-to-bottom",
+    },
+    "horizontal_positive_wrap": {
+        "color": "#009E73",
+        "linestyle": (0, (5, 1.5, 1, 1.5)),
+        "label": r"Horizontal + $\psi=+1$",
+    },
+    "horizontal_negative_wrap": {
+        "color": "#882255",
+        "linestyle": (0, (5, 1.5, 1, 1.5)),
+        "label": r"Horizontal + $\psi=-1$",
     },
 }
 
@@ -146,22 +157,26 @@ def draw_radial_torus(
     ]
 
     # エッジを分類
-    # 1. 左右のトーラス辺（t_val=True）
-    # 2. 上下のトーラス辺（psi≠0）
-    # 3. 通常辺（それ以外）
+    # 左右巻きと上下巻きは排他的ではない。両方を持つ辺は複合辺として扱う。
 
     if draw_dummy_nodes:
         # ダミーノード表示時は実エッジをそのまま描画
         left_right_torus = []  # 左右のトーラス
         positive_wrap_edges = []  # 表示上の下端から上端へ継続（psi > 0）
         negative_wrap_edges = []  # 表示上の上端から下端へ継続（psi < 0）
+        horizontal_positive_wrap_edges = []
+        horizontal_negative_wrap_edges = []
         normal_edges = []
 
         for u, v in A:
             is_lr_torus = bool(t_val.get((u, v), False))
             winding = psi.get((u, v), 0)
 
-            if is_lr_torus:
+            if is_lr_torus and winding > 0:
+                horizontal_positive_wrap_edges.append((u, v))
+            elif is_lr_torus and winding < 0:
+                horizontal_negative_wrap_edges.append((u, v))
+            elif is_lr_torus:
                 left_right_torus.append((u, v))
             elif winding > 0:
                 positive_wrap_edges.append((u, v))
@@ -213,9 +228,12 @@ def draw_radial_torus(
         left_right_torus = []
         positive_wrap_edges = []
         negative_wrap_edges = []
+        horizontal_positive_wrap_edges = []
+        horizontal_negative_wrap_edges = []
         normal_edges = []
 
         for (u, v), (flag_t, flag_psi) in display_edges.items():
+            is_lr_torus = flag_t
             u_layer = node_to_layer.get(u)
             v_layer = node_to_layer.get(v)
             if u_layer is not None and v_layer is not None:
@@ -223,10 +241,13 @@ def draw_radial_torus(
                 v_idx = layer_index.get(v_layer)
                 # レイヤーが逆転している場合は左右のトーラス
                 if u_idx is not None and v_idx is not None and v_idx < u_idx:
-                    left_right_torus.append((u, v))
-                    continue
+                    is_lr_torus = True
 
-            if flag_t:
+            if is_lr_torus and flag_psi > 0:
+                horizontal_positive_wrap_edges.append((u, v))
+            elif is_lr_torus and flag_psi < 0:
+                horizontal_negative_wrap_edges.append((u, v))
+            elif is_lr_torus:
                 left_right_torus.append((u, v))
             elif flag_psi > 0:
                 positive_wrap_edges.append((u, v))
@@ -318,6 +339,47 @@ def draw_radial_torus(
             arrow=True,
             shrink_b=node_shrink(v),
         )
+
+    # 左右と上下の境界を同時にまたぐ辺を描画する。普遍被覆上では
+    # (v.x + 横周期, v.y + ψ * 縦周期) への直線になり、境界を横切る
+    # 順番に分割して基本領域へ折り返す。
+    combined_wrap_groups = (
+        (
+            horizontal_positive_wrap_edges,
+            1,
+            EDGE_STYLES["horizontal_positive_wrap"],
+        ),
+        (
+            horizontal_negative_wrap_edges,
+            -1,
+            EDGE_STYLES["horizontal_negative_wrap"],
+        ),
+    )
+    for edges, vertical_winding, style in combined_wrap_groups:
+        for u, v in edges:
+            segments = _periodic_edge_segments(
+                pos[u],
+                pos[v],
+                x_min=x_min,
+                x_max=x_max,
+                y_min=y_min,
+                y_max=y_max,
+                horizontal_winding=1,
+                vertical_winding=vertical_winding,
+            )
+            for index, (start, end) in enumerate(segments):
+                _add_edge_patch(
+                    ax,
+                    start,
+                    end,
+                    style,
+                    edge_width,
+                    arrow=index == len(segments) - 1,
+                    shrink_a=node_shrink(u) if index == 0 else 0.0,
+                    shrink_b=node_shrink(v)
+                    if index == len(segments) - 1
+                    else 0.0,
+                )
 
     # 上下のトーラス辺を描画（rayをまたぐ）
     # psi > 0: 表示上は下端から上端へ継続する。
@@ -434,6 +496,10 @@ def draw_radial_torus(
             present_styles.append("positive_wrap")
         if negative_wrap_edges:
             present_styles.append("negative_wrap")
+        if horizontal_positive_wrap_edges:
+            present_styles.append("horizontal_positive_wrap")
+        if horizontal_negative_wrap_edges:
+            present_styles.append("horizontal_negative_wrap")
         handles = [
             _legend_handle(EDGE_STYLES[key], edge_width) for key in present_styles
         ]
@@ -618,6 +684,81 @@ def _add_edge_patch(
         clip_on=False,
     )
     ax.add_patch(patch)
+
+
+def _periodic_edge_segments(
+    start,
+    end,
+    *,
+    x_min,
+    x_max,
+    y_min,
+    y_max,
+    horizontal_winding,
+    vertical_winding,
+):
+    """普遍被覆上の直線を、基本領域内の線分列へ分割する。"""
+    width = x_max - x_min
+    height = y_max - y_min
+    lifted_end = (
+        end[0] + horizontal_winding * width,
+        end[1] + vertical_winding * height,
+    )
+
+    crossing_times = [0.0, 1.0]
+    crossing_times.extend(
+        _axis_crossing_times(start[0], lifted_end[0], x_min, width)
+    )
+    crossing_times.extend(
+        _axis_crossing_times(start[1], lifted_end[1], y_min, height)
+    )
+    crossing_times.sort()
+
+    # 左右・上下の境界を同時に通る（角を通る）場合の重複を除く。
+    unique_times = []
+    for value in crossing_times:
+        if not unique_times or not math.isclose(
+            value, unique_times[-1], rel_tol=0.0, abs_tol=1e-12
+        ):
+            unique_times.append(value)
+
+    dx = lifted_end[0] - start[0]
+    dy = lifted_end[1] - start[1]
+    segments = []
+    for left_t, right_t in zip(unique_times, unique_times[1:]):
+        middle_t = (left_t + right_t) / 2.0
+        middle_x = start[0] + middle_t * dx
+        middle_y = start[1] + middle_t * dy
+        x_tile = math.floor((middle_x - x_min) / width)
+        y_tile = math.floor((middle_y - y_min) / height)
+
+        def wrapped_point(t):
+            return (
+                start[0] + t * dx - x_tile * width,
+                start[1] + t * dy - y_tile * height,
+            )
+
+        segments.append((wrapped_point(left_t), wrapped_point(right_t)))
+    return segments
+
+
+def _axis_crossing_times(start, end, minimum, period):
+    """開区間(start, end)にある周期境界との交差時刻を返す。"""
+    delta = end - start
+    if math.isclose(delta, 0.0, rel_tol=0.0, abs_tol=1e-15):
+        return []
+
+    lower = min(start, end)
+    upper = max(start, end)
+    first_index = math.floor((lower - minimum) / period) + 1
+    last_index = math.ceil((upper - minimum) / period) - 1
+    times = []
+    for index in range(first_index, last_index + 1):
+        boundary = minimum + index * period
+        t = (boundary - start) / delta
+        if 0.0 < t < 1.0:
+            times.append(t)
+    return times
 
 
 def _legend_handle(style, edge_width):

@@ -2,6 +2,7 @@ import random
 
 from crossing_reduction.radial import (
     _count_all_crossings,
+    _optimize_offsets,
     _postprocess_layer_rotations,
     _rotate_layer_preserving_crossings,
 )
@@ -19,7 +20,6 @@ def test_postprocess_rotates_by_average_angle_without_changing_crossings():
         psi,
         layers,
         edges,
-        fixed_zero_edges=set(),
         rounds=1,
     )
 
@@ -65,13 +65,14 @@ def test_rotation_preserves_crossings_for_random_embeddings():
         assert _count_all_crossings(order, psi, [0, 1], edges) == before
 
 
-def test_postprocess_keeps_fixed_torus_offsets_zero():
-    order = {0: [0, 1], 1: [2, 3], 2: [4, 5]}
-    layers = [0, 1, 2]
-    edges = [(0, 2), (1, 3), (2, 4), (3, 5), (4, 0), (5, 1)]
-    fixed = {(4, 0), (5, 1)}
+def test_torus_edge_offset_is_not_forced_to_zero():
+    order = {0: [0, 1], 1: [2, 3]}
+    layers = [0, 1]
+    torus_edge = (0, 3)
+    edges = [torus_edge, (1, 2)]
     psi = {edge: 0 for edge in edges}
 
-    _postprocess_layer_rotations(order, psi, layers, edges, fixed, rounds=2)
+    _optimize_offsets(order, psi, layers, edges)
 
-    assert all(psi[edge] == 0 for edge in fixed)
+    assert psi[torus_edge] == -1
+    assert _count_all_crossings(order, psi, layers, edges) == 0
