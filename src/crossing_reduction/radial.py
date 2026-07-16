@@ -6,8 +6,7 @@ from lib.insert_dummy_node import insert_dummy_node
 
 OFFSET_VALUES = (-1, 0, 1)
 MAX_EXHAUSTIVE_OFFSET_EDGES = 4
-MAX_BOUNDARY_GROUP_CANDIDATES = 2500
-BOUNDARY_SWEEP_ROUNDS = 3
+POSTPROCESS_SWEEP_ROUNDS = 2
 
 
 def cartesian_barycenter_heuristic(V, A, layer_dict, t_val, w=None):
@@ -68,7 +67,14 @@ def radial_sifting_heuristic(
             if _is_perfect_primary_score(best_score):
                 break
 
-    _optimize_boundary_positions(best_order, best_psi, L, layers, A, fixed_zero_edges)
+    _postprocess_layer_rotations(
+        best_order,
+        best_psi,
+        layers,
+        A,
+        fixed_zero_edges,
+        rounds=POSTPROCESS_SWEEP_ROUNDS,
+    )
     return best_order, L, A, t_val, best_psi
 
 
@@ -996,288 +1002,172 @@ def _best_winding_for_edge(edge, order, node_to_layer, layer_index, layers):
 
 
 # ---------------------------------------------------------------------------
-# Boundary optimization
+# Crossing-preserving radial rotation postprocessing
 # ---------------------------------------------------------------------------
 
 
-def _optimize_boundary_positions(order, psi, L, layers, edges, fixed_zero_edges):
-    """
-    円周順序を保ったまま上下境界の切れ目を最適化する。
-
-    Args:
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        L: レイヤー辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
-    Returns:
-        None: orderとpsiを破壊的に更新する。
-    """
-    _optimize_single_layer_boundaries(order, psi, L, layers, edges, fixed_zero_edges)
-    _optimize_consecutive_boundary_groups(
-        order, psi, L, layers, edges, fixed_zero_edges
-    )
-
-
-def _optimize_single_layer_boundaries(order, psi, L, layers, edges, fixed_zero_edges):
-    """
-    1レイヤーずつ境界位置を動かして改善を試す。
-
-    Args:
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        L: レイヤー辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
-    Returns:
-        None: orderとpsiを破壊的に更新する。
-    """
-    for _ in range(BOUNDARY_SWEEP_ROUNDS):
-        improved = False
-        for layer in layers:
-            improved |= _try_rotate_layer_boundary(
-                layer, order, psi, L, layers, edges, fixed_zero_edges
-            )
-        if not improved:
-            break
-
-
-def _try_rotate_layer_boundary(layer, order, psi, L, layers, edges, fixed_zero_edges):
-    """
-    指定レイヤーの境界位置だけを回転して改善候補を探す。
-
-    Args:
-        layer: 境界を動かすレイヤー。
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        L: レイヤー辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-
-    Returns:
-        bool: 改善を採用した場合True。
-    """
-    nodes = order[layer]
-    if len(nodes) <= 1:
-        return False
-
-    current_score = _score(order, psi, layers, edges)
-    best_nodes = list(nodes)
-    best_psi = dict(psi)
-    best_score = current_score
-
-    for shift in _candidate_boundary_shifts(len(nodes)):
-        if shift == 0:
-            continue
-
-        candidate_order = _copy_order(order)
-        candidate_order[layer] = _rotate_list(nodes, shift)
-        candidate_psi = _boundary_candidate_psi(
-            candidate_order, L, layers, edges, fixed_zero_edges
-        )
-
-        score = _score(candidate_order, candidate_psi, layers, edges)
-        if score < best_score:
-            best_score = score
-            best_nodes = candidate_order[layer]
-            best_psi = candidate_psi
-
-    if best_score >= current_score:
-        return False
-
-    order[layer] = best_nodes
-    psi.clear()
-    psi.update(best_psi)
-    return True
-
-
-def _optimize_consecutive_boundary_groups(
-    order, psi, L, layers, edges, fixed_zero_edges
+def _postprocess_layer_rotations(
+    order, psi, layers, edges, fixed_zero_edges, rounds=POSTPROCESS_SWEEP_ROUNDS
 ):
     """
-    連続する2層・3層の境界位置を同時に動かして改善を試す。
+    交差数を変えず、各レイヤー全体を回転して辺のねじれを減らす。
+
+    Bachmaier Algorithm 2 の2層postprocessをトーラスの多層描画に
+    拡張する。回転量は前後両側のincident edgeの平均角度差から
+    直接求める。頂点が切断rayをまたぐときはpsiを決定的に更新し、
+    巡回順序と交差数を保つ。
+
+    layers[0]は全体回転の不定性を除く基準レイヤーとして固定する。
+    また、現行モデルでは左右トーラス辺のpsi=0を保つため、
+    fixed_zero_edgesに接続するレイヤーは回転しない。
 
     Args:
         order: 更新対象のorder。
         psi: 更新対象の巻き数辞書。
-        L: レイヤー辞書。
         layers: レイヤーキー列。
         edges: エッジ集合。
         fixed_zero_edges: psi=0に固定するエッジ集合。
+        rounds: forward/backward sweepの反復回数。
 
     Returns:
         None: orderとpsiを破壊的に更新する。
     """
-    shift_options = {
-        layer: list(_candidate_boundary_shifts(len(order[layer]))) for layer in layers
-    }
-    if (
-        _boundary_group_candidate_count(layers, shift_options)
-        > MAX_BOUNDARY_GROUP_CANDIDATES
-    ):
+    if not layers or rounds <= 0:
         return
 
-    current_score = _score(order, psi, layers, edges)
-    for group_size in (2, 3):
-        for group in _consecutive_layer_groups(layers, group_size):
-            current_score = _try_rotate_boundary_group(
-                group,
-                shift_options,
-                order,
-                psi,
-                L,
-                layers,
-                edges,
-                fixed_zero_edges,
-                current_score,
-            )
+    node_to_layer = _node_to_layer(order)
+    incident_by_layer = defaultdict(list)
+    fixed_layers = {layers[0]}
+
+    for edge in edges:
+        u, v = edge
+        u_layer = node_to_layer.get(u)
+        v_layer = node_to_layer.get(v)
+        if u_layer is None or v_layer is None or u_layer == v_layer:
+            continue
+        incident_by_layer[u_layer].append(edge)
+        incident_by_layer[v_layer].append(edge)
+        if edge in fixed_zero_edges:
+            fixed_layers.add(u_layer)
+            fixed_layers.add(v_layer)
+
+    positions = {
+        layer: {node: index for index, node in enumerate(order[layer])}
+        for layer in layers
+    }
+
+    movable_layers = [layer for layer in layers if layer not in fixed_layers]
+    for _ in range(rounds):
+        changed = False
+        for sweep in (movable_layers, list(reversed(movable_layers))):
+            for layer in sweep:
+                steps = _average_rotation_steps(
+                    layer,
+                    order,
+                    positions,
+                    psi,
+                    incident_by_layer.get(layer, []),
+                    node_to_layer,
+                )
+                if steps == 0:
+                    continue
+                _rotate_layer_preserving_crossings(
+                    layer,
+                    steps,
+                    order,
+                    positions,
+                    psi,
+                    incident_by_layer.get(layer, []),
+                    node_to_layer,
+                )
+                changed = True
+        if not changed:
+            break
+
+    _force_zero_offsets(psi, fixed_zero_edges)
 
 
-def _try_rotate_boundary_group(
-    group,
-    shift_options,
-    order,
-    psi,
-    L,
-    layers,
-    edges,
-    fixed_zero_edges,
-    current_score,
+def _average_rotation_steps(
+    layer, order, positions, psi, incident_edges, node_to_layer
 ):
-    """
-    レイヤー群の境界位置を同時回転して最良候補を採用する。
+    """incident edgeの平均角度差からレイヤーの回転数を求める。"""
+    nodes = order[layer]
+    if len(nodes) <= 1 or not incident_edges:
+        return 0
 
-    Args:
-        group: 同時に境界を動かすレイヤー群。
-        shift_options: layer -> 試すshift列。
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        L: レイヤー辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
-        current_score: 現在のスコア。
-
-    Returns:
-        tuple: 採用後の現在スコア。
-    """
-    best_order = None
-    best_psi = None
-    best_score = current_score
-
-    for shifts in product(*(shift_options[layer] for layer in group)):
-        if all(shift == 0 for shift in shifts):
+    signed_span_sum = 0.0
+    count = 0
+    for edge in incident_edges:
+        u, v = edge
+        u_layer = node_to_layer[u]
+        v_layer = node_to_layer[v]
+        if u_layer == v_layer:
             continue
 
-        candidate_order = _copy_order(order)
-        for layer, shift in zip(group, shifts):
-            candidate_order[layer] = _rotate_list(candidate_order[layer], shift)
+        theta_u = 2 * math.pi * positions[u_layer][u] / len(order[u_layer])
+        theta_v = 2 * math.pi * positions[v_layer][v] / len(order[v_layer])
+        span = theta_v - theta_u + 2 * math.pi * psi.get(edge, 0)
 
-        candidate_psi = _boundary_candidate_psi(
-            candidate_order, L, layers, edges, fixed_zero_edges
-        )
-        score = _score(candidate_order, candidate_psi, layers, edges)
-        if score < best_score:
-            best_score = score
-            best_order = candidate_order
-            best_psi = candidate_psi
+        # A left list rotation decreases target angles and increases the
+        # target-source span for source-side rotations.  This sign converts
+        # the common angular residual into the required left-rotation count.
+        sign = 1 if v_layer == layer else -1
+        signed_span_sum += sign * span
+        count += 1
 
-    if best_score < current_score:
-        order.clear()
-        order.update(best_order)
-        psi.clear()
-        psi.update(best_psi)
-        return best_score
+    if count == 0:
+        return 0
 
-    return current_score
+    angle_per_step = 2 * math.pi / len(nodes)
+    return math.floor(signed_span_sum / (count * angle_per_step) + 0.5)
 
 
-def _boundary_candidate_psi(order, L, layers, edges, fixed_zero_edges):
-    """
-    境界回転候補に対するpsiを再計算して最適化する。
+def _rotate_layer_preserving_crossings(
+    layer,
+    steps,
+    order,
+    positions,
+    psi,
+    incident_edges,
+    node_to_layer,
+):
+    """layerを回転し、rayをまたぐ端点のpsiを同時に更新する。"""
+    nodes = order[layer]
+    size = len(nodes)
+    if size <= 1 or steps == 0:
+        return
 
-    Args:
-        order: 候補order。
-        L: レイヤー辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        fixed_zero_edges: psi=0に固定するエッジ集合。
+    crossings = _cut_crossing_counts(nodes, steps)
+    for edge in incident_edges:
+        u, v = edge
+        source_crossings = crossings.get(u, 0) if node_to_layer[u] == layer else 0
+        target_crossings = crossings.get(v, 0) if node_to_layer[v] == layer else 0
+        delta = source_crossings - target_crossings
+        if delta:
+            psi[edge] = psi.get(edge, 0) + delta
 
-    Returns:
-        dict: 候補orderに対応するpsi。
-    """
-    psi = _compute_winding_numbers(edges, order, L, layers, fixed_zero_edges)
-    _optimize_offsets(order, psi, layers, edges, fixed_zero_edges=fixed_zero_edges)
-    return psi
-
-
-def _boundary_group_candidate_count(layers, shift_options):
-    """
-    連続境界グループ探索で試す候補数を見積もる。
-
-    Args:
-        layers: レイヤーキー列。
-        shift_options: layer -> 試すshift列。
-
-    Returns:
-        int: 2層・3層グループ探索の候補総数。
-    """
-    total = 0
-    for group_size in (2, 3):
-        for group in _consecutive_layer_groups(layers, group_size):
-            count = 1
-            for layer in group:
-                count *= len(shift_options[layer])
-            total += count
-    return total
+    order[layer] = _rotate_list(nodes, steps)
+    positions[layer] = {
+        node: index for index, node in enumerate(order[layer])
+    }
 
 
-def _candidate_boundary_shifts(layer_size):
-    """
-    境界位置として試すshift量を返す。
-
-    Args:
-        layer_size: 対象レイヤーのノード数。
-
-    Returns:
-        iterable: 試す左回転量。
-    """
-    if layer_size <= 16:
-        return range(layer_size)
-
-    step = max(1, layer_size // 16)
-    shifts = {0, layer_size // 2}
-    shifts.update(range(0, layer_size, step))
-    return sorted(shifts)
-
-
-def _consecutive_layer_groups(layers, group_size):
-    """
-    トーラス上で連続するレイヤー群を列挙する。
-
-    Args:
-        layers: レイヤーキー列。
-        group_size: グループに含めるレイヤー数。
-
-    Returns:
-        list[tuple]: 連続レイヤーグループ。
-    """
-    if len(layers) < group_size:
-        return []
-
-    groups = []
-    for start in range(len(layers)):
-        group = tuple(
-            layers[(start + offset) % len(layers)] for offset in range(group_size)
-        )
-        if len(set(group)) == group_size:
-            groups.append(group)
-    return groups
+def _cut_crossing_counts(nodes, steps):
+    """signed rotationで各頂点がrayをまたぐ回数を返す。"""
+    size = len(nodes)
+    counts = {}
+    if steps > 0:
+        full_turns, remainder = divmod(steps, size)
+        for index, node in enumerate(nodes):
+            counts[node] = full_turns + (1 if index < remainder else 0)
+    else:
+        full_turns, remainder = divmod(-steps, size)
+        boundary = size - remainder
+        for index, node in enumerate(nodes):
+            counts[node] = -full_turns - (
+                1 if remainder and index >= boundary else 0
+            )
+    return counts
 
 
 # ---------------------------------------------------------------------------
