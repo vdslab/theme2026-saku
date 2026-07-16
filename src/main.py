@@ -19,6 +19,7 @@ from lib.generate_torus_graph import generate_cyclic_graph
 from collections import defaultdict
 
 import argparse
+import time
 
 
 def parse_augment():
@@ -107,8 +108,6 @@ def layer_assignment(V, A, func_type):
     )
 
     L = optimal_L
-    run_time = search_time + balance_time
-
     if not y_val:
         print("階層割当に失敗しました。")
         return
@@ -130,17 +129,22 @@ def layer_assignment(V, A, func_type):
     for k, v in sorted(d.items()):
         print(f"    {k}: {v}")
 
-    return layer_dict, t_val, run_time
+    return layer_dict, t_val, search_time, balance_time
 
 
 def reduce_crossings_radial(V, A, layer_dict, t_val, rounds=3):
-    """Radial Siftingでレイヤー内順序とトーラスの巻き数を最適化する。"""
+    """交差削減結果と実行時間を返す。"""
     print("  Radial Siftingで順序を最適化中...")
-    return radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=rounds)
+    started_at = time.perf_counter()
+    result = radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=rounds)
+    run_time = time.perf_counter() - started_at
+    return (*result, run_time)
 
 
 def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=None):
-    return assign_torus_brandes_koepf_coordinates(
+    """座標割り当て結果と実行時間を返す。"""
+    started_at = time.perf_counter()
+    pos = assign_torus_brandes_koepf_coordinates(
         order=order,
         layer_dict=layer_dict,
         edges=A,
@@ -148,6 +152,19 @@ def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=None)
         psi=psi,
         original_nodes=original_nodes,
     )
+    run_time = time.perf_counter() - started_at
+    return pos, run_time
+
+
+def _print_phase_times(step1_time, step2_time, crossing_time, coordinate_time):
+    """描画前に各処理フェーズの実行時間をまとめて表示する。"""
+    total = step1_time + step2_time + crossing_time + coordinate_time
+    print("\n各フェーズの実行時間:")
+    print(f"  階層割り当て Step 1（最小トーラス構成探索）: {step1_time:.5f}秒")
+    print(f"  階層割り当て Step 2（バランス調整）      : {step2_time:.5f}秒")
+    print(f"  交差削減                                  : {crossing_time:.5f}秒")
+    print(f"  座標割り当て                              : {coordinate_time:.5f}秒")
+    print(f"  合計                                      : {total:.5f}秒")
 
 
 def _print_crossing_details(order, layer_dict, edges, t_val, psi):
@@ -216,18 +233,22 @@ def main(
     layer_result = layer_assignment(V, A, func_type)
     if layer_result is None:
         return None
-    layer_dict, t_val, run_time = layer_result
+    layer_dict, t_val, step1_time, step2_time = layer_result
 
     # 3. 交差削減
     print("\n3. Radial交差削減")
-    order, layer_dict, A, t_val, psi = reduce_crossings_radial(
+    order, layer_dict, A, t_val, psi, crossing_time = reduce_crossings_radial(
         V, A, layer_dict, t_val, rounds=rounds
     )
     _print_crossing_details(order, layer_dict, A, t_val, psi)
 
     # 4. 座標割当
     print("\n4. 座標割当（4方向Brandes-Köpf系 + torus smoothing）")
-    pos = coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=V)
+    pos, coordinate_time = coordinate_assignment(
+        order, layer_dict, A, t_val, psi, original_nodes=V
+    )
+
+    _print_phase_times(step1_time, step2_time, crossing_time, coordinate_time)
 
     # 5. 描画
     print("\n5. 描画（draw_radial_torus.py）...")
