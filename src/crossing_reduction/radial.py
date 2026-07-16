@@ -343,27 +343,6 @@ def _barycenter_angle(node, free_nodes, neighbors, fixed_positions, fixed_angles
     return angle + 2 * math.pi if angle < 0 else angle
 
 
-def _dedupe_orders(orders, layers):
-    """
-    同じレイヤー順序を持つorder候補を取り除く。
-
-    Args:
-        orders: order候補列。
-        layers: 比較に使うレイヤーキー列。
-
-    Returns:
-        list[dict]: 重複除去済みのorder候補。
-    """
-    seen = set()
-    unique = []
-    for order in orders:
-        key = tuple(tuple(order[layer]) for layer in layers)
-        if key not in seen:
-            seen.add(key)
-            unique.append(_copy_order(order))
-    return unique
-
-
 # ---------------------------------------------------------------------------
 # Sifting and offset optimization
 # ---------------------------------------------------------------------------
@@ -394,60 +373,6 @@ def _run_sifting(order, psi, layers, edges, rounds):
         _optimize_offsets(order, psi, layers, edges)
         if not improved:
             break
-
-
-def _sift_vertex(node, layer, order, psi, layers, edges):
-    """
-    1ノードを同一レイヤー内の全位置へ試し、最良位置へ移動する。
-
-    Args:
-        node: 移動対象ノード。
-        layer: nodeが属するレイヤー。
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-    Returns:
-        bool: orderまたはpsiが改善された場合True。
-    """
-    nodes = order[layer]
-    if len(nodes) <= 1 or node not in nodes:
-        return False
-
-    current_score = _score(order, psi, layers, edges)
-    best_score = current_score
-    best_position = nodes.index(node)
-    best_psi = dict(psi)
-
-    for position in range(len(nodes)):
-        candidate_order = _copy_order(order)
-        candidate_nodes = candidate_order[layer]
-        candidate_nodes.remove(node)
-        candidate_nodes.insert(position, node)
-
-        candidate_psi = dict(psi)
-        _optimize_offsets(
-            candidate_order,
-            candidate_psi,
-            layers,
-            edges,
-            candidate_edges=_incident_edges(edges, node),
-        )
-
-        candidate_score = _score(candidate_order, candidate_psi, layers, edges)
-        if candidate_score < best_score:
-            best_score = candidate_score
-            best_position = position
-            best_psi = candidate_psi
-
-    if best_score >= current_score:
-        return False
-
-    nodes.remove(node)
-    nodes.insert(best_position, node)
-    psi.clear()
-    psi.update(best_psi)
-    return True
 
 
 def _sift_vertex_incremental(node, layer, order, psi, layers, edges):
@@ -1013,7 +938,6 @@ def _postprocess_layer_rotations(
             break
 
 
-
 def _average_rotation_steps(
     layer, order, positions, psi, incident_edges, node_to_layer
 ):
@@ -1074,9 +998,7 @@ def _rotate_layer_preserving_crossings(
             psi[edge] = psi.get(edge, 0) + delta
 
     order[layer] = _rotate_list(nodes, steps)
-    positions[layer] = {
-        node: index for index, node in enumerate(order[layer])
-    }
+    positions[layer] = {node: index for index, node in enumerate(order[layer])}
 
 
 def _cut_crossing_counts(nodes, steps):
@@ -1091,9 +1013,7 @@ def _cut_crossing_counts(nodes, steps):
         full_turns, remainder = divmod(-steps, size)
         boundary = size - remainder
         for index, node in enumerate(nodes):
-            counts[node] = -full_turns - (
-                1 if remainder and index >= boundary else 0
-            )
+            counts[node] = -full_turns - (1 if remainder and index >= boundary else 0)
     return counts
 
 
@@ -1240,30 +1160,16 @@ def _count_layer_pair_crossings(order, psi, fixed_key, free_key, edges):
     pi_fixed = {node: index for index, node in enumerate(fixed_nodes)}
     pi_free = {node: index for index, node in enumerate(free_nodes)}
 
-    edges_between = _edges_between_forward_layers(
-        edges, set(fixed_nodes), set(free_nodes)
-    )
+    # fixed -> free 方向の隣接レイヤー間エッジだけを抽出する。
+    edges_between = [
+        (u, v) for u, v in edges if u in set(fixed_nodes) and v in set(free_nodes)
+    ]
 
     crossings = 0
     for i, edge1 in enumerate(edges_between):
         for edge2 in edges_between[i + 1 :]:
             crossings += _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
     return crossings
-
-
-def _edges_between_forward_layers(edges, fixed_set, free_set):
-    """
-    fixed -> free 方向の隣接レイヤー間エッジだけを抽出する。
-
-    Args:
-        edges: エッジ集合。
-        fixed_set: 左側レイヤーのノード集合。
-        free_set: 右側レイヤーのノード集合。
-
-    Returns:
-        list: fixed_setからfree_setへ向かうエッジ。
-    """
-    return [(u, v) for u, v in edges if u in fixed_set and v in free_set]
 
 
 def _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi):
@@ -1286,6 +1192,9 @@ def _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi):
     if fixed1 == fixed2 or free1 == free2:
         return 0
 
+    # 数値の符号を -1, 0, 1 で返す。
+    _sign = lambda value: 1 if value > 0 else -1 if value < 0 else 0
+
     a = _sign(pi_fixed[fixed2] - pi_fixed[fixed1])
     b = _sign(pi_free[free2] - pi_free[free1])
     delta = psi.get(edge2, 0) - psi.get(edge1, 0)
@@ -1294,20 +1203,3 @@ def _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi):
     # またぐ回数を表す。
     value = abs(delta + (b - a) / 2) - 1 + (abs(a) + abs(b)) / 2
     return max(0, int(round(value)))
-
-
-def _sign(value):
-    """
-    数値の符号を -1, 0, 1 で返す。
-
-    Args:
-        value: 判定する数値。
-
-    Returns:
-        int: 正なら1、負なら-1、0なら0。
-    """
-    if value > 0:
-        return 1
-    if value < 0:
-        return -1
-    return 0

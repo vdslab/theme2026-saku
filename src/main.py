@@ -31,7 +31,7 @@ def parse_augment():
     parser.add_argument(
         "--func_type",
         choices=["diff", "diff_square", "qp", "barycenter"],
-        default="diff_square",
+        default="barycenter",
         help="階層割当のバランス手法 (binary_balanceで使用、デフォルト: diff_square)",
     )
     parser.add_argument(
@@ -102,7 +102,6 @@ def layer_assignment(V, A, func_type):
         return
 
     # balanceで階層割当を完成
-    print(f"  {func_type}手法でバランスを取った階層割当を実行中...")
     y_val, t_val, layer_dict, balance_time = balance_layer_assignment(
         V, A, min_torus_count, optimal_L, func_type
     )
@@ -134,7 +133,6 @@ def layer_assignment(V, A, func_type):
 
 def reduce_crossings_radial(V, A, layer_dict, t_val, rounds=3):
     """交差削減結果と実行時間を返す。"""
-    print("  Radial Siftingで順序を最適化中...")
     started_at = time.perf_counter()
     result = radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=rounds)
     run_time = time.perf_counter() - started_at
@@ -172,9 +170,7 @@ def _print_drawing_summary(
 ):
     """描画対象グラフと交差削減結果の概要を表示する。"""
     crossing_count = count_radial_crossings(order, psi, layer_dict, edges)
-    horizontal_torus_count = sum(
-        1 for edge in edges if t_val.get(edge, False)
-    )
+    horizontal_torus_count = sum(1 for edge in edges if t_val.get(edge, False))
     vertical_torus_count = sum(1 for edge in edges if psi.get(edge, 0) != 0)
 
     print("\n描画結果の情報:")
@@ -293,10 +289,6 @@ def main(
         show=show,
         draw_dummy_nodes=draw_dummy_nodes,
     )
-
-    print("\n" + "=" * 60)
-    print("完了！")
-    print("=" * 60)
 
 
 if __name__ == "__main__":
