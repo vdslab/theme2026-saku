@@ -50,7 +50,7 @@ def parse_augment():
     n = 25  # ノード数
     num_cycles = 2  # サイクル数
     edge_prob = 0.005  # エッジ確率
-    seed = None  # シード値
+    seed = 1  # シード値
     func_type = "diff_square"
 
     if args.node is not None:
