@@ -1,12 +1,15 @@
 from collections import defaultdict
-from itertools import product
 import math
 
 from lib.insert_dummy_node import insert_dummy_node
 
 OFFSET_VALUES = (-1, 0, 1)
-MAX_EXHAUSTIVE_OFFSET_EDGES = 4
-POSTPROCESS_SWEEP_ROUNDS = 2
+
+DEFAULT_ROUND_COUNT = 5
+
+
+def get_default_round_count():
+    return DEFAULT_ROUND_COUNT
 
 
 def cartesian_barycenter_heuristic(V, A, layer_dict, t_val, w=None):
@@ -26,15 +29,18 @@ def cartesian_barycenter_heuristic(V, A, layer_dict, t_val, w=None):
 
 
 def radial_sifting_heuristic(
-    V, A, layer_dict, t_val, w=None, rounds=3, vertical_torus_penalty=0.0
+    V,
+    A,
+    layer_dict,
+    t_val,
+    w=None,
+    rounds=DEFAULT_ROUND_COUNT,
+    vertical_torus_penalty=0.0,
 ):
     """
     Radial Siftingを用いてノード順序を求める（平坦トーラス用）。
 
-    評価は辞書順で行う:
-        1. 交差数
-        2. 上下トーラス通過数
-        3. 水平性
+    各one-sided 2層siftingでは交差数だけを評価する。
 
     `vertical_torus_penalty` は過去の呼び出し互換のために受け取る。
 
@@ -44,31 +50,10 @@ def radial_sifting_heuristic(
     V, A, L, t_val, w = insert_dummy_node(V, A, layer_dict, t_val, w)
     layers = sorted(L.keys())
 
-    best_order = None
-    best_psi = None
-    best_score = None
-
-    for order in _initial_orders(L, layers, A):
-        psi = _compute_winding_numbers(A, order, L, layers)
-        _optimize_offsets(order, psi, layers, A)
-        _run_sifting(order, psi, layers, A, rounds)
-
-        score = _score(order, psi, layers, A)
-        if best_score is None or score < best_score:
-            best_score = score
-            best_order = _copy_order(order)
-            best_psi = dict(psi)
-            if _is_perfect_primary_score(best_score):
-                break
-
-    _postprocess_layer_rotations(
-        best_order,
-        best_psi,
-        layers,
-        A,
-        rounds=POSTPROCESS_SWEEP_ROUNDS,
-    )
-    return best_order, L, A, t_val, best_psi
+    order = _initial_orders(L, layers, A)[0]
+    psi = _compute_winding_numbers(A, order, L, layers)
+    _run_sifting(order, psi, layers, A, rounds)
+    return order, L, A, t_val, psi
 
 
 def count_radial_crossings(order, psi, layer_dict, edges):
@@ -136,33 +121,9 @@ def _node_to_layer(order):
     return node_to_layer
 
 
-def _incident_edges(edges, node):
-    """
-    指定ノードに接続するエッジを抽出する。
-
-    Args:
-        edges: エッジ集合。
-        node: 対象ノード。
-
-    Returns:
-        list: nodeを端点に持つエッジ。
-    """
-    return [edge for edge in edges if node in edge]
-
-
-def _rotate_list(values, shift):
-    """
-    リストを循環回転する。
-
-    Args:
-        values: 回転対象のリスト。
-        shift: 左回転量。
-
-    Returns:
-        list: 回転後のリスト。
-    """
-    shift %= len(values)
-    return list(values[shift:]) + list(values[:shift])
+def _edge_endpoints(edge):
+    """通常辺と2層処理用の一時ID付き辺から端点を返す。"""
+    return edge[0], edge[1]
 
 
 # ---------------------------------------------------------------------------
@@ -348,455 +309,195 @@ def _barycenter_angle(node, free_nodes, neighbors, fixed_positions, fixed_angles
 # ---------------------------------------------------------------------------
 
 
+def _forward_layer_pairs(layers):
+    """順方向1 sweepの循環隣接レイヤーペアを返す。"""
+    if len(layers) < 2:
+        return []
+    return [
+        (layer, layers[(index + 1) % len(layers)]) for index, layer in enumerate(layers)
+    ]
+
+
+def _backward_layer_pairs(layers):
+    """逆方向1 sweepの循環隣接レイヤーペアを返す。"""
+    return [(free, fixed) for fixed, free in reversed(_forward_layer_pairs(layers))]
+
+
 def _run_sifting(order, psi, layers, edges, rounds):
-    """
-    全レイヤー・全ノードに対してlexicographic siftingを反復する。
-
-    Args:
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        rounds: sifting反復回数。
-    Returns:
-        None: orderとpsiを破壊的に更新する。
-    """
+    """2層siftingを順方向・逆方向交互にrounds回実行する。"""
     for _ in range(rounds):
-        improved = False
+        layer_pairs = _forward_layer_pairs(layers)
 
-        for layer in layers:
-            for node in list(order[layer]):
-                improved |= _sift_vertex_incremental(
-                    node, layer, order, psi, layers, edges
-                )
-
-        _optimize_offsets(order, psi, layers, edges)
-        if not improved:
-            break
+        for fixed_layer, free_layer in layer_pairs:
+            _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges)
 
 
-def _sift_vertex_incremental(node, layer, order, psi, layers, edges):
-    """
-    1ノードを隣接交換で円周上に流し、影響するレイヤーペアだけを差分評価する。
+def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges):
+    """fixed_layerを固定し、free_layerだけを交差数でsiftingする。"""
+    pair_edges, oriented_psi, original_edges = _oriented_pair_embedding(
+        order, psi, fixed_layer, free_layer, edges
+    )
+    if not pair_edges:
+        return
 
-    既存のradial siftingに近い形で、nodeを境界直後から1位置ずつ動かす。
-    交差数はnodeが属するレイヤーの前後ペアだけを再計算し、psiはnodeの
-    incident edgeだけを改善する。
+    for node in list(order[free_layer]):
+        incident_edges = [edge for edge in pair_edges if edge[1] == node]
+        if incident_edges:
+            _sift_vertex_one_sided(
+                node,
+                fixed_layer,
+                free_layer,
+                order,
+                oriented_psi,
+                pair_edges,
+                incident_edges,
+            )
 
-    Args:
-        node: 移動対象ノード。
-        layer: nodeが属するレイヤー。
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-    Returns:
-        bool: orderまたはpsiが改善された場合True。
-    """
-    nodes = order[layer]
-    if len(nodes) <= 1 or node not in nodes:
-        return False
+    for oriented_edge, (original_edge, direction) in original_edges.items():
+        psi[original_edge] = direction * oriented_psi[oriented_edge]
 
-    current_score = _score(order, psi, layers, edges)
-    best_score = current_score
-    best_nodes = list(nodes)
-    best_psi = dict(psi)
+
+def _oriented_pair_embedding(order, psi, fixed_layer, free_layer, edges):
+    """2層間の辺をfixed→freeへ揃え、向きに合わせてpsiを変換する。"""
+    fixed_nodes = set(order[fixed_layer])
+    free_nodes = set(order[free_layer])
+    pair_edges = []
+    oriented_psi = {}
+    original_edges = {}
+
+    for edge_index, edge in enumerate(edges):
+        u, v = _edge_endpoints(edge)
+        if u in fixed_nodes and v in free_nodes:
+            """順方向にswapする時に利用"""
+            oriented_edge = (u, v, edge_index)
+            direction = 1
+        elif u in free_nodes and v in fixed_nodes:
+            """逆方向にswapする時に利用"""
+            oriented_edge = (v, u, edge_index)
+            direction = -1
+        else:
+            continue
+
+        pair_edges.append(oriented_edge)
+        oriented_psi[oriented_edge] = direction * psi.get(edge, 0)
+        original_edges[oriented_edge] = (edge, direction)
+
+    return pair_edges, oriented_psi, original_edges
+
+
+def _sift_vertex_one_sided(
+    node,
+    fixed_layer,
+    free_layer,
+    order,
+    psi,
+    pair_edges,
+    incident_edges,
+):
+    """論文のparting探索を使い、2層間の交差数だけで1頂点をsiftingする。"""
+    free_nodes = order[free_layer]
+    if len(free_nodes) <= 1:
+        return
+
+    fixed_position = {
+        fixed_node: index for index, fixed_node in enumerate(order[fixed_layer])
+    }
+    sorted_incident = sorted(
+        incident_edges,
+        key=lambda edge: fixed_position[edge[0]],
+    )
+
+    best_crossings = _pair_crossings(order, psi, fixed_layer, free_layer, pair_edges)
+    best_nodes = list(free_nodes)
+    best_offsets = {edge: psi.get(edge, 0) for edge in sorted_incident}
 
     working_order = _copy_order(order)
     working_psi = dict(psi)
-    working_nodes = working_order[layer]
+    working_nodes = working_order[free_layer]
     working_nodes.remove(node)
     working_nodes.insert(0, node)
-    working_score = _score_after_local_change(
-        order, working_order, psi, working_psi, layers, edges, layer, current_score
-    )
+    for edge in sorted_incident:
+        working_psi[edge] = 1
 
-    working_score = _optimize_incident_offsets_incremental(
-        node,
-        layer,
-        working_order,
-        working_psi,
-        layers,
-        edges,
-        working_score,
-    )
-    if working_score < best_score:
-        best_score = working_score
-        best_nodes = list(working_order[layer])
-        best_psi = dict(working_psi)
-
-    for position in range(1, len(nodes)):
-        before_order = _copy_order(working_order)
-        before_psi = dict(working_psi)
-        working_nodes = working_order[layer]
-        node_index = working_nodes.index(node)
-        working_nodes[node_index], working_nodes[node_index + 1] = (
-            working_nodes[node_index + 1],
-            working_nodes[node_index],
-        )
-
-        working_score = _score_after_local_change(
-            before_order,
-            working_order,
-            before_psi,
-            working_psi,
-            layers,
-            edges,
-            layer,
-            working_score,
-        )
-        working_score = _optimize_incident_offsets_incremental(
-            node,
-            layer,
+    offset = 0
+    parting = 0
+    for position in range(len(working_nodes) - 1):
+        offset, parting = _advance_parting(
+            sorted_incident,
+            offset,
+            parting,
             working_order,
             working_psi,
-            layers,
-            edges,
-            working_score,
+            pair_edges,
+            fixed_layer,
+            free_layer,
         )
 
-        if working_score < best_score:
-            best_score = working_score
-            best_nodes = list(working_order[layer])
-            best_psi = dict(working_psi)
+        candidate_crossings = _pair_crossings(
+            working_order,
+            working_psi,
+            fixed_layer,
+            free_layer,
+            pair_edges,
+        )
+        if candidate_crossings < best_crossings:
+            best_crossings = candidate_crossings
+            best_nodes = list(working_order[free_layer])
+            best_offsets = {edge: working_psi[edge] for edge in sorted_incident}
 
-    if best_score >= current_score:
-        return False
+        if position < len(working_nodes) - 2:
+            node_index = working_order[free_layer].index(node)
+            (
+                working_order[free_layer][node_index],
+                working_order[free_layer][node_index + 1],
+            ) = (
+                working_order[free_layer][node_index + 1],
+                working_order[free_layer][node_index],
+            )
 
-    order[layer] = best_nodes
-    psi.clear()
-    psi.update(best_psi)
-    return True
+    order[free_layer] = best_nodes
+    for edge, value in best_offsets.items():
+        psi[edge] = value
 
 
-def _optimize_incident_offsets_incremental(
-    node, layer, order, psi, layers, edges, current_score
+def _advance_parting(
+    incident_edges,
+    offset,
+    parting,
+    order,
+    psi,
+    pair_edges,
+    fixed_layer,
+    free_layer,
 ):
-    """
-    nodeに接続するpsiだけを、影響レイヤーペアの差分評価で改善する。
-
-    Args:
-        node: 移動対象ノード。
-        layer: nodeが属するレイヤー。
-        order: 現在のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        current_score: 現在の全体スコア。
-
-    Returns:
-        tuple: 改善後の全体スコア。
-    """
-    candidates = _offset_candidate_edges(edges, psi, _incident_edges(edges, node))
-    if not candidates:
-        return current_score
-
-    improved = True
-    while improved:
-        improved = False
-        for edge in candidates:
-            old_value = psi.get(edge, 0)
-            best_value = old_value
-            best_score = current_score
-
-            for value in OFFSET_VALUES:
-                if value == old_value:
-                    continue
-
-                psi[edge] = old_value
-                before_psi = dict(psi)
-                psi[edge] = value
-                score = _score_after_edge_offset_change(
-                    order, before_psi, psi, layers, edges, edge, current_score
-                )
-                if score < best_score:
-                    best_score = score
-                    best_value = value
-
-            psi[edge] = best_value
-            if best_score < current_score:
-                current_score = best_score
-                improved = True
-
-    return current_score
-
-
-def _optimize_offsets(order, psi, layers, edges, candidate_edges=None):
-    """
-    指定エッジ群のpsiを辞書順スコアが良くなるように調整する。
-
-    Args:
-        order: 現在のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        candidate_edges: 調整対象のエッジ集合。Noneなら全エッジ。
-    Returns:
-        None: psiを破壊的に更新する。
-    """
-    candidates = _offset_candidate_edges(edges, psi, candidate_edges)
-    if not candidates:
-        return
-
-    current_score = _score(order, psi, layers, edges)
-    if len(candidates) <= MAX_EXHAUSTIVE_OFFSET_EDGES:
-        current_score = _optimize_offsets_exhaustive(
-            order, psi, layers, edges, candidates, current_score
+    """2層間の交差数を増やさない間、論文のpartingを進める。"""
+    degree = len(incident_edges)
+    while offset >= -1:
+        edge = incident_edges[parting]
+        before_crossings = _pair_crossings(
+            order, psi, fixed_layer, free_layer, pair_edges
+        )
+        old_value = psi[edge]
+        psi[edge] = offset
+        after_crossings = _pair_crossings(
+            order, psi, fixed_layer, free_layer, pair_edges
         )
 
-    _optimize_offsets_coordinate_descent(
-        order, psi, layers, edges, candidates, current_score
-    )
+        if after_crossings > before_crossings:
+            psi[edge] = old_value
+            break
+
+        parting += 1
+        if parting == degree:
+            offset -= 1
+            parting = 0
+
+    return offset, parting
 
 
-def _score_after_local_change(
-    before_order,
-    after_order,
-    before_psi,
-    after_psi,
-    layers,
-    edges,
-    changed_layer,
-    current_score,
-):
-    """
-    changed_layerの順序変更後スコアを、前後レイヤーペアの交差差分で更新する。
-
-    Args:
-        before_order: 変更前のorder。
-        after_order: 変更後のorder。
-        before_psi: 変更前のpsi。
-        after_psi: 変更後のpsi。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        changed_layer: 順序を変えたレイヤー。
-        current_score: 変更前の全体スコア。
-
-    Returns:
-        tuple: 変更後の全体スコア。
-    """
-    pair_keys = _incident_layer_pairs(changed_layer, layers)
-    return _score_after_pair_changes(
-        before_order,
-        after_order,
-        before_psi,
-        after_psi,
-        layers,
-        edges,
-        pair_keys,
-        current_score,
-    )
-
-
-def _score_after_edge_offset_change(
-    order, before_psi, after_psi, layers, edges, changed_edge, current_score
-):
-    """
-    1本のpsi変更後スコアを、そのエッジが属するレイヤーペアの交差差分で更新する。
-
-    Args:
-        order: 現在のorder。
-        before_psi: 変更前のpsi。
-        after_psi: 変更後のpsi。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        changed_edge: psiを変えたエッジ。
-        current_score: 変更前の全体スコア。
-
-    Returns:
-        tuple: 変更後の全体スコア。
-    """
-    pair_key = _edge_layer_pair(changed_edge, order, layers)
-    if pair_key is None:
-        return (
-            current_score[0],
-            _vertical_torus_cost(edges, after_psi),
-            _horizontal_cost(order, after_psi, edges),
-        )
-
-    return _score_after_pair_changes(
-        order,
-        order,
-        before_psi,
-        after_psi,
-        layers,
-        edges,
-        [pair_key],
-        current_score,
-    )
-
-
-def _score_after_pair_changes(
-    before_order,
-    after_order,
-    before_psi,
-    after_psi,
-    layers,
-    edges,
-    pair_keys,
-    current_score,
-):
-    """
-    指定レイヤーペアだけ交差数を数え直し、全体スコアを差分更新する。
-
-    Args:
-        before_order: 変更前のorder。
-        after_order: 変更後のorder。
-        before_psi: 変更前のpsi。
-        after_psi: 変更後のpsi。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        pair_keys: 再計算する (fixed_layer, free_layer) の列。
-        current_score: 変更前の全体スコア。
-
-    Returns:
-        tuple: 変更後の全体スコア。
-    """
-    before_crossings = 0
-    after_crossings = 0
-    for fixed_layer, free_layer in set(pair_keys):
-        before_crossings += _count_layer_pair_crossings(
-            before_order, before_psi, fixed_layer, free_layer, edges
-        )
-        after_crossings += _count_layer_pair_crossings(
-            after_order, after_psi, fixed_layer, free_layer, edges
-        )
-
-    return (
-        current_score[0] - before_crossings + after_crossings,
-        _vertical_torus_cost(edges, after_psi),
-        _horizontal_cost(after_order, after_psi, edges),
-    )
-
-
-def _incident_layer_pairs(layer, layers):
-    """
-    layerの順序変更で交差数が変わり得る前後レイヤーペアを返す。
-
-    Args:
-        layer: 対象レイヤー。
-        layers: レイヤーキー列。
-
-    Returns:
-        list[tuple]: (fixed_layer, free_layer) の列。
-    """
-    layer_index = layers.index(layer)
-    previous_layer = layers[(layer_index - 1) % len(layers)]
-    next_layer = layers[(layer_index + 1) % len(layers)]
-    return [(previous_layer, layer), (layer, next_layer)]
-
-
-def _edge_layer_pair(edge, order, layers):
-    """
-    edgeが属する循環隣接レイヤーペアを返す。
-
-    Args:
-        edge: 対象エッジ。
-        order: 現在のorder。
-        layers: レイヤーキー列。
-
-    Returns:
-        tuple | None: (fixed_layer, free_layer)。隣接前進エッジでなければNone。
-    """
-    node_to_layer = _node_to_layer(order)
-    u, v = edge
-    u_layer = node_to_layer.get(u)
-    v_layer = node_to_layer.get(v)
-    if u_layer is None or v_layer is None:
-        return None
-
-    u_index = layers.index(u_layer)
-    v_index = layers.index(v_layer)
-    if (v_index - u_index) % len(layers) != 1:
-        return None
-    return (u_layer, v_layer)
-
-
-def _offset_candidate_edges(edges, psi, candidate_edges):
-    """
-    psi最適化の対象エッジを固定対象を除いて作る。
-
-    Args:
-        edges: 全エッジ集合。
-        psi: 巻き数辞書。
-        candidate_edges: 呼び出し側が指定した候補。Noneなら全エッジ。
-    Returns:
-        list: 実際にpsiを変更してよいエッジ集合。
-    """
-    source = edges if candidate_edges is None else candidate_edges
-    return [edge for edge in source if edge in psi]
-
-
-def _optimize_offsets_exhaustive(order, psi, layers, edges, candidates, current_score):
-    """
-    少数エッジのpsi組み合わせを全探索する。
-
-    Args:
-        order: 現在のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        candidates: 全探索対象エッジ。
-        current_score: 探索開始時のスコア。
-
-    Returns:
-        tuple: 全探索後の最良スコア。
-    """
-    best_values = {edge: psi.get(edge, 0) for edge in candidates}
-    best_score = current_score
-
-    for values in product(OFFSET_VALUES, repeat=len(candidates)):
-        for edge, value in zip(candidates, values):
-            psi[edge] = value
-
-        score = _score(order, psi, layers, edges)
-        if score < best_score:
-            best_score = score
-            best_values = {edge: value for edge, value in zip(candidates, values)}
-
-    for edge in candidates:
-        psi[edge] = best_values[edge]
-    return best_score
-
-
-def _optimize_offsets_coordinate_descent(
-    order, psi, layers, edges, candidates, current_score
-):
-    """
-    各エッジのpsiを1本ずつ改善する座標降下を行う。
-
-    Args:
-        order: 現在のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: 全エッジ集合。
-        candidates: 調整対象エッジ。
-        current_score: 探索開始時のスコア。
-
-    Returns:
-        None: psiを破壊的に更新する。
-    """
-    improved = True
-    while improved:
-        improved = False
-        for edge in candidates:
-            old_value = psi.get(edge, 0)
-            best_value = old_value
-            best_score = current_score
-
-            for value in OFFSET_VALUES:
-                if value == old_value:
-                    continue
-                psi[edge] = value
-                score = _score(order, psi, layers, edges)
-                if score < best_score:
-                    best_score = score
-                    best_value = value
-
-            psi[edge] = best_value
-            if best_score < current_score:
-                current_score = best_score
-                improved = True
+def _pair_crossings(order, psi, fixed_layer, free_layer, pair_edges):
+    """処理中の2層ペアの交差数だけを返す。"""
+    return _count_layer_pair_crossings(order, psi, fixed_layer, free_layer, pair_edges)
 
 
 def _compute_winding_numbers(A, order, L, layers):
@@ -861,264 +562,8 @@ def _best_winding_for_edge(edge, order, node_to_layer, layer_index, layers):
 
 
 # ---------------------------------------------------------------------------
-# Crossing-preserving radial rotation postprocessing
+# Crossing counting
 # ---------------------------------------------------------------------------
-
-
-def _postprocess_layer_rotations(
-    order, psi, layers, edges, rounds=POSTPROCESS_SWEEP_ROUNDS
-):
-    """
-    交差数を変えず、各レイヤー全体を回転して辺のねじれを減らす。
-
-    Bachmaier Algorithm 2 の2層postprocessをトーラスの多層描画に
-    拡張する。回転量は前後両側のincident edgeの平均角度差から
-    直接求める。頂点が切断rayをまたぐときはpsiを決定的に更新し、
-    巡回順序と交差数を保つ。
-
-    layers[0]は全体回転の不定性を除く基準レイヤーとして固定する。
-
-    Args:
-        order: 更新対象のorder。
-        psi: 更新対象の巻き数辞書。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-        rounds: forward/backward sweepの反復回数。
-
-    Returns:
-        None: orderとpsiを破壊的に更新する。
-    """
-    if not layers or rounds <= 0:
-        return
-
-    node_to_layer = _node_to_layer(order)
-    incident_by_layer = defaultdict(list)
-    fixed_layers = {layers[0]}
-
-    for edge in edges:
-        u, v = edge
-        u_layer = node_to_layer.get(u)
-        v_layer = node_to_layer.get(v)
-        if u_layer is None or v_layer is None or u_layer == v_layer:
-            continue
-        incident_by_layer[u_layer].append(edge)
-        incident_by_layer[v_layer].append(edge)
-
-    positions = {
-        layer: {node: index for index, node in enumerate(order[layer])}
-        for layer in layers
-    }
-
-    movable_layers = [layer for layer in layers if layer not in fixed_layers]
-    for _ in range(rounds):
-        changed = False
-        for sweep in (movable_layers, list(reversed(movable_layers))):
-            for layer in sweep:
-                steps = _average_rotation_steps(
-                    layer,
-                    order,
-                    positions,
-                    psi,
-                    incident_by_layer.get(layer, []),
-                    node_to_layer,
-                )
-                if steps == 0:
-                    continue
-                _rotate_layer_preserving_crossings(
-                    layer,
-                    steps,
-                    order,
-                    positions,
-                    psi,
-                    incident_by_layer.get(layer, []),
-                    node_to_layer,
-                )
-                changed = True
-        if not changed:
-            break
-
-
-def _average_rotation_steps(
-    layer, order, positions, psi, incident_edges, node_to_layer
-):
-    """incident edgeの平均角度差からレイヤーの回転数を求める。"""
-    nodes = order[layer]
-    if len(nodes) <= 1 or not incident_edges:
-        return 0
-
-    signed_span_sum = 0.0
-    count = 0
-    for edge in incident_edges:
-        u, v = edge
-        u_layer = node_to_layer[u]
-        v_layer = node_to_layer[v]
-        if u_layer == v_layer:
-            continue
-
-        theta_u = 2 * math.pi * positions[u_layer][u] / len(order[u_layer])
-        theta_v = 2 * math.pi * positions[v_layer][v] / len(order[v_layer])
-        span = theta_v - theta_u + 2 * math.pi * psi.get(edge, 0)
-
-        # A left list rotation decreases target angles and increases the
-        # target-source span for source-side rotations.  This sign converts
-        # the common angular residual into the required left-rotation count.
-        sign = 1 if v_layer == layer else -1
-        signed_span_sum += sign * span
-        count += 1
-
-    if count == 0:
-        return 0
-
-    angle_per_step = 2 * math.pi / len(nodes)
-    return math.floor(signed_span_sum / (count * angle_per_step) + 0.5)
-
-
-def _rotate_layer_preserving_crossings(
-    layer,
-    steps,
-    order,
-    positions,
-    psi,
-    incident_edges,
-    node_to_layer,
-):
-    """layerを回転し、rayをまたぐ端点のpsiを同時に更新する。"""
-    nodes = order[layer]
-    size = len(nodes)
-    if size <= 1 or steps == 0:
-        return
-
-    crossings = _cut_crossing_counts(nodes, steps)
-    for edge in incident_edges:
-        u, v = edge
-        source_crossings = crossings.get(u, 0) if node_to_layer[u] == layer else 0
-        target_crossings = crossings.get(v, 0) if node_to_layer[v] == layer else 0
-        delta = source_crossings - target_crossings
-        if delta:
-            psi[edge] = psi.get(edge, 0) + delta
-
-    order[layer] = _rotate_list(nodes, steps)
-    positions[layer] = {node: index for index, node in enumerate(order[layer])}
-
-
-def _cut_crossing_counts(nodes, steps):
-    """signed rotationで各頂点がrayをまたぐ回数を返す。"""
-    size = len(nodes)
-    counts = {}
-    if steps > 0:
-        full_turns, remainder = divmod(steps, size)
-        for index, node in enumerate(nodes):
-            counts[node] = full_turns + (1 if index < remainder else 0)
-    else:
-        full_turns, remainder = divmod(-steps, size)
-        boundary = size - remainder
-        for index, node in enumerate(nodes):
-            counts[node] = -full_turns - (1 if remainder and index >= boundary else 0)
-    return counts
-
-
-# ---------------------------------------------------------------------------
-# Scoring and crossing counting
-# ---------------------------------------------------------------------------
-
-
-def _score(order, psi, layers, edges):
-    """
-    探索で使う辞書順スコアを作る。
-
-    Args:
-        order: 各レイヤー内のノード順序。
-        psi: 各エッジの上下境界巻き数。
-        layers: レイヤーキー列。
-        edges: エッジ集合。
-
-    Returns:
-        tuple: (交差数, 上下トーラス通過数, 水平性コスト)。
-    """
-    return (
-        _count_all_crossings(order, psi, layers, edges),
-        _vertical_torus_cost(edges, psi),
-        _horizontal_cost(order, psi, edges),
-    )
-
-
-def _is_perfect_primary_score(score):
-    """
-    これ以上副目的を見る必要がないスコアか判定する。
-
-    Args:
-        score: _score が返すスコア。
-
-    Returns:
-        bool: 交差数0かつ上下トーラス通過数0ならTrue。
-    """
-    crossings, vertical_torus_edges, _ = score
-    return crossings == 0 and vertical_torus_edges == 0
-
-
-def _vertical_torus_cost(edges, psi):
-    """
-    上下境界を通るエッジ数を数える。
-
-    Args:
-        edges: エッジ集合。
-        psi: 各エッジの上下境界巻き数。
-
-    Returns:
-        int: sum(abs(psi))。
-    """
-    return sum(abs(psi.get(edge, 0)) for edge in edges)
-
-
-def _horizontal_cost(order, psi, edges):
-    """
-    辺がどれだけ水平からズレているかを測る。
-
-    Args:
-        order: 各レイヤー内のノード順序。
-        psi: 各エッジの上下境界巻き数。
-        edges: エッジ集合。
-
-    Returns:
-        float: 中央揃え座標上のdy二乗和。
-    """
-    node_to_layer = _node_to_layer(order)
-    cost = 0.0
-
-    for edge in edges:
-        u, v = edge
-        u_layer = node_to_layer.get(u)
-        v_layer = node_to_layer.get(v)
-        if u_layer is None or v_layer is None or u_layer == v_layer:
-            continue
-
-        u_nodes = order[u_layer]
-        v_nodes = order[v_layer]
-        if u not in u_nodes or v not in v_nodes:
-            continue
-
-        dy = (
-            _centered_position(v, v_nodes)
-            - _centered_position(u, u_nodes)
-            + psi.get(edge, 0) * max(len(u_nodes), len(v_nodes), 1)
-        )
-        cost += dy * dy
-
-    return cost
-
-
-def _centered_position(node, layer):
-    """
-    レイヤー内indexを中心0のy座標へ変換する。
-
-    Args:
-        node: 対象ノード。
-        layer: ノード列。
-
-    Returns:
-        float: 中心揃えした位置。
-    """
-    return layer.index(node) - (len(layer) - 1) / 2
 
 
 def _count_all_crossings(order, psi, layers, edges):
@@ -1160,16 +605,25 @@ def _count_layer_pair_crossings(order, psi, fixed_key, free_key, edges):
     pi_fixed = {node: index for index, node in enumerate(fixed_nodes)}
     pi_free = {node: index for index, node in enumerate(free_nodes)}
 
-    # fixed -> free 方向の隣接レイヤー間エッジだけを抽出する。
-    edges_between = [
-        (u, v) for u, v in edges if u in set(fixed_nodes) and v in set(free_nodes)
-    ]
+    edges_between = _edges_between_layers(order, fixed_key, free_key, edges)
 
     crossings = 0
     for i, edge1 in enumerate(edges_between):
         for edge2 in edges_between[i + 1 :]:
             crossings += _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
     return crossings
+
+
+def _edges_between_layers(order, fixed_key, free_key, edges):
+    """fixed_keyからfree_keyへ向かう辺だけを抽出する。"""
+    fixed_nodes = set(order[fixed_key])
+    free_nodes = set(order[free_key])
+    return [
+        edge
+        for edge in edges
+        if _edge_endpoints(edge)[0] in fixed_nodes
+        and _edge_endpoints(edge)[1] in free_nodes
+    ]
 
 
 def _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi):
@@ -1186,11 +640,8 @@ def _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi):
     Returns:
         int: 交差数。
     """
-    fixed1, free1 = edge1
-    fixed2, free2 = edge2
-
-    if fixed1 == fixed2 or free1 == free2:
-        return 0
+    fixed1, free1 = _edge_endpoints(edge1)
+    fixed2, free2 = _edge_endpoints(edge2)
 
     # 数値の符号を -1, 0, 1 で返す。
     _sign = lambda value: 1 if value > 0 else -1 if value < 0 else 0

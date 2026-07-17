@@ -11,7 +11,11 @@
 from layer_assignment.torus_balance import balance_layer_assignment
 from layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
-from crossing_reduction.radial import count_radial_crossings, radial_sifting_heuristic
+from crossing_reduction.radial import (
+    count_radial_crossings,
+    radial_sifting_heuristic,
+    get_default_round_count,
+)
 from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
 from drawing.draw_radial_torus import draw_radial_torus
 from lib.generate_torus_graph import generate_cyclic_graph
@@ -37,8 +41,8 @@ def parse_augment():
     parser.add_argument(
         "--rounds",
         type=int,
-        default=3,
-        help="Radial Siftingの反復回数 (デフォルト: 3)",
+        default=get_default_round_count(),
+        help=f"Radial Siftingの反復回数 (デフォルト: {get_default_round_count()})",
     )
     parser.add_argument("--save_path", type=str, help="描画画像の保存先（PDF/SVG推奨）")
     parser.add_argument("--no_show", action="store_true", help="描画画面を表示しない")
@@ -220,7 +224,7 @@ def main(
     cycle=None,
     prob=None,
     seed=None,
-    rounds=3,
+    rounds=get_default_round_count(),
     func_type="diff_square",
     save_path=None,
     show=True,
