@@ -1,27 +1,33 @@
 import crossing_reduction.radial as radial
 
 
-def test_sifting_alternates_forward_and_backward_pairs(monkeypatch):
+def test_rounds_repeat_each_pair_during_two_forward_passes(monkeypatch):
     calls = []
     order = {0: [0], 1: [1], 2: [2]}
     monkeypatch.setattr(
         radial,
         "_sift_two_layer_pair",
-        lambda fixed, free, order, psi, edges: calls.append((fixed, free)),
+        lambda fixed, free, order, psi, edges, **kwargs: calls.append((fixed, free)),
     )
 
     radial._run_sifting(order, {}, [0, 1, 2], [], rounds=3)
 
     assert calls == [
         (0, 1),
-        (1, 2),
-        (2, 0),
-        (0, 2),
-        (2, 1),
-        (1, 0),
+        (0, 1),
         (0, 1),
         (1, 2),
+        (1, 2),
+        (1, 2),
         (2, 0),
+        (2, 0),
+        (2, 0),
+        (0, 1),
+        (0, 1),
+        (0, 1),
+        (1, 2),
+        (1, 2),
+        (1, 2),
     ]
 
 
@@ -119,3 +125,42 @@ def test_adjacent_swap_delta_matches_whole_pair_recalculation():
     )
 
     assert whole_after - whole_before == sets_after - sets_before
+
+
+def test_algorithm_2_rotates_free_layer_and_reduces_winding():
+    order = {0: [0, 1, 2], 1: [3, 4, 5]}
+    edges = [(0, 4), (1, 5), (2, 3)]
+    psi = {(0, 4): 0, (1, 5): 0, (2, 3): 1}
+    crossings_before = radial._pair_crossings(order, psi, 0, 1, edges)
+
+    radial._postprocess_two_layer_rotation(0, 1, order, psi, edges)
+
+    assert order[1] == [4, 5, 3]
+    assert psi == {edge: 0 for edge in edges}
+    assert radial._pair_crossings(order, psi, 0, 1, edges) == crossings_before
+
+
+def test_algorithm_2_updates_edges_on_both_sides_of_rotated_layer():
+    order = {0: [0, 1], 1: [2, 3], 2: [4, 5]}
+    edges = [(0, 3), (1, 2), (2, 5), (3, 4)]
+    psi = {edge: 0 for edge in edges}
+    crossings_before = radial._count_all_crossings(order, psi, [0, 1, 2], edges)
+
+    radial._rotate_layer_preserving_embedding(1, 1, order, psi, edges)
+
+    assert order[1] == [3, 2]
+    assert psi[(1, 2)] == -1
+    assert psi[(2, 5)] == 1
+    assert radial._count_all_crossings(order, psi, [0, 1, 2], edges) == crossings_before
+
+
+def test_inner_segment_crossing_uses_edge_count_as_weight():
+    order = {0: [0, 10], 1: [11, 1]}
+    edges = [(10, 11), (0, 1)]
+    psi = {edge: 0 for edge in edges}
+    weights = radial._sifting_edge_weights(edges, {10, 11}, edge_count=7)
+
+    assert radial._pair_crossings(order, psi, 0, 1, edges) == 1
+    assert radial._pair_crossings(
+        order, psi, 0, 1, edges, edge_weights=weights
+    ) == 7

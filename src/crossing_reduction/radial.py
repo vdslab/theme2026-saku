@@ -47,12 +47,15 @@ def radial_sifting_heuristic(
     Returns:
         (order, L, A, t_val, psi)
     """
+    original_nodes = set(V)
     V, A, L, t_val, w = insert_dummy_node(V, A, layer_dict, t_val, w)
     layers = sorted(L.keys())
+    dummy_nodes = set(V) - original_nodes
 
     order = _initial_orders(L, layers, A)[0]
     psi = _compute_winding_numbers(A, order, L, layers)
-    _run_sifting(order, psi, layers, A, rounds)
+    _run_sifting(order, psi, layers, A, rounds, dummy_nodes=dummy_nodes)
+    _postprocess_sifting_rotations(order, psi, layers, A)
     return order, L, A, t_val, psi
 
 
@@ -323,16 +326,25 @@ def _backward_layer_pairs(layers):
     return [(free, fixed) for fixed, free in reversed(_forward_layer_pairs(layers))]
 
 
-def _run_sifting(order, psi, layers, edges, rounds):
-    """2層siftingを順方向・逆方向交互にrounds回実行する。"""
-    for _ in range(rounds):
-        layer_pairs = _forward_layer_pairs(layers)
+def _run_sifting(order, psi, layers, edges, rounds, dummy_nodes=None):
+    """各2層ペアをrounds回siftingし、トーラス経由で順方向に2巡する。"""
+    layer_pairs = _forward_layer_pairs(layers)
+    two_pass_pairs = layer_pairs + layer_pairs[:-1]
+    for fixed_layer, free_layer in two_pass_pairs:
+        for _ in range(rounds):
+            _sift_two_layer_pair(
+                fixed_layer,
+                free_layer,
+                order,
+                psi,
+                edges,
+                dummy_nodes=dummy_nodes,
+            )
 
-        for fixed_layer, free_layer in layer_pairs:
-            _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges)
 
-
-def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges):
+def _sift_two_layer_pair(
+    fixed_layer, free_layer, order, psi, edges, dummy_nodes=None
+):
     """fixed_layerを固定し、free_layerだけを交差数でsiftingする。"""
     pair_edges, oriented_psi, original_edges = _oriented_pair_embedding(
         order, psi, fixed_layer, free_layer, edges
@@ -340,8 +352,14 @@ def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges):
     if not pair_edges:
         return
 
+    edge_weights = _sifting_edge_weights(pair_edges, dummy_nodes, len(pair_edges))
     current_crossings = _pair_crossings(
-        order, oriented_psi, fixed_layer, free_layer, pair_edges
+        order,
+        oriented_psi,
+        fixed_layer,
+        free_layer,
+        pair_edges,
+        edge_weights=edge_weights,
     )
     for node in list(order[free_layer]):
         incident_edges = [edge for edge in pair_edges if edge[1] == node]
@@ -355,6 +373,7 @@ def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges):
                 pair_edges,
                 incident_edges,
                 current_crossings,
+                edge_weights,
             )
 
     for oriented_edge, (original_edge, direction) in original_edges.items():
@@ -398,6 +417,7 @@ def _sift_vertex_one_sided(
     pair_edges,
     incident_edges,
     current_crossings,
+    edge_weights,
 ):
     """論文のparting探索を使い、2層間の交差数だけで1頂点をsiftingする。"""
     free_nodes = order[free_layer]
@@ -422,6 +442,7 @@ def _sift_vertex_one_sided(
         psi,
         fixed_layer,
         free_layer,
+        edge_weights,
     )
 
     working_order = _copy_order(order)
@@ -442,6 +463,7 @@ def _sift_vertex_one_sided(
             working_psi,
             fixed_layer,
             free_layer,
+            edge_weights,
         )
     )
 
@@ -458,6 +480,7 @@ def _sift_vertex_one_sided(
             pair_edges,
             fixed_layer,
             free_layer,
+            edge_weights,
         )
 
         if current_crossings < best_crossings:
@@ -476,6 +499,7 @@ def _sift_vertex_one_sided(
                 working_psi,
                 fixed_layer,
                 free_layer,
+                edge_weights,
             )
             (
                 working_order[free_layer][node_index],
@@ -491,6 +515,7 @@ def _sift_vertex_one_sided(
                 working_psi,
                 fixed_layer,
                 free_layer,
+                edge_weights,
             )
             current_crossings += after_swap - before_swap
 
@@ -510,18 +535,31 @@ def _advance_parting(
     pair_edges,
     fixed_layer,
     free_layer,
+    edge_weights,
 ):
     """2層間の交差数を増やさない間、論文のpartingを進める。"""
     degree = len(incident_edges)
     while offset >= -1:
         edge = incident_edges[parting]
         before_crossings = _crossings_for_edge(
-            edge, pair_edges, order, psi, fixed_layer, free_layer
+            edge,
+            pair_edges,
+            order,
+            psi,
+            fixed_layer,
+            free_layer,
+            edge_weights,
         )
         old_value = psi[edge]
         psi[edge] = offset
         after_crossings = _crossings_for_edge(
-            edge, pair_edges, order, psi, fixed_layer, free_layer
+            edge,
+            pair_edges,
+            order,
+            psi,
+            fixed_layer,
+            free_layer,
+            edge_weights,
         )
 
         if after_crossings > before_crossings:
@@ -546,31 +584,47 @@ def _pair_positions(order, fixed_layer, free_layer):
 
 
 def _crossings_for_edge(
-    edge, pair_edges, order, psi, fixed_layer, free_layer
+    edge, pair_edges, order, psi, fixed_layer, free_layer, edge_weights=None
 ):
     """指定辺と他の全辺の交差数を返す。"""
     pi_fixed, pi_free = _pair_positions(order, fixed_layer, free_layer)
     return sum(
-        _crossings_between_edges(edge, other, pi_fixed, pi_free, psi)
+        _weighted_edge_crossings(
+            edge, other, pi_fixed, pi_free, psi, edge_weights
+        )
         for other in pair_edges
         if other != edge
     )
 
 
 def _crossings_between_edge_sets(
-    first_edges, second_edges, order, psi, fixed_layer, free_layer
+    first_edges,
+    second_edges,
+    order,
+    psi,
+    fixed_layer,
+    free_layer,
+    edge_weights=None,
 ):
     """2つの辺集合の間で生じる交差数を返す。"""
     pi_fixed, pi_free = _pair_positions(order, fixed_layer, free_layer)
     return sum(
-        _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
+        _weighted_edge_crossings(
+            edge1, edge2, pi_fixed, pi_free, psi, edge_weights
+        )
         for edge1 in first_edges
         for edge2 in second_edges
     )
 
 
 def _crossings_involving_edges(
-    incident_edges, pair_edges, order, psi, fixed_layer, free_layer
+    incident_edges,
+    pair_edges,
+    order,
+    psi,
+    fixed_layer,
+    free_layer,
+    edge_weights=None,
 ):
     """incident_edgesのいずれかを含む辺対の交差数を1回ずつ数える。"""
     pi_fixed, pi_free = _pair_positions(order, fixed_layer, free_layer)
@@ -578,21 +632,152 @@ def _crossings_involving_edges(
     other_edges = [edge for edge in pair_edges if edge not in incident_set]
 
     crossings = sum(
-        _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
+        _weighted_edge_crossings(
+            edge1, edge2, pi_fixed, pi_free, psi, edge_weights
+        )
         for edge1 in incident_edges
         for edge2 in other_edges
     )
     for index, edge1 in enumerate(incident_edges):
         for edge2 in incident_edges[index + 1 :]:
-            crossings += _crossings_between_edges(
-                edge1, edge2, pi_fixed, pi_free, psi
+            crossings += _weighted_edge_crossings(
+                edge1, edge2, pi_fixed, pi_free, psi, edge_weights
             )
     return crossings
 
 
-def _pair_crossings(order, psi, fixed_layer, free_layer, pair_edges):
+def _sifting_edge_weights(pair_edges, dummy_nodes, edge_count):
+    """inner segmentの交差重みを論文どおり|E|にする。"""
+    dummy_nodes = set() if dummy_nodes is None else set(dummy_nodes)
+    inner_weight = max(1, edge_count)
+    return {
+        edge: (
+            inner_weight
+            if edge[0] in dummy_nodes and edge[1] in dummy_nodes
+            else 1
+        )
+        for edge in pair_edges
+    }
+
+
+def _weighted_edge_crossings(
+    edge1, edge2, pi_fixed, pi_free, psi, edge_weights=None
+):
+    """inner segmentが関わる交差だけ重み付きで返す。"""
+    crossings = _crossings_between_edges(
+        edge1, edge2, pi_fixed, pi_free, psi
+    )
+    if edge_weights is None:
+        return crossings
+    return crossings * max(
+        edge_weights.get(edge1, 1), edge_weights.get(edge2, 1)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Radial sifting postprocess (Bachmaier Algorithm 2)
+# ---------------------------------------------------------------------------
+
+
+def _postprocess_sifting_rotations(order, psi, layers, edges):
+    """Algorithm 2を各循環隣接レイヤーペアに1回ずつ適用する。"""
+    for fixed_layer, free_layer in _forward_layer_pairs(layers):
+        _postprocess_two_layer_rotation(
+            fixed_layer, free_layer, order, psi, edges
+        )
+
+
+def _postprocess_two_layer_rotation(
+    fixed_layer, free_layer, order, psi, edges
+):
+    """辺の平均角度差に基づき、自由層を一括回転する。"""
+    fixed_nodes = order[fixed_layer]
+    free_nodes = order[free_layer]
+    if not fixed_nodes or len(free_nodes) <= 1:
+        return
+
+    pair_edges, oriented_psi, _ = _oriented_pair_embedding(
+        order, psi, fixed_layer, free_layer, edges
+    )
+    if not pair_edges:
+        return
+
+    fixed_positions = {node: index for index, node in enumerate(fixed_nodes)}
+    free_positions = {node: index for index, node in enumerate(free_nodes)}
+    fixed_step = 2 * math.pi / len(fixed_nodes)
+    free_step = 2 * math.pi / len(free_nodes)
+
+    average_span = sum(
+        free_positions[edge[1]] * free_step
+        - fixed_positions[edge[0]] * fixed_step
+        + 2 * math.pi * oriented_psi[edge]
+        for edge in pair_edges
+    ) / len(pair_edges)
+    rotation_steps = math.floor(average_span / free_step + 0.5)
+    _rotate_layer_preserving_embedding(
+        free_layer, rotation_steps, order, psi, edges
+    )
+
+
+def _rotate_layer_preserving_embedding(layer, steps, order, psi, edges):
+    """レイヤーを左回転し、同じradial embeddingを表すようpsiを更新する。"""
+    nodes = order[layer]
+    if len(nodes) <= 1 or steps == 0:
+        return
+
+    node_to_layer = _node_to_layer(order)
+    cut_crossings = _rotation_cut_crossings(nodes, steps)
+    for edge in edges:
+        u, v = _edge_endpoints(edge)
+        source_crossings = (
+            cut_crossings.get(u, 0) if node_to_layer.get(u) == layer else 0
+        )
+        target_crossings = (
+            cut_crossings.get(v, 0) if node_to_layer.get(v) == layer else 0
+        )
+        delta = source_crossings - target_crossings
+        if delta:
+            psi[edge] = psi.get(edge, 0) + delta
+
+    shift = steps % len(nodes)
+    order[layer] = list(nodes[shift:]) + list(nodes[:shift])
+
+
+def _rotation_cut_crossings(nodes, steps):
+    """循環回転で各頂点が基準rayを跨ぐ符号付き回数を返す。"""
+    size = len(nodes)
+    counts = {}
+    if steps > 0:
+        full_turns, remainder = divmod(steps, size)
+        for index, node in enumerate(nodes):
+            counts[node] = full_turns + (1 if index < remainder else 0)
+    else:
+        full_turns, remainder = divmod(-steps, size)
+        boundary = size - remainder
+        for index, node in enumerate(nodes):
+            counts[node] = -full_turns - (
+                1 if remainder and index >= boundary else 0
+            )
+    return counts
+
+
+def _pair_crossings(
+    order,
+    psi,
+    fixed_layer,
+    free_layer,
+    pair_edges,
+    edge_weights=None,
+):
     """処理中の2層ペアの交差数だけを返す。"""
-    return _count_layer_pair_crossings(order, psi, fixed_layer, free_layer, pair_edges)
+    return _count_layer_pair_crossings(
+        order,
+        psi,
+        fixed_layer,
+        free_layer,
+        pair_edges,
+        edge_weights=edge_weights,
+    )
 
 
 def _compute_winding_numbers(A, order, L, layers):
@@ -681,7 +866,9 @@ def _count_all_crossings(order, psi, layers, edges):
     return total
 
 
-def _count_layer_pair_crossings(order, psi, fixed_key, free_key, edges):
+def _count_layer_pair_crossings(
+    order, psi, fixed_key, free_key, edges, edge_weights=None
+):
     """
     1つの隣接レイヤーペア間の交差数を数える。
 
@@ -705,7 +892,9 @@ def _count_layer_pair_crossings(order, psi, fixed_key, free_key, edges):
     crossings = 0
     for i, edge1 in enumerate(edges_between):
         for edge2 in edges_between[i + 1 :]:
-            crossings += _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
+            crossings += _weighted_edge_crossings(
+                edge1, edge2, pi_fixed, pi_free, psi, edge_weights
+            )
     return crossings
 
 
