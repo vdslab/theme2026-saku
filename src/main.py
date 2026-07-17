@@ -11,11 +11,7 @@
 from layer_assignment.torus_balance import balance_layer_assignment
 from layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
-from crossing_reduction.radial import (
-    count_radial_crossings,
-    radial_sifting_heuristic,
-    get_default_round_count,
-)
+from crossing_reduction.radial import count_radial_crossings, radial_sifting_heuristic
 from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
 from drawing.draw_radial_torus import draw_radial_torus
 from lib.generate_torus_graph import generate_cyclic_graph
@@ -26,59 +22,94 @@ import argparse
 import time
 
 
+# CLIから指定されなかった場合に使用する設定値。
+# 実行時の初期値はここだけを変更すればよいように、一か所へ集約する。
+DEFAULT_NODE_COUNT = 25
+DEFAULT_CYCLE_COUNT = 2
+DEFAULT_EDGE_PROBABILITY = 0.005
+DEFAULT_RANDOM_SEED = 1
+DEFAULT_BALANCE_METHOD = "diff_square"
+DEFAULT_ROUND_COUNT = 5
+DEFAULT_SAVE_PATH = None
+DEFAULT_SHOW_DRAWING = True
+DEFAULT_DRAW_DUMMY_NODES = True
+
+BALANCE_METHOD_CHOICES = ("diff", "diff_square", "qp", "barycenter")
+
+
 def parse_augment():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--node", type=int)
-    parser.add_argument("--cycle", type=int)
-    parser.add_argument("--prob", type=float)
-    parser.add_argument("--seed", type=int)
+    parser.add_argument(
+        "--node",
+        type=int,
+        default=DEFAULT_NODE_COUNT,
+        help=f"ノード数 (デフォルト: {DEFAULT_NODE_COUNT})",
+    )
+    parser.add_argument(
+        "--cycle",
+        type=int,
+        default=DEFAULT_CYCLE_COUNT,
+        help=f"生成するサイクル数 (デフォルト: {DEFAULT_CYCLE_COUNT})",
+    )
+    parser.add_argument(
+        "--prob",
+        type=float,
+        default=DEFAULT_EDGE_PROBABILITY,
+        help=f"追加辺の生成確率 (デフォルト: {DEFAULT_EDGE_PROBABILITY})",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_RANDOM_SEED,
+        help=f"乱数シード (デフォルト: {DEFAULT_RANDOM_SEED})",
+    )
     parser.add_argument(
         "--func_type",
-        choices=["diff", "diff_square", "qp", "barycenter"],
-        default="barycenter",
-        help="階層割当のバランス手法 (binary_balanceで使用、デフォルト: diff_square)",
+        choices=BALANCE_METHOD_CHOICES,
+        default=DEFAULT_BALANCE_METHOD,
+        help=(
+            "階層割当のバランス手法 "
+            f"(デフォルト: {DEFAULT_BALANCE_METHOD})"
+        ),
     )
     parser.add_argument(
         "--rounds",
         type=int,
-        default=get_default_round_count(),
-        help=f"Radial Siftingの反復回数 (デフォルト: {get_default_round_count()})",
+        default=DEFAULT_ROUND_COUNT,
+        help=f"Radial Siftingの反復回数 (デフォルト: {DEFAULT_ROUND_COUNT})",
     )
-    parser.add_argument("--save_path", type=str, help="描画画像の保存先（PDF/SVG推奨）")
-    parser.add_argument("--no_show", action="store_true", help="描画画面を表示しない")
     parser.add_argument(
-        "--hide_dummy_nodes", action="store_true", help="ダミーノードを表示しない"
+        "--save_path",
+        type=str,
+        default=DEFAULT_SAVE_PATH,
+        help="描画画像の保存先（PDF/SVG推奨）",
+    )
+    parser.add_argument(
+        "--no_show",
+        action="store_false",
+        dest="show",
+        default=DEFAULT_SHOW_DRAWING,
+        help="描画画面を表示しない",
+    )
+    parser.add_argument(
+        "--hide_dummy_nodes",
+        action="store_false",
+        dest="draw_dummy_nodes",
+        default=DEFAULT_DRAW_DUMMY_NODES,
+        help="ダミーノードを表示しない",
     )
     args = parser.parse_args()
 
-    # 初期値
-    n = 25  # ノード数
-    num_cycles = 2  # サイクル数
-    edge_prob = 0.005  # エッジ確率
-    seed = 1  # シード値
-    func_type = "diff_square"
-
-    if args.node is not None:
-        n = int(args.node)
-    if args.cycle is not None:
-        num_cycles = int(args.cycle)
-    if args.prob is not None:
-        edge_prob = float(args.prob)
-    if args.seed is not None:
-        seed = int(args.seed)
-    if args.func_type is not None:
-        func_type = args.func_type
-
     return (
-        n,
-        num_cycles,
-        edge_prob,
-        seed,
-        func_type,
+        args.node,
+        args.cycle,
+        args.prob,
+        args.seed,
+        args.func_type,
         args.rounds,
         args.save_path,
-        not args.no_show,
-        not args.hide_dummy_nodes,
+        args.show,
+        args.draw_dummy_nodes,
     )
 
 
@@ -135,7 +166,7 @@ def layer_assignment(V, A, func_type):
     return layer_dict, t_val, search_time, balance_time
 
 
-def reduce_crossings_radial(V, A, layer_dict, t_val, rounds=3):
+def reduce_crossings_radial(V, A, layer_dict, t_val, rounds):
     """交差削減結果と実行時間を返す。"""
     started_at = time.perf_counter()
     result = radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=rounds)
@@ -143,7 +174,7 @@ def reduce_crossings_radial(V, A, layer_dict, t_val, rounds=3):
     return (*result, run_time)
 
 
-def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes=None):
+def coordinate_assignment(order, layer_dict, A, t_val, psi, original_nodes):
     """座標割り当て結果と実行時間を返す。"""
     started_at = time.perf_counter()
     pos = assign_torus_brandes_koepf_coordinates(
@@ -220,31 +251,23 @@ def _print_crossing_details(order, layer_dict, edges, t_val, psi):
 
 
 def main(
-    node=None,
-    cycle=None,
-    prob=None,
-    seed=None,
-    rounds=get_default_round_count(),
-    func_type="diff_square",
-    save_path=None,
-    show=True,
-    draw_dummy_nodes=True,
+    node,
+    cycle,
+    prob,
+    seed,
+    rounds,
+    func_type,
+    save_path,
+    show,
+    draw_dummy_nodes,
 ):
     """グラフ生成から平坦トーラス描画までの処理を実行する。"""
-    n = 25 if node is None else int(node)
-    num_cycles = 2 if cycle is None else int(cycle)
-    edge_prob = 0.005 if prob is None else float(prob)
-    seed = None if seed is None else int(seed)
-    rounds = int(rounds)
-    if func_type is None:
-        func_type = "diff_square"
-
     if save_path is not None and seed is None:
         raise ValueError("再現可能な図を保存するにはseedを指定してください。")
 
     """ メイン処理 """
     # 1. ランダムなグラフを生成
-    V, A = generate_graph(n, num_cycles, edge_prob, seed)
+    V, A = generate_graph(node, cycle, prob, seed)
     original_node_count = len(V)
     original_edge_count = len(A)
 
