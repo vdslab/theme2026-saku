@@ -340,10 +340,13 @@ def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges):
     if not pair_edges:
         return
 
+    current_crossings = _pair_crossings(
+        order, oriented_psi, fixed_layer, free_layer, pair_edges
+    )
     for node in list(order[free_layer]):
         incident_edges = [edge for edge in pair_edges if edge[1] == node]
         if incident_edges:
-            _sift_vertex_one_sided(
+            current_crossings = _sift_vertex_one_sided(
                 node,
                 fixed_layer,
                 free_layer,
@@ -351,6 +354,7 @@ def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges):
                 oriented_psi,
                 pair_edges,
                 incident_edges,
+                current_crossings,
             )
 
     for oriented_edge, (original_edge, direction) in original_edges.items():
@@ -393,11 +397,12 @@ def _sift_vertex_one_sided(
     psi,
     pair_edges,
     incident_edges,
+    current_crossings,
 ):
     """論文のparting探索を使い、2層間の交差数だけで1頂点をsiftingする。"""
     free_nodes = order[free_layer]
     if len(free_nodes) <= 1:
-        return
+        return current_crossings
 
     fixed_position = {
         fixed_node: index for index, fixed_node in enumerate(order[fixed_layer])
@@ -407,9 +412,17 @@ def _sift_vertex_one_sided(
         key=lambda edge: fixed_position[edge[0]],
     )
 
-    best_crossings = _pair_crossings(order, psi, fixed_layer, free_layer, pair_edges)
+    best_crossings = current_crossings
     best_nodes = list(free_nodes)
     best_offsets = {edge: psi.get(edge, 0) for edge in sorted_incident}
+    original_incident_crossings = _crossings_involving_edges(
+        sorted_incident,
+        pair_edges,
+        order,
+        psi,
+        fixed_layer,
+        free_layer,
+    )
 
     working_order = _copy_order(order)
     working_psi = dict(psi)
@@ -419,13 +432,27 @@ def _sift_vertex_one_sided(
     for edge in sorted_incident:
         working_psi[edge] = 1
 
+    current_crossings = (
+        best_crossings
+        - original_incident_crossings
+        + _crossings_involving_edges(
+            sorted_incident,
+            pair_edges,
+            working_order,
+            working_psi,
+            fixed_layer,
+            free_layer,
+        )
+    )
+
     offset = 0
     parting = 0
     for position in range(len(working_nodes) - 1):
-        offset, parting = _advance_parting(
+        offset, parting, current_crossings = _advance_parting(
             sorted_incident,
             offset,
             parting,
+            current_crossings,
             working_order,
             working_psi,
             pair_edges,
@@ -433,20 +460,23 @@ def _sift_vertex_one_sided(
             free_layer,
         )
 
-        candidate_crossings = _pair_crossings(
-            working_order,
-            working_psi,
-            fixed_layer,
-            free_layer,
-            pair_edges,
-        )
-        if candidate_crossings < best_crossings:
-            best_crossings = candidate_crossings
+        if current_crossings < best_crossings:
+            best_crossings = current_crossings
             best_nodes = list(working_order[free_layer])
             best_offsets = {edge: working_psi[edge] for edge in sorted_incident}
 
         if position < len(working_nodes) - 2:
             node_index = working_order[free_layer].index(node)
+            next_node = working_order[free_layer][node_index + 1]
+            next_incident = [edge for edge in pair_edges if edge[1] == next_node]
+            before_swap = _crossings_between_edge_sets(
+                sorted_incident,
+                next_incident,
+                working_order,
+                working_psi,
+                fixed_layer,
+                free_layer,
+            )
             (
                 working_order[free_layer][node_index],
                 working_order[free_layer][node_index + 1],
@@ -454,16 +484,27 @@ def _sift_vertex_one_sided(
                 working_order[free_layer][node_index + 1],
                 working_order[free_layer][node_index],
             )
+            after_swap = _crossings_between_edge_sets(
+                sorted_incident,
+                next_incident,
+                working_order,
+                working_psi,
+                fixed_layer,
+                free_layer,
+            )
+            current_crossings += after_swap - before_swap
 
     order[free_layer] = best_nodes
     for edge, value in best_offsets.items():
         psi[edge] = value
+    return best_crossings
 
 
 def _advance_parting(
     incident_edges,
     offset,
     parting,
+    current_crossings,
     order,
     psi,
     pair_edges,
@@ -474,25 +515,79 @@ def _advance_parting(
     degree = len(incident_edges)
     while offset >= -1:
         edge = incident_edges[parting]
-        before_crossings = _pair_crossings(
-            order, psi, fixed_layer, free_layer, pair_edges
+        before_crossings = _crossings_for_edge(
+            edge, pair_edges, order, psi, fixed_layer, free_layer
         )
         old_value = psi[edge]
         psi[edge] = offset
-        after_crossings = _pair_crossings(
-            order, psi, fixed_layer, free_layer, pair_edges
+        after_crossings = _crossings_for_edge(
+            edge, pair_edges, order, psi, fixed_layer, free_layer
         )
 
         if after_crossings > before_crossings:
             psi[edge] = old_value
             break
 
+        current_crossings += after_crossings - before_crossings
         parting += 1
         if parting == degree:
             offset -= 1
             parting = 0
 
-    return offset, parting
+    return offset, parting, current_crossings
+
+
+def _pair_positions(order, fixed_layer, free_layer):
+    """2層間の交差差分計算に使う頂点位置を返す。"""
+    return (
+        {node: index for index, node in enumerate(order[fixed_layer])},
+        {node: index for index, node in enumerate(order[free_layer])},
+    )
+
+
+def _crossings_for_edge(
+    edge, pair_edges, order, psi, fixed_layer, free_layer
+):
+    """指定辺と他の全辺の交差数を返す。"""
+    pi_fixed, pi_free = _pair_positions(order, fixed_layer, free_layer)
+    return sum(
+        _crossings_between_edges(edge, other, pi_fixed, pi_free, psi)
+        for other in pair_edges
+        if other != edge
+    )
+
+
+def _crossings_between_edge_sets(
+    first_edges, second_edges, order, psi, fixed_layer, free_layer
+):
+    """2つの辺集合の間で生じる交差数を返す。"""
+    pi_fixed, pi_free = _pair_positions(order, fixed_layer, free_layer)
+    return sum(
+        _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
+        for edge1 in first_edges
+        for edge2 in second_edges
+    )
+
+
+def _crossings_involving_edges(
+    incident_edges, pair_edges, order, psi, fixed_layer, free_layer
+):
+    """incident_edgesのいずれかを含む辺対の交差数を1回ずつ数える。"""
+    pi_fixed, pi_free = _pair_positions(order, fixed_layer, free_layer)
+    incident_set = set(incident_edges)
+    other_edges = [edge for edge in pair_edges if edge not in incident_set]
+
+    crossings = sum(
+        _crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
+        for edge1 in incident_edges
+        for edge2 in other_edges
+    )
+    for index, edge1 in enumerate(incident_edges):
+        for edge2 in incident_edges[index + 1 :]:
+            crossings += _crossings_between_edges(
+                edge1, edge2, pi_fixed, pi_free, psi
+            )
+    return crossings
 
 
 def _pair_crossings(order, psi, fixed_layer, free_layer, pair_edges):
