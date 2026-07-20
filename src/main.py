@@ -21,7 +21,6 @@ from collections import defaultdict
 import argparse
 import time
 
-
 # CLIから指定されなかった場合に使用する設定値。
 # 実行時の初期値はここだけを変更すればよいように、一か所へ集約する。
 DEFAULT_NODE_COUNT = 25
@@ -67,10 +66,7 @@ def parse_augment():
         "--func_type",
         choices=BALANCE_METHOD_CHOICES,
         default=DEFAULT_BALANCE_METHOD,
-        help=(
-            "階層割当のバランス手法 "
-            f"(デフォルト: {DEFAULT_BALANCE_METHOD})"
-        ),
+        help=("階層割当のバランス手法 " f"(デフォルト: {DEFAULT_BALANCE_METHOD})"),
     )
     parser.add_argument(
         "--rounds",
@@ -261,7 +257,6 @@ def main(
     show,
     draw_dummy_nodes,
 ):
-    """グラフ生成から平坦トーラス描画までの処理を実行する。"""
     if save_path is not None and seed is None:
         raise ValueError("再現可能な図を保存するにはseedを指定してください。")
 
