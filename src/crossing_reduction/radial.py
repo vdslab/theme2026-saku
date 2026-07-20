@@ -141,7 +141,7 @@ def _initial_orders(L, layers, edges):
     return [_barycentric_order(base, layers, edges)]
 
 
-def _barycentric_order(initial_order, layers, edges, passes=3):
+def _barycentric_order(initial_order, layers, edges):
     """
     初期順序にbarycenter sweepを複数回かける。
 
@@ -149,15 +149,12 @@ def _barycentric_order(initial_order, layers, edges, passes=3):
         initial_order: sweep前のorder。
         layers: レイヤーキー列。
         edges: エッジ集合。
-        passes: forward/backward sweepの反復回数。
 
     Returns:
         dict: barycenterで整えたorder。
     """
     order = _copy_order(initial_order)
-    for _ in range(passes):
-        _barycenter_sweep(order, layers, edges, forward=True)
-        _barycenter_sweep(order, layers, edges, forward=False)
+    _barycenter_sweep(order, layers, edges, forward=True)
     return order
 
 
