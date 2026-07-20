@@ -32,6 +32,9 @@ DEFAULT_ROUND_COUNT = 5
 DEFAULT_SAVE_PATH = None
 DEFAULT_SHOW_DRAWING = True
 DEFAULT_DRAW_DUMMY_NODES = True
+DEFAULT_TILE_SURROUNDINGS = True
+DEFAULT_SURROUNDING_OPACITY = 0.5
+DEFAULT_TILE_GAP = 0
 
 BALANCE_METHOD_CHOICES = ("diff", "diff_square", "qp", "barycenter")
 
@@ -78,7 +81,7 @@ def parse_augment():
         "--save_path",
         type=str,
         default=DEFAULT_SAVE_PATH,
-        help="描画画像の保存先（PDF/SVG推奨）",
+        help="描画画像の保存先（通常はPDF/SVG、周囲配置時はPNG等のラスター画像）",
     )
     parser.add_argument(
         "--no_show",
@@ -94,6 +97,31 @@ def parse_augment():
         default=DEFAULT_DRAW_DUMMY_NODES,
         help="ダミーノードを表示しない",
     )
+    tile_group = parser.add_mutually_exclusive_group()
+    tile_group.add_argument(
+        "--tile_surroundings",
+        action="store_true",
+        help="描画結果の周囲8方向に、半透明の同一画像を配置する（デフォルト）",
+    )
+    tile_group.add_argument(
+        "--no_tile_surroundings",
+        action="store_false",
+        dest="tile_surroundings",
+        help="周囲8方向への画像配置を無効にする",
+    )
+    parser.set_defaults(tile_surroundings=DEFAULT_TILE_SURROUNDINGS)
+    parser.add_argument(
+        "--surrounding_opacity",
+        type=float,
+        default=DEFAULT_SURROUNDING_OPACITY,
+        help=f"周囲8枚の不透明度 (デフォルト: {DEFAULT_SURROUNDING_OPACITY})",
+    )
+    parser.add_argument(
+        "--tile_gap",
+        type=int,
+        default=DEFAULT_TILE_GAP,
+        help=f"周囲画像との間隔[pixel] (デフォルト: {DEFAULT_TILE_GAP})",
+    )
     args = parser.parse_args()
 
     return (
@@ -106,6 +134,9 @@ def parse_augment():
         args.save_path,
         args.show,
         args.draw_dummy_nodes,
+        args.tile_surroundings,
+        args.surrounding_opacity,
+        args.tile_gap,
     )
 
 
@@ -256,6 +287,9 @@ def main(
     save_path,
     show,
     draw_dummy_nodes,
+    tile_surroundings=DEFAULT_TILE_SURROUNDINGS,
+    surrounding_opacity=DEFAULT_SURROUNDING_OPACITY,
+    tile_gap=DEFAULT_TILE_GAP,
 ):
     if save_path is not None and seed is None:
         raise ValueError("再現可能な図を保存するにはseedを指定してください。")
@@ -310,6 +344,9 @@ def main(
         save_path=save_path,
         show=show,
         draw_dummy_nodes=draw_dummy_nodes,
+        tile_surroundings=tile_surroundings,
+        surrounding_opacity=surrounding_opacity,
+        tile_gap=tile_gap,
     )
 
 
@@ -324,6 +361,9 @@ if __name__ == "__main__":
         save_path,
         show,
         draw_dummy_nodes,
+        tile_surroundings,
+        surrounding_opacity,
+        tile_gap,
     ) = parse_augment()
     main(
         node=n,
@@ -335,4 +375,7 @@ if __name__ == "__main__":
         save_path=save_path,
         show=show,
         draw_dummy_nodes=draw_dummy_nodes,
+        tile_surroundings=tile_surroundings,
+        surrounding_opacity=surrounding_opacity,
+        tile_gap=tile_gap,
     )

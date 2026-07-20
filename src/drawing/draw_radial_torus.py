@@ -7,12 +7,19 @@
 """
 
 from collections import defaultdict, deque
+from io import BytesIO
 import math
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, Rectangle
+from PIL import Image
 
+from drawing.tile_image import (
+    create_torus_context_image,
+    validate_torus_context_options,
+)
 
 EDGE_STYLES = {
     "normal": {
@@ -70,6 +77,9 @@ def draw_radial_torus(
     font_size=8,
     edge_width=0.9,
     vertical_period=None,
+    tile_surroundings=False,
+    surrounding_opacity=0.8,
+    tile_gap=0,
 ):
     """
     平坦トーラスグラフを描画（階層レイアウト + Radial境界）
@@ -97,6 +107,10 @@ def draw_radial_torus(
         edge_width: エッジの線幅(points)
         vertical_period: y方向の周期。Noneなら最大レイヤーサイズを使用。
             座標割当でmin_gapを変更した場合は max_layer_size * min_gap を指定
+        tile_surroundings: 枠・凡例・目盛りを除いた描画領域を、周囲8方向へ
+            半透明で継ぎ目なく配置するか
+        surrounding_opacity: 周囲8枚の不透明度（0.0から1.0）
+        tile_gap: 周囲画像との間隔（pixel）
     """
     _validate_drawing_parameters(
         dpi=dpi,
@@ -108,6 +122,21 @@ def draw_radial_torus(
     )
     if not L:
         raise ValueError("L must contain at least one layer")
+    if tile_surroundings:
+        validate_torus_context_options(surrounding_opacity, tile_gap)
+        suffix = Path(save_path).suffix.lower() if save_path is not None else None
+        if suffix is not None and suffix not in {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".webp",
+            ".tif",
+            ".tiff",
+        }:
+            raise ValueError(
+                "tile_surroundings requires a raster save_path "
+                "(.png, .jpg, .jpeg, .webp, .tif, or .tiff)"
+            )
 
     t_val = {} if t_val is None else t_val
     psi = {} if psi is None else psi
@@ -152,9 +181,7 @@ def draw_radial_torus(
     _validate_positions(pos, L, A, x_min, x_max, y_min, y_max)
 
     V_set = set(V)
-    dummy_nodes = [
-        node for nodes in L.values() for node in nodes if node not in V_set
-    ]
+    dummy_nodes = [node for nodes in L.values() for node in nodes if node not in V_set]
 
     # エッジを分類
     # 左右巻きと上下巻きは排他的ではない。両方を持つ辺は複合辺として扱う。
@@ -257,7 +284,9 @@ def draw_radial_torus(
                 normal_edges.append((u, v))
 
     if figsize is None:
-        figsize = _paper_figure_size(num_layers, max_layer_size, show_legend)
+        figsize = _paper_figure_size(
+            num_layers, max_layer_size, show_legend and not tile_surroundings
+        )
 
     fig, ax = plt.subplots(figsize=figsize, constrained_layout=True)
     ax.set_facecolor("white")
@@ -265,7 +294,7 @@ def draw_radial_torus(
     ax.set_ylim(y_min, y_max)
     ax.set_aspect("equal", adjustable="box")
     ax.set_yticks([])
-    if show_layer_labels:
+    if show_layer_labels and not tile_surroundings:
         ax.set_xticks(range(num_layers))
         ax.set_xticklabels(
             [f"L{layer}" for layer in sorted_layers], fontsize=max(6, font_size - 1)
@@ -276,19 +305,20 @@ def draw_radial_torus(
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    # The rectangle is the fundamental domain; opposite sides are identified.
-    ax.add_patch(
-        Rectangle(
-            (x_min, y_min),
-            x_max - x_min,
-            y_max - y_min,
-            fill=False,
-            edgecolor="#8A8A8A",
-            linewidth=0.7,
-            zorder=0,
-            clip_on=False,
+    if not tile_surroundings:
+        # The rectangle is the fundamental domain; opposite sides are identified.
+        ax.add_patch(
+            Rectangle(
+                (x_min, y_min),
+                x_max - x_min,
+                y_max - y_min,
+                fill=False,
+                edgecolor="#8A8A8A",
+                linewidth=0.7,
+                zorder=0,
+                clip_on=False,
+            )
         )
-    )
 
     def node_shrink(node):
         size = node_size if node in V_set else dummy_node_size
@@ -376,9 +406,7 @@ def draw_radial_torus(
                     edge_width,
                     arrow=index == len(segments) - 1,
                     shrink_a=node_shrink(u) if index == 0 else 0.0,
-                    shrink_b=node_shrink(v)
-                    if index == len(segments) - 1
-                    else 0.0,
+                    shrink_b=node_shrink(v) if index == len(segments) - 1 else 0.0,
                 )
 
     # 上下のトーラス辺を描画（rayをまたぐ）
@@ -486,7 +514,7 @@ def draw_radial_torus(
             zorder=3,
         )
 
-    if show_legend:
+    if show_legend and not tile_surroundings:
         present_styles = []
         if normal_edges:
             present_styles.append("normal")
@@ -531,7 +559,53 @@ def draw_radial_torus(
     # y軸を反転（上から下に描画）
     ax.invert_yaxis()
 
-    if save_path:
+    if tile_surroundings:
+        # 元のFigureを一度メモリ上の画像にし、中心＋周囲8方向へ合成する。
+        # Axesのデータ領域だけを余白ゼロで切り出すことで、隣の基本領域と
+        # 境界が直接つながるようにする。
+        fig.canvas.draw()
+        axes_bbox = ax.get_window_extent().transformed(
+            fig.dpi_scale_trans.inverted()
+        )
+        fig.set_layout_engine(None)
+        buffer = BytesIO()
+        with plt.rc_context(
+            {"pdf.fonttype": 42, "ps.fonttype": 42, "svg.fonttype": "none"}
+        ):
+            fig.savefig(
+                buffer,
+                format="png",
+                dpi=dpi,
+                bbox_inches=axes_bbox,
+                pad_inches=0,
+                facecolor="white",
+            )
+        buffer.seek(0)
+        with Image.open(buffer) as rendered:
+            tiled_image = create_torus_context_image(
+                rendered,
+                opacity=surrounding_opacity,
+                gap=tile_gap,
+                output_path=save_path,
+                border_width=1,
+                border_color=(0, 0, 0, 72),
+            )
+        buffer.close()
+
+        # plt.show() は開いている全Figureを表示するため、タイル表示を作る前に
+        # 元の小さいFigureを閉じる。
+        plt.close(fig)
+
+        if show:
+            tiled_fig, tiled_ax = plt.subplots(
+                figsize=(fig.get_figwidth() * 3, fig.get_figheight() * 3),
+                constrained_layout=True,
+            )
+            tiled_ax.imshow(tiled_image)
+            tiled_ax.set_axis_off()
+            plt.show()
+            plt.close(tiled_fig)
+    elif save_path:
         # Keep labels searchable/editable in paper-oriented vector output.
         with plt.rc_context(
             {"pdf.fonttype": 42, "ps.fonttype": 42, "svg.fonttype": "none"}
@@ -543,7 +617,7 @@ def draw_radial_torus(
                 pad_inches=0.04,
                 facecolor="white",
             )
-    if show:
+    if show and not tile_surroundings:
         plt.show()
     plt.close(fig)
 
@@ -706,12 +780,8 @@ def _periodic_edge_segments(
     )
 
     crossing_times = [0.0, 1.0]
-    crossing_times.extend(
-        _axis_crossing_times(start[0], lifted_end[0], x_min, width)
-    )
-    crossing_times.extend(
-        _axis_crossing_times(start[1], lifted_end[1], y_min, height)
-    )
+    crossing_times.extend(_axis_crossing_times(start[0], lifted_end[0], x_min, width))
+    crossing_times.extend(_axis_crossing_times(start[1], lifted_end[1], y_min, height))
     crossing_times.sort()
 
     # 左右・上下の境界を同時に通る（角を通る）場合の重複を除く。
