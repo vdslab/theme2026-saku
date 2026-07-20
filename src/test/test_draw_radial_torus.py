@@ -4,6 +4,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 
+import drawing.draw_radial_torus as radial_torus
 from drawing.draw_radial_torus import _periodic_edge_segments, draw_radial_torus
 from drawing.tile_image import create_torus_context_image
 from PIL import Image
@@ -95,6 +96,41 @@ def test_draw_radial_torus_supports_combined_horizontal_and_vertical_wrap(tmp_pa
     assert "#009e73" in content
     assert "#882255" in content
     assert "horizontal +" in content
+
+
+def test_hidden_dummy_keeps_segmented_route_without_marker_gaps(monkeypatch):
+    layers = {0: [0], 1: [2], 2: [1]}
+    edges = [(0, 2), (2, 1)]
+    pos = {0: (0.0, 0.0), 2: (1.0, 0.75), 1: (2.0, 0.0)}
+    calls = []
+
+    def record_edge(_ax, start, end, _style, _width, **kwargs):
+        calls.append((start, end, kwargs))
+
+    monkeypatch.setattr(radial_torus, "_add_edge_patch", record_edge)
+
+    draw_radial_torus(
+        V=[0, 1],
+        A=edges,
+        L=layers,
+        order=layers,
+        psi={edge: 0 for edge in edges},
+        t_val={edge: False for edge in edges},
+        pos=pos,
+        show=False,
+        show_legend=False,
+        draw_dummy_nodes=False,
+        vertical_period=2.0,
+    )
+
+    assert [(start, end) for start, end, _ in calls] == [
+        (pos[0], pos[2]),
+        (pos[2], pos[1]),
+    ]
+    assert calls[0][2]["arrow"] is False
+    assert calls[0][2]["shrink_b"] == 0.0
+    assert calls[1][2]["arrow"] is True
+    assert calls[1][2]["shrink_a"] == 0.0
 
 
 def test_combined_wrap_is_split_at_both_boundaries():

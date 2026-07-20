@@ -6,7 +6,7 @@
 - 複合トーラス: 左右・上下の境界をともにまたぐエッジ（t=True かつ ψ≠0）
 """
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from io import BytesIO
 import math
 from pathlib import Path
@@ -186,102 +186,32 @@ def draw_radial_torus(
     # エッジを分類
     # 左右巻きと上下巻きは排他的ではない。両方を持つ辺は複合辺として扱う。
 
-    if draw_dummy_nodes:
-        # ダミーノード表示時は実エッジをそのまま描画
-        left_right_torus = []  # 左右のトーラス
-        positive_wrap_edges = []  # 表示上の下端から上端へ継続（psi > 0）
-        negative_wrap_edges = []  # 表示上の上端から下端へ継続（psi < 0）
-        horizontal_positive_wrap_edges = []
-        horizontal_negative_wrap_edges = []
-        normal_edges = []
+    # ダミーノードの表示有無にかかわらず、交差削減と座標割り当てで使った
+    # 分割セグメントをそのまま描画する。draw_dummy_nodes はマーカーの表示だけを
+    # 制御し、元ノード間を直結して経路を変えることはしない。
+    left_right_torus = []  # 左右のトーラス
+    positive_wrap_edges = []  # 表示上の下端から上端へ継続（psi > 0）
+    negative_wrap_edges = []  # 表示上の上端から下端へ継続（psi < 0）
+    horizontal_positive_wrap_edges = []
+    horizontal_negative_wrap_edges = []
+    normal_edges = []
 
-        for u, v in A:
-            is_lr_torus = bool(t_val.get((u, v), False))
-            winding = psi.get((u, v), 0)
+    for u, v in A:
+        is_lr_torus = bool(t_val.get((u, v), False))
+        winding = psi.get((u, v), 0)
 
-            if is_lr_torus and winding > 0:
-                horizontal_positive_wrap_edges.append((u, v))
-            elif is_lr_torus and winding < 0:
-                horizontal_negative_wrap_edges.append((u, v))
-            elif is_lr_torus:
-                left_right_torus.append((u, v))
-            elif winding > 0:
-                positive_wrap_edges.append((u, v))
-            elif winding < 0:
-                negative_wrap_edges.append((u, v))
-            else:
-                normal_edges.append((u, v))
-    else:
-        # ダミーノードを表示しない場合の処理（既存実装と同様）
-        succ = defaultdict(list)
-        for u, v in A:
-            succ[u].append(v)
-
-        display_edges = {}  # (u,v) -> (combined_t, combined_psi)
-
-        for start in V:
-            if start not in succ:
-                continue
-            for nxt in succ[start]:
-                stack = deque()
-                combined_t = bool(t_val.get((start, nxt), False))
-                combined_psi = psi.get((start, nxt), 0)
-                stack.append((nxt, combined_t, combined_psi, {(start, nxt)}))
-
-                while stack:
-                    cur, cur_t, cur_psi, visited_edges = stack.pop()
-                    if cur in V_set:
-                        if cur != start:
-                            key = (start, cur)
-                            if key not in display_edges:
-                                display_edges[key] = (cur_t, cur_psi)
-                            else:
-                                old_t, old_psi = display_edges[key]
-                                display_edges[key] = (old_t or cur_t, old_psi + cur_psi)
-                        continue
-
-                    for s in succ.get(cur, []):
-                        edge_t = bool(t_val.get((cur, s), False))
-                        edge_psi = psi.get((cur, s), 0)
-                        new_t = cur_t or edge_t
-                        new_psi = cur_psi + edge_psi
-                        edge = (cur, s)
-                        if edge in visited_edges or len(visited_edges) > 1000:
-                            continue
-                        new_visited = set(visited_edges)
-                        new_visited.add(edge)
-                        stack.append((s, new_t, new_psi, new_visited))
-
-        left_right_torus = []
-        positive_wrap_edges = []
-        negative_wrap_edges = []
-        horizontal_positive_wrap_edges = []
-        horizontal_negative_wrap_edges = []
-        normal_edges = []
-
-        for (u, v), (flag_t, flag_psi) in display_edges.items():
-            is_lr_torus = flag_t
-            u_layer = node_to_layer.get(u)
-            v_layer = node_to_layer.get(v)
-            if u_layer is not None and v_layer is not None:
-                u_idx = layer_index.get(u_layer)
-                v_idx = layer_index.get(v_layer)
-                # レイヤーが逆転している場合は左右のトーラス
-                if u_idx is not None and v_idx is not None and v_idx < u_idx:
-                    is_lr_torus = True
-
-            if is_lr_torus and flag_psi > 0:
-                horizontal_positive_wrap_edges.append((u, v))
-            elif is_lr_torus and flag_psi < 0:
-                horizontal_negative_wrap_edges.append((u, v))
-            elif is_lr_torus:
-                left_right_torus.append((u, v))
-            elif flag_psi > 0:
-                positive_wrap_edges.append((u, v))
-            elif flag_psi < 0:
-                negative_wrap_edges.append((u, v))
-            else:
-                normal_edges.append((u, v))
+        if is_lr_torus and winding > 0:
+            horizontal_positive_wrap_edges.append((u, v))
+        elif is_lr_torus and winding < 0:
+            horizontal_negative_wrap_edges.append((u, v))
+        elif is_lr_torus:
+            left_right_torus.append((u, v))
+        elif winding > 0:
+            positive_wrap_edges.append((u, v))
+        elif winding < 0:
+            negative_wrap_edges.append((u, v))
+        else:
+            normal_edges.append((u, v))
 
     if figsize is None:
         figsize = _paper_figure_size(
@@ -321,8 +251,15 @@ def draw_radial_torus(
         )
 
     def node_shrink(node):
+        if node not in V_set and not draw_dummy_nodes:
+            return 0.0
         size = node_size if node in V_set else dummy_node_size
         return math.sqrt(size / math.pi) + 0.8
+
+    def edge_has_arrow(target):
+        # 分割辺の途中にある非表示ダミーノードには矢印を置かず、元辺の
+        # 終点に到達する最後のセグメントだけに矢印を付ける。
+        return draw_dummy_nodes or target in V_set
 
     # 通常エッジを描画
     for u, v in normal_edges:
@@ -332,7 +269,7 @@ def draw_radial_torus(
             pos[v],
             EDGE_STYLES["normal"],
             edge_width,
-            arrow=True,
+            arrow=edge_has_arrow(v),
             shrink_a=node_shrink(u),
             shrink_b=node_shrink(v),
         )
@@ -366,7 +303,7 @@ def draw_radial_torus(
             v_pos,
             EDGE_STYLES["horizontal_wrap"],
             edge_width,
-            arrow=True,
+            arrow=edge_has_arrow(v),
             shrink_b=node_shrink(v),
         )
 
@@ -404,7 +341,9 @@ def draw_radial_torus(
                     end,
                     style,
                     edge_width,
-                    arrow=index == len(segments) - 1,
+                    arrow=(
+                        index == len(segments) - 1 and edge_has_arrow(v)
+                    ),
                     shrink_a=node_shrink(u) if index == 0 else 0.0,
                     shrink_b=node_shrink(v) if index == len(segments) - 1 else 0.0,
                 )
@@ -438,7 +377,7 @@ def draw_radial_torus(
             v_pos,
             EDGE_STYLES["positive_wrap"],
             edge_width,
-            arrow=True,
+            arrow=edge_has_arrow(v),
             shrink_b=node_shrink(v),
         )
 
@@ -470,7 +409,7 @@ def draw_radial_torus(
             v_pos,
             EDGE_STYLES["negative_wrap"],
             edge_width,
-            arrow=True,
+            arrow=edge_has_arrow(v),
             shrink_b=node_shrink(v),
         )
 
