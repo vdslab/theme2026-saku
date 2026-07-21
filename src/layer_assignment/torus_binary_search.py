@@ -10,7 +10,6 @@ from pprint import pprint
 if __name__ == "__main__":
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from layer_length.graph_diameter import graph_diameter
 from layer_assignment.torus_two_stage import minimize_torus_edges
 
 
@@ -19,6 +18,7 @@ def find_minimum_torus_configuration(V, A, w=None, lam=None):
     グラフに対する最小のトーラス辺数とそれを達成する最小のレイヤー数を求める
 
     レイヤー数を2分探索し、最小のトーラス辺数を達成できる最小のレイヤー数を見つける。
+    L は最大レイヤー番号ではなくレイヤー数であり、番号は 0, ..., L - 1。
 
     Args:
         V: ノード集合 list[int]
@@ -66,15 +66,21 @@ def find_minimum_torus_configuration(V, A, w=None, lam=None):
     # エッジの重複を除去
     A = list(set(A))
 
-    # 1. グラフの直径を計算（レイヤー数の上限）
-    max_L = graph_diameter(V, A, w)
+    # 1. 全頂点を異なる位置に置ける値をレイヤー数の上限にする。
+    #
+    # 有向直径は安全な上限ではない。例えば3-cycleの有向直径は2だが、
+    # このモデルは y in {0, ..., L-1} かつトーラス辺の正方向スパンを1以上に
+    # するため L=3 を必要とする。最大の最小階層差を使った以下の上限なら、
+    # 任意の頂点順を十分な間隔で配置できる。
+    max_lam = max(lam.values(), default=1) if lam is not None else 1
+    max_L = max(1, len(V) * max_lam)
 
-    # 2. 上限（直径）でトーラス辺の最小値を計算
+    # 2. 安全な上限でトーラス辺の最小値を計算
     _, _, _, _, target_min_torus = minimize_torus_edges(V, A, max_L, w, lam)
 
     if target_min_torus is None:
         # 最適化に失敗した場合
-        return None, None
+        return None, None, time.time() - st
 
     # 3. target_min_torusを達成できる最小のLを2分探索
     left, right = 1, max_L

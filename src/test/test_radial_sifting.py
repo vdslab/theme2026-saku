@@ -31,6 +31,26 @@ def test_rounds_repeat_each_pair_during_two_forward_passes(monkeypatch):
     ]
 
 
+def test_global_guard_never_returns_more_crossings_than_initial_order():
+    order = {0: [0, 1], 1: [2, 3], 2: [4, 5]}
+    edges = [
+        (0, 3),
+        (1, 2),
+        (2, 5),
+        (3, 4),
+        (4, 1),
+        (5, 0),
+    ]
+    psi = {edge: 0 for edge in edges}
+    initial = radial._count_all_crossings(order, psi, [0, 1, 2], edges)
+
+    radial._run_sifting_with_global_guard(
+        order, psi, [0, 1, 2], edges, rounds=2
+    )
+
+    assert radial._count_all_crossings(order, psi, [0, 1, 2], edges) <= initial
+
+
 def test_two_layer_sifting_reduces_crossings_and_keeps_fixed_layer():
     order = {0: [0, 1], 1: [2, 3]}
     edges = [(0, 3), (1, 2)]

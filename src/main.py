@@ -11,7 +11,10 @@
 from layer_assignment.torus_balance import balance_layer_assignment
 from layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
-from crossing_reduction.radial import count_radial_crossings, radial_sifting_heuristic
+from crossing_reduction.radial import (
+    count_radial_crossings,
+    radial_sifting_global_guard_heuristic,
+)
 from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
 from drawing.draw_radial_torus import draw_radial_torus
 from lib.generate_torus_graph import generate_cyclic_graph
@@ -23,10 +26,10 @@ import time
 
 # CLIから指定されなかった場合に使用する設定値。
 # 実行時の初期値はここだけを変更すればよいように、一か所へ集約する。
-DEFAULT_NODE_COUNT = 50
+DEFAULT_NODE_COUNT = 25
 DEFAULT_CYCLE_COUNT = 2
 DEFAULT_EDGE_PROBABILITY = 0.005
-DEFAULT_RANDOM_SEED = None
+DEFAULT_RANDOM_SEED = 1
 DEFAULT_BALANCE_METHOD = "diff_square"
 DEFAULT_ROUND_COUNT = 5
 DEFAULT_SAVE_PATH = None
@@ -196,7 +199,9 @@ def layer_assignment(V, A, func_type):
 def reduce_crossings_radial(V, A, layer_dict, t_val, rounds):
     """交差削減結果と実行時間を返す。"""
     started_at = time.perf_counter()
-    result = radial_sifting_heuristic(V, A, layer_dict, t_val, rounds=rounds)
+    result = radial_sifting_global_guard_heuristic(
+        V, A, layer_dict, t_val, rounds=rounds
+    )
     run_time = time.perf_counter() - started_at
     return (*result, run_time)
 

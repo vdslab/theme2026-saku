@@ -50,6 +50,46 @@ def radial_sifting_heuristic(
     return order, L, A, t_val, psi
 
 
+def radial_sifting_global_guard_heuristic(
+    V,
+    A,
+    layer_dict,
+    t_val,
+    rounds,
+    w=None,
+):
+    """Radial Sifting with a global non-worsening safeguard.
+
+    The original heuristic optimizes one adjacent layer pair at a time.  A
+    change can therefore improve the active pair while worsening the other
+    pair incident to the moved layer.  This variant evaluates the global
+    unweighted crossing count after each local pass and returns the best state
+    encountered.  Since the barycentric initial state is included, the result
+    cannot be worse than that initial state under ``count_radial_crossings``.
+    """
+    original_nodes = set(V)
+    V, A, L, t_val, w = insert_dummy_node(V, A, layer_dict, t_val, w)
+    layers = sorted(L.keys())
+    dummy_nodes = set(V) - original_nodes
+
+    order = _initial_orders(L, layers, A)[0]
+    psi = _compute_winding_numbers(A, order, L, layers)
+    _run_sifting_with_global_guard(
+        order, psi, layers, A, rounds, dummy_nodes=dummy_nodes
+    )
+
+    guarded_order = _copy_order(order)
+    guarded_psi = dict(psi)
+    guarded_crossings = _count_all_crossings(order, psi, layers, A)
+    _postprocess_sifting_rotations(order, psi, layers, A)
+    if _count_all_crossings(order, psi, layers, A) > guarded_crossings:
+        order.clear()
+        order.update(guarded_order)
+        psi.clear()
+        psi.update(guarded_psi)
+    return order, L, A, t_val, psi
+
+
 def count_radial_crossings(order, psi, layer_dict, edges):
     """
     radial交差削減の評価式で総交差数を数える。
@@ -328,6 +368,38 @@ def _run_sifting(order, psi, layers, edges, rounds, dummy_nodes=None):
                 edges,
                 dummy_nodes=dummy_nodes,
             )
+
+
+def _run_sifting_with_global_guard(
+    order, psi, layers, edges, rounds, dummy_nodes=None
+):
+    """Run the same local passes as ``_run_sifting`` and retain global best."""
+    best_order = _copy_order(order)
+    best_psi = dict(psi)
+    best_crossings = _count_all_crossings(order, psi, layers, edges)
+
+    layer_pairs = _forward_layer_pairs(layers)
+    two_pass_pairs = layer_pairs + layer_pairs[:-1]
+    for fixed_layer, free_layer in two_pass_pairs:
+        for _ in range(rounds):
+            _sift_two_layer_pair(
+                fixed_layer,
+                free_layer,
+                order,
+                psi,
+                edges,
+                dummy_nodes=dummy_nodes,
+            )
+            crossings = _count_all_crossings(order, psi, layers, edges)
+            if crossings < best_crossings:
+                best_crossings = crossings
+                best_order = _copy_order(order)
+                best_psi = dict(psi)
+
+    order.clear()
+    order.update(best_order)
+    psi.clear()
+    psi.update(best_psi)
 
 
 def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges, dummy_nodes=None):

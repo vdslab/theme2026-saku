@@ -32,20 +32,24 @@ def _prepare_edge_params(A, w=None, lam=None):
 
 def minimize_torus_edges(V, A, L, w=None, lam=None):
     """
-    トーラス辺数を最小化する定式化
+    L 個のレイヤー上でトーラス辺数を最小化する定式化。
+
+    レイヤー番号は 0, ..., L - 1、トーラス周期は L とする。
     """
+    if L < 1:
+        raise ValueError("L must be a positive layer count")
+
     A = list(set(A))
     w, lam = _prepare_edge_params(A, w, lam)
-    n = len(V)
-    M = L  # Big-M定数: y[v]の範囲が[0,L]なので、Lで十分
+    M = L  # Big-M定数とトーラス周期
 
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Minimize_Torus_Edges", env=env) as m:
-        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=L, name="y")
+        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=L - 1, name="y")
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
 
-        m.addConstrs((y[v] <= L for v in V), name="max_layer")
+        m.addConstrs((y[v] <= L - 1 for v in V), name="max_layer")
         m.addConstrs((y[u] - y[v] <= M * t[u, v] for (u, v) in A), name="torus_def_a")
         m.addConstrs(
             (y[u] - y[v] >= lam[(u, v)] - M * (1 - t[u, v]) for (u, v) in A),
@@ -85,12 +89,14 @@ def minimize_torus_edges(V, A, L, w=None, lam=None):
 
 def balance_with_fixed_torus_edges(V, A, L, torus_count, w=None, lam=None):
     """
-    トーラス辺数を固定して、エッジスパンの二乗和を最小化する定式化
+    L 個のレイヤーとトーラス辺数を固定し、エッジスパンの二乗和を最小化する。
     """
+    if L < 1:
+        raise ValueError("L must be a positive layer count")
+
     A = list(set(A))
     w, lam = _prepare_edge_params(A, w, lam)
-    n = len(V)
-    M = L  # Big-M定数: y[v]の範囲が[0,L]なので、Lで十分
+    M = L  # Big-M定数とトーラス周期
 
     K_uv = {}
     for u, v in A:
@@ -103,13 +109,13 @@ def balance_with_fixed_torus_edges(V, A, L, torus_count, w=None, lam=None):
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Balance_With_Fixed_Torus", env=env) as m:
-        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=L, name="y")
+        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=L - 1, name="y")
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
 
         x_keys = [(u, v, k) for (u, v) in A for k in K_uv[(u, v)]]
         x = m.addVars(x_keys, vtype=GRB.BINARY, name="x") if x_keys else {}
 
-        m.addConstrs((y[v] <= L for v in V), name="max_layer")
+        m.addConstrs((y[v] <= L - 1 for v in V), name="max_layer")
         m.addConstr(
             gp.quicksum(t[u, v] for (u, v) in A) == torus_count,
             name="fixed_torus_count",

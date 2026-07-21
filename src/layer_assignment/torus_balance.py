@@ -38,12 +38,15 @@ def _optimize_diff(V, A, torus_count, layer_count, w, lam):
     手法1: エッジスパンの和を最小化 (ILP)
     目的関数: minimize Σ w[u,v] * (y[v] - y[u] + M*t[u,v])
     """
+    if layer_count < 1:
+        raise ValueError("layer_count must be positive")
     M = layer_count
+    max_layer = layer_count - 1
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Balance_Diff", env=env) as m:
         # 変数定義
-        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=layer_count, name="y")
+        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=max_layer, name="y")
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
 
         # 制約
@@ -54,7 +57,7 @@ def _optimize_diff(V, A, torus_count, layer_count, w, lam):
         )
 
         # レイヤー数固定
-        m.addConstrs((y[v] <= layer_count for v in V), name="max_layer")
+        m.addConstrs((y[v] <= max_layer for v in V), name="max_layer")
 
         # Big-M制約（トーラス辺の定義）
         m.addConstrs((y[u] - y[v] <= M * t[u, v] for (u, v) in A), name="torus_def_a")
@@ -92,12 +95,15 @@ def _optimize_diff_square(V, A, torus_count, layer_count, w, lam):
     手法2: エッジスパンの2乗和を最小化 (IQP)
     目的関数: minimize Σ w[u,v] * (y[v] - y[u] + M*t[u,v])²
     """
+    if layer_count < 1:
+        raise ValueError("layer_count must be positive")
     M = layer_count
+    max_layer = layer_count - 1
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Balance_DiffSquare", env=env) as m:
         # 変数定義
-        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=layer_count, name="y")
+        y = m.addVars(V, vtype=GRB.INTEGER, lb=0, ub=max_layer, name="y")
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
 
         # 制約
@@ -105,7 +111,7 @@ def _optimize_diff_square(V, A, torus_count, layer_count, w, lam):
             gp.quicksum(t[u, v] for (u, v) in A) == torus_count,
             name="fixed_torus_count",
         )
-        m.addConstrs((y[v] <= layer_count for v in V), name="max_layer")
+        m.addConstrs((y[v] <= max_layer for v in V), name="max_layer")
         m.addConstrs((y[u] - y[v] <= M * t[u, v] for (u, v) in A), name="torus_def_a")
         m.addConstrs(
             (y[u] - y[v] >= lam[(u, v)] - M * (1 - t[u, v]) for (u, v) in A),
@@ -145,12 +151,15 @@ def _optimize_qp(V, A, torus_count, layer_count, w, lam):
     y[v]のみ連続変数、t[u,v]はバイナリ
     目的関数: minimize Σ w[u,v] * (y[v] - y[u] + M*t[u,v])²
     """
+    if layer_count < 1:
+        raise ValueError("layer_count must be positive")
     M = layer_count
+    max_layer = layer_count - 1
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Balance_QP", env=env) as m:
         # 変数定義: y[v]は連続変数
-        y = m.addVars(V, vtype=GRB.CONTINUOUS, lb=0, ub=layer_count, name="y")
+        y = m.addVars(V, vtype=GRB.CONTINUOUS, lb=0, ub=max_layer, name="y")
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
 
         # 制約
@@ -158,7 +167,7 @@ def _optimize_qp(V, A, torus_count, layer_count, w, lam):
             gp.quicksum(t[u, v] for (u, v) in A) == torus_count,
             name="fixed_torus_count",
         )
-        m.addConstrs((y[v] <= layer_count for v in V), name="max_layer")
+        m.addConstrs((y[v] <= max_layer for v in V), name="max_layer")
         m.addConstrs((y[u] - y[v] <= M * t[u, v] for (u, v) in A), name="torus_def_a")
         m.addConstrs(
             (y[u] - y[v] >= lam[(u, v)] - M * (1 - t[u, v]) for (u, v) in A),
@@ -206,6 +215,8 @@ def _optimize_barycenter(V, A, torus_count, layer_count, w, lam):
     - xに入る全てのエッジの根本のノードよりも左に行ってはいけない
     - xから出る全てのエッジの先端のノードよりも右に行ってはいけない
     """
+    max_layer_bound = layer_count - 1
+
     # 初期解を取得
     y_val, t_val, init_time = _optimize_diff(V, A, torus_count, layer_count, w, lam)
 
@@ -218,7 +229,7 @@ def _optimize_barycenter(V, A, torus_count, layer_count, w, lam):
     for u, v in A:
         if not t_val[(u, v)] and y_val[u] == y_val[v]:
             # 通常辺なのに同一階層にいる場合、vを1つ右に移動
-            if y_val[v] < layer_count:
+            if y_val[v] < max_layer_bound:
                 y_val[v] += 1
             elif y_val[u] > 0:
                 y_val[u] -= 1
@@ -253,11 +264,11 @@ def _optimize_barycenter(V, A, torus_count, layer_count, w, lam):
             if v in out_edges and len(out_edges[v]) > 0:
                 max_layer = min(y_val[u] for u in out_edges[v]) - 1
             else:
-                max_layer = layer_count
+                max_layer = max_layer_bound
 
             # 全体の制約も考慮
             min_layer = max(min_layer, 0)
-            max_layer = min(max_layer, layer_count)
+            max_layer = min(max_layer, max_layer_bound)
 
             # 移動可能範囲が無効な場合は現在位置を維持
             if min_layer > max_layer:
@@ -337,7 +348,7 @@ def _optimize_barycenter(V, A, torus_count, layer_count, w, lam):
                         y_val[u] -= 1
                         continue
                 # どちらもダメなら、vを右に（制約無視）
-                if y_val[v] < layer_count:
+                if y_val[v] < max_layer_bound:
                     y_val[v] += 1
                 elif y_val[u] > 0:
                     y_val[u] -= 1
@@ -364,7 +375,7 @@ def balance_layer_assignment(
         V: ノード集合 list[int]
         A: エッジ集合 list[tuple(int, int)]
         torus_count: トーラス辺数（固定値） int
-        layer_count: レイヤー数（固定値） int
+        layer_count: レイヤー数（固定値） int。番号は 0..layer_count-1
         func_type: 最適化手法の識別子 str
             - "diff": エッジスパンの和を最小化 (ILP)
             - "diff_square": エッジスパンの2乗和を最小化 (IQP)
