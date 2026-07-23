@@ -64,6 +64,20 @@ def test_two_layer_sifting_reduces_crossings_and_keeps_fixed_layer():
     assert radial._pair_crossings(order, psi, 0, 1, edges) < crossings_before
 
 
+def test_fixed_winding_sifting_changes_order_but_not_winding():
+    order = {0: [0, 1], 1: [2, 3]}
+    edges = [(0, 3), (1, 2)]
+    psi = {(0, 3): 0, (1, 2): 0}
+    crossings_before = radial._pair_crossings(order, psi, 0, 1, edges)
+
+    radial._sift_two_layer_pair(
+        0, 1, order, psi, edges, optimize_winding=False
+    )
+
+    assert psi == {(0, 3): 0, (1, 2): 0}
+    assert radial._pair_crossings(order, psi, 0, 1, edges) < crossings_before
+
+
 def test_backward_sifting_reorients_edges():
     order = {0: [0, 1], 1: [2, 3]}
     edges = [(0, 3), (1, 2)]

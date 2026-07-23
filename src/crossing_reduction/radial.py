@@ -354,7 +354,15 @@ def _backward_layer_pairs(layers):
     return [(free, fixed) for fixed, free in reversed(_forward_layer_pairs(layers))]
 
 
-def _run_sifting(order, psi, layers, edges, rounds, dummy_nodes=None):
+def _run_sifting(
+    order,
+    psi,
+    layers,
+    edges,
+    rounds,
+    dummy_nodes=None,
+    optimize_winding=True,
+):
     """各2層ペアをrounds回siftingし、トーラス経由で順方向に2巡する。"""
     layer_pairs = _forward_layer_pairs(layers)
     two_pass_pairs = layer_pairs + layer_pairs[:-1]
@@ -367,11 +375,18 @@ def _run_sifting(order, psi, layers, edges, rounds, dummy_nodes=None):
                 psi,
                 edges,
                 dummy_nodes=dummy_nodes,
+                optimize_winding=optimize_winding,
             )
 
 
 def _run_sifting_with_global_guard(
-    order, psi, layers, edges, rounds, dummy_nodes=None
+    order,
+    psi,
+    layers,
+    edges,
+    rounds,
+    dummy_nodes=None,
+    optimize_winding=True,
 ):
     """Run the same local passes as ``_run_sifting`` and retain global best."""
     best_order = _copy_order(order)
@@ -389,6 +404,7 @@ def _run_sifting_with_global_guard(
                 psi,
                 edges,
                 dummy_nodes=dummy_nodes,
+                optimize_winding=optimize_winding,
             )
             crossings = _count_all_crossings(order, psi, layers, edges)
             if crossings < best_crossings:
@@ -402,7 +418,15 @@ def _run_sifting_with_global_guard(
     psi.update(best_psi)
 
 
-def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges, dummy_nodes=None):
+def _sift_two_layer_pair(
+    fixed_layer,
+    free_layer,
+    order,
+    psi,
+    edges,
+    dummy_nodes=None,
+    optimize_winding=True,
+):
     """fixed_layerを固定し、free_layerだけを交差数でsiftingする。"""
     pair_edges, oriented_psi, original_edges = _oriented_pair_embedding(
         order, psi, fixed_layer, free_layer, edges
@@ -422,20 +446,83 @@ def _sift_two_layer_pair(fixed_layer, free_layer, order, psi, edges, dummy_nodes
     for node in list(order[free_layer]):
         incident_edges = [edge for edge in pair_edges if edge[1] == node]
         if incident_edges:
-            current_crossings = _sift_vertex_one_sided(
-                node,
-                fixed_layer,
-                free_layer,
-                order,
-                oriented_psi,
-                pair_edges,
-                incident_edges,
-                current_crossings,
-                edge_weights,
-            )
+            if optimize_winding:
+                current_crossings = _sift_vertex_one_sided(
+                    node,
+                    fixed_layer,
+                    free_layer,
+                    order,
+                    oriented_psi,
+                    pair_edges,
+                    incident_edges,
+                    current_crossings,
+                    edge_weights,
+                )
+            else:
+                current_crossings = _sift_vertex_with_fixed_winding(
+                    node,
+                    fixed_layer,
+                    free_layer,
+                    order,
+                    oriented_psi,
+                    pair_edges,
+                    incident_edges,
+                    current_crossings,
+                    edge_weights,
+                )
 
     for oriented_edge, (original_edge, direction) in original_edges.items():
         psi[original_edge] = direction * oriented_psi[oriented_edge]
+
+
+def _sift_vertex_with_fixed_winding(
+    node,
+    fixed_layer,
+    free_layer,
+    order,
+    psi,
+    pair_edges,
+    incident_edges,
+    current_crossings,
+    edge_weights,
+):
+    """psiを固定し、自由層内の頂点位置だけを全候補から選ぶ。"""
+    free_nodes = order[free_layer]
+    if len(free_nodes) <= 1:
+        return current_crossings
+
+    best_crossings = current_crossings
+    best_nodes = list(free_nodes)
+    original_incident_crossings = _crossings_involving_edges(
+        incident_edges,
+        pair_edges,
+        order,
+        psi,
+        fixed_layer,
+        free_layer,
+        edge_weights,
+    )
+    unaffected_crossings = current_crossings - original_incident_crossings
+    remaining = [candidate for candidate in free_nodes if candidate != node]
+    for position in range(len(free_nodes)):
+        candidate_nodes = list(remaining)
+        candidate_nodes.insert(position, node)
+        order[free_layer] = candidate_nodes
+        candidate_crossings = unaffected_crossings + _crossings_involving_edges(
+            incident_edges,
+            pair_edges,
+            order,
+            psi,
+            fixed_layer,
+            free_layer,
+            edge_weights,
+        )
+        if candidate_crossings < best_crossings:
+            best_crossings = candidate_crossings
+            best_nodes = candidate_nodes
+
+    order[free_layer] = best_nodes
+    return best_crossings
 
 
 def _oriented_pair_embedding(order, psi, fixed_layer, free_layer, edges):
