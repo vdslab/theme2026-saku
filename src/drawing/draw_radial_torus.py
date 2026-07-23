@@ -108,7 +108,7 @@ def draw_radial_torus(
         vertical_period: y方向の周期。Noneなら最大レイヤーサイズを使用。
             座標割当でmin_gapを変更した場合は max_layer_size * min_gap を指定
         tile_surroundings: 枠・凡例・目盛りを除いた描画領域を、周囲8方向へ
-            半透明で継ぎ目なく配置するか
+            半透明で部分配置するか。上下・左右は半分、四隅は1/4を表示する
         surrounding_opacity: 周囲8枚の不透明度（0.0から1.0）
         tile_gap: 周囲画像との間隔（pixel）
     """
@@ -537,7 +537,7 @@ def draw_radial_torus(
 
         if show:
             tiled_fig, tiled_ax = plt.subplots(
-                figsize=(fig.get_figwidth() * 3, fig.get_figheight() * 3),
+                figsize=(fig.get_figwidth() * 2, fig.get_figheight() * 2),
                 constrained_layout=True,
             )
             tiled_ax.imshow(tiled_image)

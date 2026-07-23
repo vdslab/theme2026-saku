@@ -10,6 +10,8 @@
 import random
 from collections import deque
 
+import networkx as nx
+
 
 def is_connected(V, A):
     """グラフが弱連結かどうかを判定"""
@@ -72,6 +74,66 @@ def generate_random_connected_graph(n, edge_prob=0.3, seed=None):
             if u != v and (u, v) not in A:
                 if random.random() < edge_prob:
                     A.append((u, v))
+
+    return V, A
+
+
+def generate_watts_strogatz_graph(
+    n,
+    k=4,
+    p=0.1,
+    seed=None,
+    ensure_connected=True,
+    tries=100,
+):
+    """
+    トーラス階層描画用の有向Watts--Strogatzグラフを生成する。
+
+    NetworkXで無向Watts--Strogatzグラフを生成した後、円環上で短い
+    時計回り方向に各辺を向ける。これにより、p=0では円環に沿った
+    有向閉路を持ち、既存の描画処理が期待する ``(V, A)`` 形式になる。
+
+    Args:
+        n: ノード数
+        k: 各ノードが接続する最近傍ノード数。n未満の偶数を指定する
+        p: 各辺の張り替え確率（0以上1以下）
+        seed: 乱数シード
+        ensure_connected: Trueなら連結なグラフが得られるまで再生成する
+        tries: ensure_connected=Trueのときの最大生成試行回数
+
+    Returns:
+        V: ノード集合 list[int]
+        A: 時計回りに向き付けたエッジ集合 list[tuple[int, int]]
+    """
+    if n < 3:
+        raise ValueError("n must be at least 3")
+    if k <= 0 or k >= n or k % 2 != 0:
+        raise ValueError("k must be a positive even integer smaller than n")
+    if not 0 <= p <= 1:
+        raise ValueError("p must be between 0 and 1")
+    if tries <= 0:
+        raise ValueError("tries must be positive")
+
+    if ensure_connected:
+        graph = nx.connected_watts_strogatz_graph(
+            n=n,
+            k=k,
+            p=p,
+            tries=tries,
+            seed=seed,
+        )
+    else:
+        graph = nx.watts_strogatz_graph(n=n, k=k, p=p, seed=seed)
+
+    V = list(graph.nodes())
+    A = []
+    for u, v in graph.edges():
+        clockwise_distance = (v - u) % n
+        counterclockwise_distance = (u - v) % n
+        if clockwise_distance <= counterclockwise_distance:
+            A.append((u, v))
+        else:
+            A.append((v, u))
 
     return V, A
 

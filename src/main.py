@@ -17,7 +17,10 @@ from crossing_reduction.radial import (
 )
 from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
 from drawing.draw_radial_torus import draw_radial_torus
-from lib.generate_torus_graph import generate_cyclic_graph
+from lib.generate_torus_graph import (
+    generate_cyclic_graph,
+    generate_watts_strogatz_graph,
+)
 
 from collections import defaultdict
 
@@ -104,7 +107,7 @@ def parse_augment():
     tile_group.add_argument(
         "--tile_surroundings",
         action="store_true",
-        help="描画結果の周囲8方向に、半透明の同一画像を配置する（デフォルト）",
+        help="描画結果の周囲8方向に、半透明の同一画像の一部を配置する（デフォルト）",
     )
     tile_group.add_argument(
         "--no_tile_surroundings",
@@ -149,6 +152,7 @@ def generate_graph(n, num_cycles, edge_prob, seed):
     V, A = generate_cyclic_graph(
         n=n, num_cycles=num_cycles, edge_prob=edge_prob, seed=seed
     )
+    # V, A = generate_watts_strogatz_graph(n, 4, 0.8)
 
     print(f"  ノード数: {len(V)}")
     print(f"  エッジ数: {len(A)}")

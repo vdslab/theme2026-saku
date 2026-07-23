@@ -163,14 +163,35 @@ def test_create_torus_context_image_keeps_center_and_fades_neighbors(tmp_path):
         source, opacity=0.25, gap=1, output_path=output
     )
 
-    assert result.size == (8, 11)
-    assert result.getpixel((3, 4)) == (10, 20, 30, 200)
+    assert result.size == (6, 8)
+    assert result.getpixel((3, 3)) == (10, 20, 30, 200)
     assert result.getpixel((0, 0)) == (10, 20, 30, 50)
-    assert result.getpixel((2, 0)) == (255, 255, 255, 0)
+    assert result.getpixel((1, 0)) == (255, 255, 255, 0)
     assert Image.open(output).size == result.size
 
 
-def test_create_torus_context_image_can_draw_light_tile_borders():
+def test_create_torus_context_image_crops_neighbors_toward_center():
+    source = Image.new("RGBA", (4, 4))
+    pixels = source.load()
+    for y in range(4):
+        for x in range(4):
+            pixels[x, y] = (x * 10, y * 10, 0, 255)
+
+    result = create_torus_context_image(source, opacity=1.0)
+
+    assert result.size == (8, 8)
+    # 上は元画像の下半分、下は上半分。
+    assert result.getpixel((2, 0)) == source.getpixel((0, 2))
+    assert result.getpixel((2, 7)) == source.getpixel((0, 1))
+    # 左は右半分、右は左半分。
+    assert result.getpixel((0, 2)) == source.getpixel((2, 0))
+    assert result.getpixel((7, 2)) == source.getpixel((1, 0))
+    # 右下には元画像の左上1/4だけを表示する。
+    assert result.getpixel((6, 6)) == source.getpixel((0, 0))
+    assert result.getpixel((7, 7)) == source.getpixel((1, 1))
+
+
+def test_create_torus_context_image_draws_only_the_inner_border():
     source = Image.new("RGBA", (3, 3), (255, 255, 255, 255))
 
     result = create_torus_context_image(
@@ -180,9 +201,12 @@ def test_create_torus_context_image_can_draw_light_tile_borders():
         border_color=(0, 0, 0, 72),
     )
 
-    # 境界線は半透明黒を白へ重ねた薄い灰色になる。
-    assert result.getpixel((3, 4)) == (183, 183, 183, 255)
-    assert result.getpixel((4, 4)) == (255, 255, 255, 255)
+    # 中央領域の境界線だけが、半透明黒を重ねた薄い灰色になる。
+    assert result.getpixel((2, 2)) == (183, 183, 183, 255)
+    assert result.getpixel((3, 3)) == (255, 255, 255, 255)
+    # 合成画像の外周には境界線を描かない。
+    assert result.getpixel((0, 0)) == (255, 255, 255, 255)
+    assert result.getpixel((5, 5)) == (255, 255, 255, 255)
 
 
 def test_draw_radial_torus_can_save_surrounding_tiles(tmp_path):
@@ -206,10 +230,10 @@ def test_draw_radial_torus_can_save_surrounding_tiles(tmp_path):
 
     with Image.open(output) as tiled:
         width, height = tiled.size
-        assert width % 3 == 0
-        assert height % 3 == 0
+        assert width % 2 == 0
+        assert height % 2 == 0
         # 枠・凡例・目盛りを含まず、データ領域（幅3、高さ2）の比率になる。
-        assert abs((width / 3) / (height / 3) - 1.5) < 0.02
+        assert abs((width / 2) / (height / 2) - 1.5) < 0.02
 
 
 def test_draw_radial_torus_can_render_tiles_without_save_path():

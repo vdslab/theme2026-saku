@@ -1,4 +1,4 @@
-"""画像をトーラスの基本領域として 3 x 3 に並べるユーティリティ。"""
+"""画像をトーラスの基本領域として、周辺を部分表示するユーティリティ。"""
 
 from pathlib import Path
 import math
@@ -17,7 +17,10 @@ def create_torus_context_image(
     border_width=0,
     border_color=(0, 0, 0, 72),
 ):
-    """中心画像の周囲8方向に、半透明の同一画像を配置する。
+    """中心画像の周囲8方向に、半透明の同一画像の一部を配置する。
+
+    中央画像を大きく見せるため、上下には中央へ接する半分、左右には
+    中央へ接する半分、四隅には中央へ接する1/4だけを表示する。
 
     Args:
         image: 入力画像のパス、または ``PIL.Image.Image``。
@@ -25,12 +28,13 @@ def create_torus_context_image(
         gap: タイル間の間隔（pixel）。
         output_path: 指定した場合は合成結果を保存する。
         background: 出力キャンバスのRGBA背景色。
-        border_width: 各タイルの境界線幅（pixel）。0なら描画しない。
+        border_width: 中央領域の境界線幅（pixel）。0なら描画しない。
         border_color: 境界線のRGBA色。
 
     Returns:
-        3 x 3 に合成した ``PIL.Image.Image`` (RGBA)。中心画像の不透明度は
-        変更せず、元画像が持つアルファ値も維持する。
+        中央の1枚と、部分表示した周囲8方向を合成した
+        ``PIL.Image.Image`` (RGBA)。中心画像の不透明度は変更せず、
+        元画像が持つアルファ値も維持する。
     """
     validate_torus_context_options(
         opacity, gap, background, border_width, border_color
@@ -38,28 +42,46 @@ def create_torus_context_image(
     source = _load_rgba_image(image)
 
     width, height = source.size
+    x_split = width // 2
+    y_split = height // 2
+    left_band_width = width - x_split
+    top_band_height = height - y_split
+    center_x = left_band_width + gap
+    center_y = top_band_height + gap
+
     canvas = Image.new(
         "RGBA",
-        (width * 3 + gap * 2, height * 3 + gap * 2),
+        (width * 2 + gap * 2, height * 2 + gap * 2),
         tuple(background),
     )
 
     faded = source.copy()
     faded.putalpha(source.getchannel("A").point(lambda alpha: round(alpha * opacity)))
 
-    for row in range(3):
-        for column in range(3):
-            tile = source if (row, column) == (1, 1) else faded
-            x = column * (width + gap)
-            y = row * (height + gap)
-            canvas.alpha_composite(tile, (x, y))
+    # crop box, paste position。周辺には中央領域に接する側だけを残す。
+    placements = [
+        ((x_split, y_split, width, height), (0, 0)),
+        ((0, y_split, width, height), (center_x, 0)),
+        ((0, y_split, x_split, height), (center_x + width + gap, 0)),
+        ((x_split, 0, width, height), (0, center_y)),
+        ((0, 0, width, height), (center_x, center_y)),
+        ((0, 0, x_split, height), (center_x + width + gap, center_y)),
+        ((x_split, 0, width, y_split), (0, center_y + height + gap)),
+        ((0, 0, width, y_split), (center_x, center_y + height + gap)),
+        ((0, 0, x_split, y_split), (center_x + width + gap, center_y + height + gap)),
+    ]
+    for index, (crop_box, position) in enumerate(placements):
+        tile = source if index == 4 else faded
+        cropped = tile.crop(crop_box)
+        canvas.alpha_composite(cropped, position)
 
     if border_width:
-        _draw_tile_borders(
+        _draw_inner_border(
             canvas,
-            tile_width=width,
-            tile_height=height,
-            gap=gap,
+            left=center_x,
+            top=center_y,
+            width=width,
+            height=height,
             border_width=border_width,
             border_color=border_color,
         )
@@ -115,21 +137,17 @@ def _validate_rgba(name, color):
         raise ValueError(f"{name} must contain four integer RGBA channels")
 
 
-def _draw_tile_borders(
-    canvas, *, tile_width, tile_height, gap, border_width, border_color
+def _draw_inner_border(
+    canvas, *, left, top, width, height, border_width, border_color
 ):
-    """タイルの接続を維持したまま、半透明の輪郭線を重ねる。"""
+    """中央領域の境界だけに半透明の枠線を重ねる。"""
     overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    for row in range(3):
-        for column in range(3):
-            left = column * (tile_width + gap)
-            top = row * (tile_height + gap)
-            draw.rectangle(
-                (left, top, left + tile_width - 1, top + tile_height - 1),
-                outline=tuple(border_color),
-                width=border_width,
-            )
+    draw.rectangle(
+        (left, top, left + width - 1, top + height - 1),
+        outline=tuple(border_color),
+        width=border_width,
+    )
     canvas.alpha_composite(overlay)
 
 
