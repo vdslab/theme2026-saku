@@ -1,0 +1,20 @@
+{
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "tests"
+  ],
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.13",
+  "venvPath": "../..",
+  "venv": "theme2026-saku",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        ".."
+      ]
+    }
+  ]
+}
