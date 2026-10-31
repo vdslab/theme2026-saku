@@ -34,16 +34,13 @@ def _insert_dummy_node(V: list[Node], A: list[Edge], L: Layers, t_val: Flags | N
     next_dummy = max(int_nodes) + 1 if int_nodes else 0
     new_V = list(V)
     layer_index = {k: i for i, k in enumerate(layers)}
+    # Sorted-layer iteration preserves the old last-match behavior.
+    node_to_layer = {node: layer for layer in layers for node in L.get(layer, [])}
     for u, v in A:
         w_uv = w.get((u, v), 1)
         t_uv = t_val.get((u, v), False)
-        u_layer: int | None = None
-        v_layer: int | None = None
-        for k in layers:
-            if u in L.get(k, []):
-                u_layer: int | None = k
-            if v in L.get(k, []):
-                v_layer: int | None = k
+        u_layer = node_to_layer.get(u)
+        v_layer = node_to_layer.get(v)
         if u_layer is None or v_layer is None:
             new_A.append((u, v))
             new_w[u, v] = w_uv
