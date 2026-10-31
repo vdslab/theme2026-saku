@@ -31,3 +31,11 @@ Pyrightの取得は通常・権限付きの双方でDNSエラーになってい�
 strict設定と型付き公開APIを用意していますが、CLIの型検査は未実施です。
 PylanceをVS Code外から起動する方法は利用条件に適合しないため使用しません。
 通常import・コンパイル・比較テストは別途実施しています。
+
+`layering.balance_layers` は4手法を選択し、`assign_layers` は探索とバランスを順に実行します。
+- diff: 周期スパンの和を最小化するILP。
+- diff_square: 周期スパンの二乗和を最小化するIQP。
+- qp: 階層変数を連続緩和し、元と同じPythonのroundで整数化します。丸め後の既知の制約違反も維持します。
+- barycenter: diffの初期解を重心法で更新します。反復・補正は元実装のままです。
+
+TIME_LIMIT/SUBOPTIMAL時の扱いを維持しており、探索結果の最適性を新たに保証する変更は行っていません。
