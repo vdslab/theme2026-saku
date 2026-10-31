@@ -92,4 +92,3 @@ def _optimize_barycenter(V: list[Node], A: list[Edge], torus_count: int, layer_c
     heuristic_time = time.time() - start_time
     total_time = init_time + heuristic_time
     return (y_val, t_val, total_time)
-
