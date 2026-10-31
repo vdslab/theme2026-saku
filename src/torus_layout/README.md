@@ -58,3 +58,10 @@ TIME_LIMIT/SUBOPTIMAL時の扱いを維持しており、探索結果の最適�
 sifting、global guard、回転後処理を元と同じ順に実行します。
 `count_crossings` は元と同じradial交差数を返します。入力の階層・辺は変更しません。
 通常辺とsifting中の一時ID付き辺を別の型で扱います。
+
+## 座標割当
+
+`from torus_layout.coordinates import assign_coordinates` が公開入口です。
+4方向のBK系整列とブロック圧縮、中央値の統合、周期的な射影・平滑化を元と同じ順に行います。
+入力の順序と巻き数を変更せず、`CoordinateResult.positions` と `period` を返します。
+`min_gap` と `smooth_iterations` の既定値は元の1.0と4です。
