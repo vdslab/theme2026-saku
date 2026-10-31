@@ -2,18 +2,8 @@
 
 from collections import defaultdict, deque
 from collections.abc import Mapping, Callable
-from typing import TypedDict
-import math
 from statistics import median
-from ..models import (
-    Node,
-    Edge,
-    Layers,
-    Positions,
-    SubdividedGraph,
-    CrossingResult,
-    CoordinateResult,
-)
+from ..models import Node, Edge, Layers
 
 
 def single_bk_assignment(
@@ -59,15 +49,15 @@ def orient_order(node_order: Layers, horizontal_forward: bool) -> Layers:
 
 def map_node_layers(order: Layers) -> dict[Node, int]:
     result: dict[Node, int] = {}
-    for layer, nodes in order.items():
+    for _layer, nodes in order.items():
         for node in nodes:
-            result[node] = layer
+            result[node] = _layer
     return result
 
 
 def node_positions(order: Layers) -> dict[Node, int]:
     result: dict[Node, int] = {}
-    for layer, nodes in order.items():
+    for _layer, nodes in order.items():
         for index, node in enumerate(nodes):
             result[node] = index
     return result

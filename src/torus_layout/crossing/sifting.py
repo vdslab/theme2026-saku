@@ -1,8 +1,6 @@
 """局所siftingと全体の最良状態の保持。"""
-import math
-from collections import defaultdict
 from ..models import Node, Edge, Layers, Winding
-from .lib.types import OrientedEdge, EdgeLike
+from .lib.types import OrientedEdge
 from .lib.embedding import copy_order, forward_layer_pairs, oriented_pair_embedding
 from .lib.crossings import count_all_crossings, crossings_between_edge_sets, crossings_for_edge, crossings_involving_edges, pair_crossings, sifting_edge_weights
 

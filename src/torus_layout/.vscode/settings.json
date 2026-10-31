@@ -1,0 +1,4 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/../../theme2026-saku/bin/python",
+  "python.analysis.diagnosticMode": "workspace"
+}

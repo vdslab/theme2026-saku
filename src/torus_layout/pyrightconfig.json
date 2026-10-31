@@ -16,5 +16,6 @@
         ".."
       ]
     }
-  ]
+  ],
+  "stubPath": "typings"
 }

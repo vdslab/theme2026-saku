@@ -1,7 +1,6 @@
+from collections.abc import Callable
 """2層・全体の交差数と局所差分。"""
-import math
-from collections import defaultdict
-from ...models import Node, Edge, Layers, Winding
+from ...models import Node, Layers
 from .types import OrientedEdge, EdgeLike
 from .embedding import edge_endpoints
 
@@ -113,7 +112,7 @@ def crossings_between_edges[E: EdgeLike](edge1: E, edge2: E, pi_fixed: dict[Node
     """
     fixed1, free1 = edge_endpoints(edge1)
     fixed2, free2 = edge_endpoints(edge2)
-    _sign = lambda value: 1 if value > 0 else -1 if value < 0 else 0
+    _sign: Callable[[int], int] = lambda value: 1 if value > 0 else -1 if value < 0 else 0
     a = _sign(pi_fixed[fixed2] - pi_fixed[fixed1])
     b = _sign(pi_free[free2] - pi_free[free1])
     delta = psi.get(edge2, 0) - psi.get(edge1, 0)

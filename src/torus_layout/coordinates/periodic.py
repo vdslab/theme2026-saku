@@ -1,19 +1,9 @@
 """周期的な座標平滑化と順序を保つ射影。"""
 
-from collections import defaultdict, deque
-from collections.abc import Mapping, Callable
+from collections import defaultdict
+from collections.abc import Mapping
 from typing import TypedDict
-import math
-from statistics import median
-from ..models import (
-    Node,
-    Edge,
-    Layers,
-    Positions,
-    SubdividedGraph,
-    CrossingResult,
-    CoordinateResult,
-)
+from ..models import Node, Edge, Layers
 
 
 class IsotonicBlock(TypedDict):

@@ -1,8 +1,7 @@
 """円形重心による初期順序。"""
 import math
 from collections import defaultdict
-from ..models import Node, Edge, Layers, Winding
-from .lib.types import OrientedEdge, EdgeLike
+from ..models import Node, Edge, Layers
 from .lib.embedding import base_order, copy_order
 
 def initial_orders(L: Layers, layers: list[int], edges: list[Edge]) -> list[Layers]:

@@ -6,7 +6,7 @@ from ..lib.solver import create_gurobi_env
 from ..lib.model import add_layer_variables_and_constraints
 from ..lib.results import read_assignment
 
-def _optimize_qp(V: list[Node], A: list[Edge], torus_count: int,
+def optimize_qp(V: list[Node], A: list[Edge], torus_count: int,
                      layer_count: int, w: Weights, lam: dict[Edge,int]
                      ) -> tuple[dict[Node,int], Flags, float]:
     if layer_count < 1:

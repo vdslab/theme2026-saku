@@ -2,12 +2,12 @@
 import time
 from collections import defaultdict
 from ...models import Node, Edge, Flags, Weights
-from .diff import _optimize_diff
+from .diff import optimize_diff
 
-def _optimize_barycenter(V: list[Node], A: list[Edge], torus_count: int, layer_count: int, w: Weights, lam: dict[Edge, int]) -> tuple[dict[Node, int], Flags, float]:
+def optimize_barycenter(V: list[Node], A: list[Edge], torus_count: int, layer_count: int, w: Weights, lam: dict[Edge, int]) -> tuple[dict[Node, int], Flags, float]:
     """diffの初期解から、元と同じ反復・補正で重心を整える。"""
     max_layer_bound = layer_count - 1
-    y_val, t_val, init_time = _optimize_diff(V, A, torus_count, layer_count, w, lam)
+    y_val, t_val, init_time = optimize_diff(V, A, torus_count, layer_count, w, lam)
     if not y_val:
         return (y_val, t_val, init_time)
     start_time = time.time()
@@ -41,7 +41,7 @@ def _optimize_barycenter(V: list[Node], A: list[Edge], torus_count: int, layer_c
             max_layer = min(max_layer, max_layer_bound)
             if min_layer > max_layer:
                 continue
-            all_neighbors = []
+            all_neighbors: list[Node] = []
             if v in in_edges:
                 all_neighbors.extend(in_edges[v])
             if v in out_edges:

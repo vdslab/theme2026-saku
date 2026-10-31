@@ -8,8 +8,8 @@ def create_gurobi_env(verbose: bool = False) -> gp.Env:
     load_dotenv()
     return gp.Env(params={
         "OutputFlag": 1 if verbose else 0,
-        "WLSACCESSID": os.getenv("GRB_WLSACCESSID"),
-        "WLSSECRET": os.getenv("GRB_WLSSECRET"),
+        "WLSACCESSID": cast(str, os.getenv("GRB_WLSACCESSID")),
+        "WLSSECRET": cast(str, os.getenv("GRB_WLSSECRET")),
         # Required by the existing .env contract. cast leaves the original
         # int(None) failure unchanged if configuration is missing.
         "LICENSEID": int(cast(str, os.getenv("GRB_LICENSEID"))),

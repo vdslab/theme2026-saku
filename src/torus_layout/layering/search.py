@@ -5,10 +5,10 @@ from .minimize_wraps import minimize_torus_edges
 
 def find_minimum_torus_configuration(V: list[Node], A: list[Edge], w: Weights | None=None, lam: dict[Edge, int] | None=None) -> tuple[int | None, int | None, float]:
     st = time.time()
-    A = list(set(A))
+    edges = list(set(A))
     max_lam = max(lam.values(), default=1) if lam is not None else 1
     max_L = max(1, len(V) * max_lam)
-    _, _, _, _, target_min_torus = minimize_torus_edges(V, A, max_L, w, lam)
+    _, _, _, _, target_min_torus = minimize_torus_edges(V, edges, max_L, w, lam)
     if target_min_torus is None:
         return (None, None, time.time() - st)
     left, right = (1, max_L)
@@ -16,7 +16,7 @@ def find_minimum_torus_configuration(V: list[Node], A: list[Edge], w: Weights | 
     min_torus_count = target_min_torus
     while left <= right:
         mid = (left + right) // 2
-        _, _, _, _, torus_count = minimize_torus_edges(V, A, mid, w, lam)
+        _, _, _, _, torus_count = minimize_torus_edges(V, edges, mid, w, lam)
         if torus_count is None:
             left = mid + 1
             continue

@@ -25,20 +25,16 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ./theme2026-saku/bin/python -m torus_la
 失敗時や時間制限時の扱い、解の丸め、辺の重複除去順は元実装を維持します。
 探索の時間は処理全体、diffの時間はGurobiのRuntimeです。
 
-### 型検査の環境制限
+### 型検査
 
-Pyrightの取得は通常・権限付きの双方でDNSエラーになっています。
-strict設定と型付き公開APIを用意していますが、CLIの型検査は未実施です。
-PylanceをVS Code外から起動する方法は利用条件に適合しないため使用しません。
-通常import・コンパイル・比較テストは別途実施しています。
+Pyright CLIの取得はDNSエラーで実行できませんでしたが、インストール済みの
+VS Code / Pylance 2026.4.1で、新パッケージを別ワークスペースとして開いて検査しました。
+プロジェクトのPython環境、strict設定、ワークスペース全体の診断を有効にし、
+Pylanceの診断が0件であることを確認しています。元のVS Code設定は変更していません。
 
-`layering.balance_layers` は4手法を選択し、`assign_layers` は探索とバランスを順に実行します。
-- diff: 周期スパンの和を最小化するILP。
-- diff_square: 周期スパンの二乗和を最小化するIQP。
-- qp: 階層変数を連続緩和し、元と同じPythonのroundで整数化します。丸め後の既知の制約違反も維持します。
-- barycenter: diffの初期解を重心法で更新します。反復・補正は元実装のままです。
-
-TIME_LIMIT/SUBOPTIMAL時の扱いを維持しており、探索結果の最適性を新たに保証する変更は行っていません。
+`typings/` はMatplotlibの使用APIだけを記述した型接続です。
+ライブラリ同梱型の `**kwargs: Unknown` が伝播する箇所を限定的な宣言で補っています。
+実装・実行時importや警告レベルは変更していません。
 
 ## ダミー挿入
 
@@ -65,3 +61,10 @@ sifting、global guard、回転後処理を元と同じ順に実行します。
 4方向のBK系整列とブロック圧縮、中央値の統合、周期的な射影・平滑化を元と同じ順に行います。
 入力の順序と巻き数を変更せず、`CoordinateResult.positions` と `period` を返します。
 `min_gap` と `smooth_iterations` の既定値は元の1.0と4です。
+
+## 描画
+
+`drawing.create_figure` はFigureを返し、保存・表示・closeは呼び出し側が行います。
+`drawing.draw_layout` は元と同じ保存・表示・タイル処理を実行してFigureを閉じます。
+`DrawingOptions` は既存の表示設定をまとめたものです。座標を省略した際の補完も維持します。
+通常・タイル・ダミー表示・座標省略の8組で、旧画像とRGBAピクセルが完全一致しています。

@@ -1,0 +1,60 @@
+from collections.abc import Iterable, Mapping, Sequence
+from PIL.Image import Image
+from .lines import Line2D
+from .patches import FancyArrowPatch, Rectangle
+from .transforms import Bbox
+
+class Spine:
+    def set_visible(self, visible: bool) -> None: ...
+
+class Axes:
+    spines: Mapping[str, Spine]
+    def set_facecolor(self, color: str) -> None: ...
+    def set_xlim(self, left: float, right: float) -> None: ...
+    def set_ylim(self, bottom: float, top: float) -> None: ...
+    def set_aspect(self, aspect: str, adjustable: str = ...) -> None: ...
+    def set_yticks(self, ticks: Iterable[float]) -> object: ...
+    def set_xticks(self, ticks: Iterable[float]) -> object: ...
+    def set_xticklabels(self, labels: Iterable[str], *, fontsize: float) -> object: ...
+    def tick_params(self, *, axis: str, length: float, pad: float) -> None: ...
+    def add_patch(self, patch: FancyArrowPatch | Rectangle) -> object: ...
+    def scatter(
+        self,
+        x: Sequence[float],
+        y: Sequence[float],
+        *,
+        s: float,
+        c: str,
+        edgecolors: str,
+        linewidths: float,
+        zorder: float,
+        marker: str = ...
+    ) -> object: ...
+    def text(
+        self,
+        x: float,
+        y: float,
+        s: str,
+        *,
+        ha: str,
+        va: str,
+        fontsize: float,
+        color: str,
+        zorder: float
+    ) -> object: ...
+    def legend(
+        self,
+        *,
+        handles: Iterable[Line2D],
+        loc: str,
+        bbox_to_anchor: tuple[float, float],
+        ncol: int,
+        frameon: bool,
+        fontsize: float,
+        handlelength: float,
+        columnspacing: float
+    ) -> object: ...
+    def invert_yaxis(self) -> None: ...
+    def get_window_extent(self) -> Bbox: ...
+    def imshow(self, image: Image) -> object: ...
+    def set_axis_off(self) -> None: ...

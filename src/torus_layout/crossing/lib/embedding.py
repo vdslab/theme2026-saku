@@ -1,6 +1,5 @@
 """巻き数と回転の計算。"""
 import math
-from collections import defaultdict
 from ...models import Node, Edge, Layers, Winding
 from .types import OrientedEdge, EdgeLike
 OFFSET_VALUES = (-1,0,1)
