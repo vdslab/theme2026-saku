@@ -32,7 +32,7 @@ import time
 DEFAULT_NODE_COUNT = 25
 DEFAULT_CYCLE_COUNT = 2
 DEFAULT_EDGE_PROBABILITY = 0.005
-DEFAULT_RANDOM_SEED = 1
+DEFAULT_RANDOM_SEED = None
 DEFAULT_BALANCE_METHOD = "diff_square"
 DEFAULT_ROUND_COUNT = 5
 DEFAULT_SAVE_PATH = None
@@ -149,13 +149,17 @@ def parse_augment():
 def generate_graph(n, num_cycles, edge_prob, seed):
     print("\n1. グラフ生成")
 
-    V, A = generate_cyclic_graph(
-        n=n, num_cycles=num_cycles, edge_prob=edge_prob, seed=seed
+    V, A, seed = generate_cyclic_graph(
+        n=n,
+        num_cycles=num_cycles,
+        edge_prob=edge_prob,
+        seed=seed,
     )
     # V, A = generate_watts_strogatz_graph(n, 4, 0.8)
 
     print(f"  ノード数: {len(V)}")
     print(f"  エッジ数: {len(A)}")
+    print(f"  シード値: {seed}")
     print(f"  ノード: {V}")
     print(f"  エッジ: {A}")
 

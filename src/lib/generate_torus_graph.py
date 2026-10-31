@@ -173,7 +173,12 @@ def generate_dag(n, edge_prob=0.3, seed=None):
     return V, A
 
 
-def generate_cyclic_graph(n, num_cycles=2, edge_prob=0.2, seed=None):
+def generate_cyclic_graph(
+    n,
+    num_cycles=2,
+    edge_prob=0.2,
+    seed=None,
+):
     """
     サイクルを含む連結グラフを生成
 
@@ -186,9 +191,11 @@ def generate_cyclic_graph(n, num_cycles=2, edge_prob=0.2, seed=None):
     Returns:
         V: ノード集合 list[int]
         A: エッジ集合 list[tuple(int, int)]
+        seed: 乱数シード
     """
-    if seed is not None:
-        random.seed(seed)
+    if seed is None:
+        seed = random.SystemRandom().randrange(2**32)
+    random.seed(seed)
 
     V = list(range(n))
     A = []
@@ -233,7 +240,7 @@ def generate_cyclic_graph(n, num_cycles=2, edge_prob=0.2, seed=None):
                 if random.random() < edge_prob:
                     A.append((u, v))
 
-    return V, A
+    return V, A, seed
 
 
 def generate_mixed_graph(n, edge_prob=0.3, cycle_prob=0.3, seed=None):
@@ -310,7 +317,7 @@ if __name__ == "__main__":
     print(f"連結: {is_connected(V, A)}\n")
 
     print("=== サイクリックグラフ ===")
-    V, A = generate_cyclic_graph(8, num_cycles=2, seed=42)
+    V, A, seed = generate_cyclic_graph(8, num_cycles=2, seed=42)
     print(f"ノード数: {len(V)}, エッジ数: {len(A)}")
     print(f"エッジ: {A}")
     print(f"連結: {is_connected(V, A)}\n")
