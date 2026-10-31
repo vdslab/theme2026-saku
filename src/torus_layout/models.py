@@ -1,4 +1,5 @@
 """工程間で受け渡すデータ。入力順と辺の重複を保持する。"""
+
 from dataclasses import dataclass
 from typing import Literal
 
@@ -11,16 +12,19 @@ type Winding = dict[Edge, int]
 type Positions = dict[Node, tuple[float, float]]
 type BalanceMethod = Literal["diff", "diff_square", "qp", "barycenter"]
 
+
 @dataclass(frozen=True)
 class Graph:
     nodes: tuple[Node, ...]
     edges: tuple[Edge, ...]
+
 
 @dataclass(frozen=True)
 class LayerSearchResult:
     layer_count: int | None
     torus_count: int | None
     runtime: float
+
 
 @dataclass(frozen=True)
 class LayerAssignmentResult:
@@ -35,6 +39,7 @@ class LayerAssignmentResult:
             result.setdefault(layer, []).append(node)
         return result
 
+
 @dataclass(frozen=True)
 class SubdividedGraph:
     graph: Graph
@@ -47,15 +52,18 @@ class SubdividedGraph:
     def dummy_nodes(self) -> set[Node]:
         return set(self.graph.nodes) - set(self.original_nodes)
 
+
 @dataclass(frozen=True)
 class CrossingResult:
     order: Layers
     winding_numbers: Winding
 
+
 @dataclass(frozen=True)
 class CoordinateResult:
     positions: Positions
     period: float
+
 
 @dataclass(frozen=True)
 class PipelineResult:
@@ -67,3 +75,9 @@ class PipelineResult:
     coordinates: CoordinateResult
     crossing_time: float
     coordinate_time: float
+
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    balance_method: BalanceMethod = "diff_square"
+    rounds: int = 5
