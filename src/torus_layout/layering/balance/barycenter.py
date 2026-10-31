@@ -1,10 +1,19 @@
 """固定されたトーラス辺のフラグを維持する重心法。"""
+
 import time
 from collections import defaultdict
 from ...models import Node, Edge, Flags, Weights
 from .diff import optimize_diff
 
-def optimize_barycenter(V: list[Node], A: list[Edge], torus_count: int, layer_count: int, w: Weights, lam: dict[Edge, int]) -> tuple[dict[Node, int], Flags, float]:
+
+def optimize_barycenter(
+    V: list[Node],
+    A: list[Edge],
+    torus_count: int,
+    layer_count: int,
+    w: Weights,
+    lam: dict[Edge, int],
+) -> tuple[dict[Node, int], Flags, float]:
     """diffの初期解から、元と同じ反復・補正で重心を整える。"""
     max_layer_bound = layer_count - 1
     y_val, t_val, init_time = optimize_diff(V, A, torus_count, layer_count, w, lam)
@@ -55,12 +64,16 @@ def optimize_barycenter(V: list[Node], A: list[Edge], torus_count: int, layer_co
                 found = False
                 for offset in range(1, max_layer - min_layer + 2):
                     upper = candidate_layer + offset
-                    if upper <= max_layer and (not any((y_val[u] == upper for u in all_neighbors))):
+                    if upper <= max_layer and (
+                        not any((y_val[u] == upper for u in all_neighbors))
+                    ):
                         candidate_layer = upper
                         found = True
                         break
                     lower = candidate_layer - offset
-                    if lower >= min_layer and (not any((y_val[u] == lower for u in all_neighbors))):
+                    if lower >= min_layer and (
+                        not any((y_val[u] == lower for u in all_neighbors))
+                    ):
                         candidate_layer = lower
                         found = True
                         break

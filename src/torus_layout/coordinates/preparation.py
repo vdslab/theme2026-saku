@@ -1,14 +1,20 @@
 from ..validation import is_integer, is_number, is_tuple
+
 """元と同じ入力検証と順序の補完。"""
 from collections.abc import Mapping
 import math
 from ..models import Node, Edge, Layers
 
-def complete_order(order: Layers | None, layer_dict: Layers, layers: list[int]) -> Layers:
+
+def complete_order(
+    order: Layers | None, layer_dict: Layers, layers: list[int]
+) -> Layers:
     order = {} if order is None else order
-    unknown_layers = [layer for layer, nodes in order.items() if layer not in layer_dict and nodes]
+    unknown_layers = [
+        layer for layer, nodes in order.items() if layer not in layer_dict and nodes
+    ]
     if unknown_layers:
-        raise ValueError(f'order contains unknown layers: {unknown_layers!r}')
+        raise ValueError(f"order contains unknown layers: {unknown_layers!r}")
     completed: Layers = {}
     for layer in layers:
         layer_nodes = layer_dict[layer]
@@ -16,9 +22,11 @@ def complete_order(order: Layers | None, layer_dict: Layers, layers: list[int]) 
         nodes: list[Node] = []
         for node in order.get(layer, []):
             if node not in layer_nodes:
-                raise ValueError(f'node {node!r} in order[{layer!r}] is absent from that layer')
+                raise ValueError(
+                    f"node {node!r} in order[{layer!r}] is absent from that layer"
+                )
             if node in seen:
-                raise ValueError(f'order[{layer!r}] contains duplicate node {node!r}')
+                raise ValueError(f"order[{layer!r}] contains duplicate node {node!r}")
             nodes.append(node)
             seen.add(node)
         for node in layer_nodes:
@@ -27,40 +35,51 @@ def complete_order(order: Layers | None, layer_dict: Layers, layers: list[int]) 
         completed[layer] = nodes
     return completed
 
+
 def validate_parameters(min_gap: float, smooth_iterations: int) -> None:
     if not is_number(min_gap) or not math.isfinite(min_gap):
-        raise ValueError('min_gap must be a finite number')
+        raise ValueError("min_gap must be a finite number")
     if min_gap <= 0:
-        raise ValueError('min_gap must be greater than zero')
+        raise ValueError("min_gap must be greater than zero")
     if isinstance(smooth_iterations, bool) or not is_integer(smooth_iterations):
-        raise ValueError('smooth_iterations must be a non-negative integer')
+        raise ValueError("smooth_iterations must be a non-negative integer")
     if smooth_iterations < 0:
-        raise ValueError('smooth_iterations must be a non-negative integer')
+        raise ValueError("smooth_iterations must be a non-negative integer")
 
-def validate_graph(node_order: Layers, edges: list[Edge], psi: Mapping[Edge, float]) -> None:
+
+def validate_graph(
+    node_order: Layers, edges: list[Edge], psi: Mapping[Edge, float]
+) -> None:
     node_to_layer: dict[Node, int] = {}
     for layer, nodes in node_order.items():
         if len(nodes) != len(set(nodes)):
-            raise ValueError(f'layer {layer!r} contains duplicate nodes')
+            raise ValueError(f"layer {layer!r} contains duplicate nodes")
         for node in nodes:
             if node in node_to_layer:
-                raise ValueError(f'node {node!r} occurs in both layer {node_to_layer[node]!r} and layer {layer!r}')
+                raise ValueError(
+                    f"node {node!r} occurs in both layer {node_to_layer[node]!r} and layer {layer!r}"
+                )
             node_to_layer[node] = layer
     for edge in edges:
         if not is_tuple(edge) or len(edge) != 2:
-            raise ValueError(f'invalid edge: {edge!r}')
+            raise ValueError(f"invalid edge: {edge!r}")
         if edge[0] not in node_to_layer or edge[1] not in node_to_layer:
-            raise ValueError(f'edge endpoint is missing from layer_dict: {edge!r}')
+            raise ValueError(f"edge endpoint is missing from layer_dict: {edge!r}")
         winding = psi.get(edge, 0)
         if not is_number(winding) or not math.isfinite(winding):
-            raise ValueError(f'psi must contain finite numeric values: {edge!r}')
+            raise ValueError(f"psi must contain finite numeric values: {edge!r}")
 
-def find_dummy_nodes(node_order: Layers, original_nodes: tuple[Node, ...] | None) -> set[Node]:
+
+def find_dummy_nodes(
+    node_order: Layers, original_nodes: tuple[Node, ...] | None
+) -> set[Node]:
     if original_nodes is None:
         return set()
     all_nodes = {node for nodes in node_order.values() for node in nodes}
     original_set = set(original_nodes)
     unknown = original_set - all_nodes
     if unknown:
-        raise ValueError(f'original_nodes contains nodes that are absent from layer_dict: {sorted(unknown, key=repr)!r}')
+        raise ValueError(
+            f"original_nodes contains nodes that are absent from layer_dict: {sorted(unknown, key=repr)!r}"
+        )
     return all_nodes - original_set

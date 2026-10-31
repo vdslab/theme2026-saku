@@ -1,11 +1,19 @@
 """ソルバー結果を元と同じ終了条件・丸めで取得する。"""
+
 import gurobipy as gp
 from gurobipy import GRB
 from ...models import Edge, Node, Flags
 
-def read_assignment(model: gp.Model, nodes: list[Node], edges: list[Edge],
-                    y: gp.tupledict[Node, gp.Var], t: gp.tupledict[Edge, gp.Var],
-                    *, report_failure: bool = True) -> tuple[dict[Node,int], Flags]:
+
+def read_assignment(
+    model: gp.Model,
+    nodes: list[Node],
+    edges: list[Edge],
+    y: gp.tupledict[Node, gp.Var],
+    t: gp.tupledict[Edge, gp.Var],
+    *,
+    report_failure: bool = True,
+) -> tuple[dict[Node, int], Flags]:
     ranks: dict[Node, int] = {}
     flags: Flags = {}
     if model.status in (GRB.OPTIMAL, GRB.TIME_LIMIT, GRB.SUBOPTIMAL):

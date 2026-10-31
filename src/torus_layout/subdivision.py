@@ -1,7 +1,24 @@
 """元実装と同じ順序・IDで長距離辺を分割する。"""
-from .models import Graph, Node, Edge, Layers, Flags, Weights, LayerAssignmentResult, SubdividedGraph
 
-def _insert_dummy_node(V: list[Node], A: list[Edge], L: Layers, t_val: Flags | None=None, w: Weights | None=None) -> tuple[list[Node], list[Edge], Layers, Flags, Weights]:
+from .models import (
+    Graph,
+    Node,
+    Edge,
+    Layers,
+    Flags,
+    Weights,
+    LayerAssignmentResult,
+    SubdividedGraph,
+)
+
+
+def _insert_dummy_node(
+    V: list[Node],
+    A: list[Edge],
+    L: Layers,
+    t_val: Flags | None = None,
+    w: Weights | None = None,
+) -> tuple[list[Node], list[Edge], Layers, Flags, Weights]:
     """
     平坦トーラス上の階層グラフに対して、長距離エッジを分割するダミーノードを挿入する共通処理。
     必ず左から右（順方向）へエッジが進むように分割し、トーラス境界をまたぐセグメントを判定する。
@@ -76,11 +93,19 @@ def _insert_dummy_node(V: list[Node], A: list[Edge], L: Layers, t_val: Flags | N
         new_t[prev, v] = last_wrap or (forward_steps == 0 and t_uv)
     return (new_V, new_A, new_L, new_t, new_w)
 
-def insert_dummy_nodes(graph: Graph, assignment: LayerAssignmentResult, *,
-                       layers: Layers | None = None, w: Weights | None = None) -> SubdividedGraph:
+
+def insert_dummy_nodes(
+    graph: Graph,
+    assignment: LayerAssignmentResult,
+    *,
+    layers: Layers | None = None,
+    w: Weights | None = None
+) -> SubdividedGraph:
     """明示した空レイヤーも保持する。省略時は階層割当から導出する。"""
     layer_map = assignment.layers if layers is None else layers
     nodes, edges, divided_layers, flags, weights = _insert_dummy_node(
-        list(graph.nodes), list(graph.edges), layer_map, assignment.torus_flags, w)
-    return SubdividedGraph(Graph(tuple(nodes), tuple(edges)), divided_layers,
-                          flags, weights, graph.nodes)
+        list(graph.nodes), list(graph.edges), layer_map, assignment.torus_flags, w
+    )
+    return SubdividedGraph(
+        Graph(tuple(nodes), tuple(edges)), divided_layers, flags, weights, graph.nodes
+    )

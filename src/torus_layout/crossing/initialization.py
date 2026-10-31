@@ -1,8 +1,10 @@
 """円形重心による初期順序。"""
+
 import math
 from collections import defaultdict
 from ..models import Node, Edge, Layers
 from .lib.embedding import base_order, copy_order
+
 
 def initial_orders(L: Layers, layers: list[int], edges: list[Edge]) -> list[Layers]:
     """
@@ -19,7 +21,10 @@ def initial_orders(L: Layers, layers: list[int], edges: list[Edge]) -> list[Laye
     base = base_order(L, layers)
     return [barycentric_order(base, layers, edges)]
 
-def barycentric_order(initial_order: Layers, layers: list[int], edges: list[Edge]) -> Layers:
+
+def barycentric_order(
+    initial_order: Layers, layers: list[int], edges: list[Edge]
+) -> Layers:
     """
     初期順序にbarycenter sweepを複数回かける。
 
@@ -35,7 +40,10 @@ def barycentric_order(initial_order: Layers, layers: list[int], edges: list[Edge
     barycenter_sweep(order, layers, edges, forward=True)
     return order
 
-def barycenter_sweep(order: Layers, layers: list[int], edges: list[Edge], forward: bool) -> None:
+
+def barycenter_sweep(
+    order: Layers, layers: list[int], edges: list[Edge], forward: bool
+) -> None:
     """
     一方向に隣接レイヤーのbarycenter並べ替えを行う。
 
@@ -56,9 +64,18 @@ def barycenter_sweep(order: Layers, layers: list[int], edges: list[Edge], forwar
         else:
             free_layer = layers[i]
             fixed_layer = layers[(i + 1) % len(layers)]
-        process_layer_pair(fixed_layer, free_layer, order, edges, fixed_is_source=forward)
+        process_layer_pair(
+            fixed_layer, free_layer, order, edges, fixed_is_source=forward
+        )
 
-def process_layer_pair(fixed_key: int, free_key: int, order: Layers, edges: list[Edge], fixed_is_source: bool=True) -> None:
+
+def process_layer_pair(
+    fixed_key: int,
+    free_key: int,
+    order: Layers,
+    edges: list[Edge],
+    fixed_is_source: bool = True,
+) -> None:
     """
     固定レイヤーに対する自由レイヤーのbarycenter順序を計算する。
 
@@ -76,12 +93,28 @@ def process_layer_pair(fixed_key: int, free_key: int, order: Layers, edges: list
     free_nodes = order[free_key]
     if not fixed_nodes:
         return
-    neighbors = neighbors_from_fixed_layer(fixed_nodes, free_nodes, edges, fixed_is_source)
+    neighbors = neighbors_from_fixed_layer(
+        fixed_nodes, free_nodes, edges, fixed_is_source
+    )
     fixed_positions = circular_positions(fixed_nodes)
-    fixed_angles = {node: 2 * math.pi * index / len(fixed_nodes) for index, node in enumerate(fixed_nodes)}
-    order[free_key] = sorted(free_nodes, key=lambda node: barycenter_angle(node, free_nodes, neighbors, fixed_positions, fixed_angles))
+    fixed_angles = {
+        node: 2 * math.pi * index / len(fixed_nodes)
+        for index, node in enumerate(fixed_nodes)
+    }
+    order[free_key] = sorted(
+        free_nodes,
+        key=lambda node: barycenter_angle(
+            node, free_nodes, neighbors, fixed_positions, fixed_angles
+        ),
+    )
 
-def neighbors_from_fixed_layer(fixed_nodes: list[Node], free_nodes: list[Node], edges: list[Edge], fixed_is_source: bool) -> dict[Node, list[Node]]:
+
+def neighbors_from_fixed_layer(
+    fixed_nodes: list[Node],
+    free_nodes: list[Node],
+    edges: list[Edge],
+    fixed_is_source: bool,
+) -> dict[Node, list[Node]]:
     """
     自由レイヤーの各ノードから固定レイヤー側の隣接ノードを集める。
 
@@ -104,6 +137,7 @@ def neighbors_from_fixed_layer(fixed_nodes: list[Node], free_nodes: list[Node], 
             neighbors[u].append(v)
     return neighbors
 
+
 def circular_positions(nodes: list[Node]) -> dict[Node, tuple[float, float]]:
     """
     ノード列を単位円上に等間隔配置した座標を返す。
@@ -120,7 +154,14 @@ def circular_positions(nodes: list[Node]) -> dict[Node, tuple[float, float]]:
         positions[node] = (math.cos(theta), math.sin(theta))
     return positions
 
-def barycenter_angle(node: Node, free_nodes: list[Node], neighbors: dict[Node, list[Node]], fixed_positions: dict[Node, tuple[float, float]], fixed_angles: dict[Node, float]) -> float:
+
+def barycenter_angle(
+    node: Node,
+    free_nodes: list[Node],
+    neighbors: dict[Node, list[Node]],
+    fixed_positions: dict[Node, tuple[float, float]],
+    fixed_angles: dict[Node, float],
+) -> float:
     """
     固定側隣接ノードの重心角度を計算する。
 

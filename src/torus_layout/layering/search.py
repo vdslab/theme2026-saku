@@ -1,9 +1,16 @@
 """元実装と同じ上限・判定でレイヤー数を二分探索する。"""
+
 import time
 from ..models import Graph, Node, Edge, Weights, LayerSearchResult
 from .minimize_wraps import minimize_torus_edges
 
-def find_minimum_torus_configuration(V: list[Node], A: list[Edge], w: Weights | None=None, lam: dict[Edge, int] | None=None) -> tuple[int | None, int | None, float]:
+
+def find_minimum_torus_configuration(
+    V: list[Node],
+    A: list[Edge],
+    w: Weights | None = None,
+    lam: dict[Edge, int] | None = None,
+) -> tuple[int | None, int | None, float]:
     st = time.time()
     edges = list(set(A))
     max_lam = max(lam.values(), default=1) if lam is not None else 1
@@ -29,7 +36,10 @@ def find_minimum_torus_configuration(V: list[Node], A: list[Edge], w: Weights | 
     ed = time.time()
     return (optimal_L, min_torus_count, ed - st)
 
+
 def find_minimum_configuration(
     graph: Graph, w: Weights | None = None, lam: dict[Edge, int] | None = None
 ) -> LayerSearchResult:
-    return LayerSearchResult(*find_minimum_torus_configuration(list(graph.nodes), list(graph.edges), w, lam))
+    return LayerSearchResult(
+        *find_minimum_torus_configuration(list(graph.nodes), list(graph.edges), w, lam)
+    )
