@@ -39,4 +39,4 @@ are level guides; dummy vertices are used only as hidden bend points.
 `PYTHONPATH=src` を指定し、`radial_layout` から各処理を import できます。
 CLI は `-m radial_layout` または `-m radial_layout.main` で実行します。
 `main.py` の直接実行には対応しません。
-元の examples は既存の呼び出しとの互換性のため、そのまま残しています。
+移植元の `examples/radial` は削除済みです。import は `radial_layout` を使用してください。
