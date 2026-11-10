@@ -60,3 +60,11 @@ CLI は `-m sugiyama_layout` または `-m sugiyama_layout.main` で実行しま
 交差数計算は辺対の計算を含め、このパッケージ専用の実装を使用します。
 階層割当の方針、交差削減の探索、座標割当、描画はこのパッケージに残しています。
 依存関係と分離理由は [layout_common/README.md](../layout_common/README.md) を参照してください。
+
+## 既定値の変更
+
+この方式のCLI入力、交差削減の反復数、座標間隔、描画設定は
+[`constants.py`](constants.py) にまとめています。
+`DEFAULT_CROSSING_SWEEPS` が交差削減回数、`DEFAULT_NODE_GAP` と
+`DEFAULT_LAYER_GAP` が座標間隔です。変更は次回のプロセス起動から反映されます。
+CLI引数やAPI引数の明示指定が優先されます。共有生成器そのものの関数既定値は変更しません。

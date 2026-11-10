@@ -1,5 +1,11 @@
 """型付きの座標割当入口。"""
 
+from .. import constants
+from ..constants import (
+    MIN_NODE_GAP as MIN_NODE_GAP,
+    ALIGNMENT_ITERATIONS as ALIGNMENT_ITERATIONS,
+)
+
 from collections.abc import Mapping
 from ..models import (
     Node,
@@ -30,8 +36,6 @@ from .brandes_koepf import (
     single_bk_assignment,
 )
 
-MIN_NODE_GAP = 1.0
-ALIGNMENT_ITERATIONS = 4
 
 
 def compute_positions(
@@ -40,8 +44,8 @@ def compute_positions(
     edges: list[Edge],
     t_val: Mapping[Edge, bool] | None = None,
     psi: Mapping[Edge, float] | None = None,
-    min_gap: float = MIN_NODE_GAP,
-    smooth_iterations: int = ALIGNMENT_ITERATIONS,
+    min_gap: float = constants.MIN_NODE_GAP,
+    smooth_iterations: int = constants.ALIGNMENT_ITERATIONS,
     original_nodes: tuple[Node, ...] | None = None,
 ) -> Positions:
     """
@@ -126,10 +130,10 @@ def assign_coordinates(
     graph: SubdividedGraph,
     crossing: CrossingResult,
     *,
-    min_gap: float = 1.0,
-    smooth_iterations: int = 4,
-    method: str = "brandes_koepf",
-    bend_weight: float = 0.0,
+    min_gap: float = constants.MIN_NODE_GAP,
+    smooth_iterations: int = constants.ALIGNMENT_ITERATIONS,
+    method: str = constants.DEFAULT_COORDINATE_METHOD,
+    bend_weight: float = constants.DEFAULT_BEND_WEIGHT,
 ) -> CoordinateResult:
     """Assign coordinates with legacy BK, fixed-winding QP, or L1 LP.
 

@@ -3,6 +3,8 @@
 from collections.abc import Hashable, Mapping, Sequence
 from typing import TypeAlias
 
+from . import constants
+
 import matplotlib.pyplot as plt
 import networkx as nx
 from matplotlib.patches import FancyArrowPatch
@@ -60,7 +62,7 @@ def create_hierarchical_figure(
     width = max(1, num_layers + 1)
     height = max(1, max_layer_size + 1)
     if figsize is None:
-        figsize = (width * 2, height * 2)
+        figsize = (width * constants.FIGURE_SCALE, height * constants.FIGURE_SCALE)
     figure, axis = plt.subplots(figsize=figsize)
 
     for original_edge in original_edges:
@@ -84,22 +86,22 @@ def create_hierarchical_figure(
         positions,
         nodelist=nodes,
         ax=axis,
-        node_size=400,
-        node_color="lightblue",
+        node_size=constants.NODE_SIZE,
+        node_color=constants.NODE_COLOR,
     )
     nx.draw_networkx_labels(
         graph,
         positions,
         labels={node: node for node in nodes},
         ax=axis,
-        font_size=10,
+        font_size=constants.FONT_SIZE,
     )
 
     all_points = list(positions.values())
     xs = [point[0] for point in all_points]
     ys = [point[1] for point in all_points]
-    x_margin = 0.55
-    y_margin = 0.65
+    x_margin = constants.X_MARGIN
+    y_margin = constants.Y_MARGIN
     axis.set_xlim(min(xs, default=0.0) - x_margin, max(xs, default=0.0) + x_margin)
     axis.set_ylim(min(ys, default=0.0) - y_margin, max(ys, default=0.0) + y_margin)
     axis.invert_yaxis()
@@ -112,16 +114,16 @@ def create_hierarchical_figure(
 def _draw_path(axis, points: Sequence[Point], reversed_edge: bool) -> None:
     """非表示のダミー折れ曲がり点を経由して、元の辺を1本描画する。"""
 
-    color = "red" if reversed_edge else "black"
-    line_style = "--" if reversed_edge else "-"
-    node_radius = 0.15
+    color = constants.REVERSED_EDGE_COLOR if reversed_edge else constants.EDGE_COLOR
+    line_style = constants.REVERSED_EDGE_LINESTYLE if reversed_edge else constants.EDGE_LINESTYLE
+    node_radius = constants.NODE_RADIUS
     for index, (start, end) in enumerate(zip(points, points[1:])):
         is_last = index == len(points) - 2
         arrow = FancyArrowPatch(
             start,
             end,
             arrowstyle="->" if is_last else "-",
-            mutation_scale=20,
+            mutation_scale=constants.ARROW_SCALE,
             linestyle=line_style,
             color=color,
             shrinkA=node_radius * 100 if index == 0 else 0,

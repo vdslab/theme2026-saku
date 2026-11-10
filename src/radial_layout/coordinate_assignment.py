@@ -1,5 +1,7 @@
 """Assign polar and Cartesian coordinates to a radial hierarchy."""
 
+from . import constants
+
 from dataclasses import dataclass
 import math
 from typing import Hashable, Iterable, TypeAlias
@@ -19,9 +21,9 @@ class RadialCoordinates:
 def assign_coordinates(
     layers: dict[int, Iterable[Node]],
     *,
-    inner_radius: float = 1.8,
-    layer_gap: float = 1.8,
-    start_angle: float = math.pi / 2,
+    inner_radius: float = constants.DEFAULT_INNER_RADIUS,
+    layer_gap: float = constants.DEFAULT_LAYER_GAP,
+    start_angle: float = constants.DEFAULT_START_ANGLE,
 ) -> RadialCoordinates:
     """Place each layer at equal angular intervals on a concentric circle."""
 

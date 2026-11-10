@@ -11,6 +11,8 @@
 呼ばれる座標は、ここではレイヤー内の垂直座標になる。
 """
 
+from . import constants
+
 from collections import defaultdict
 import math
 from typing import Hashable, Iterable, TypeAlias
@@ -24,8 +26,8 @@ def assign_coordinates(
     edges: Iterable[Edge],
     *,
     dummy_nodes: Iterable[Node] = (),
-    node_gap: float = 1.35,
-    layer_gap: float = 1.65,
+    node_gap: float = constants.DEFAULT_NODE_GAP,
+    layer_gap: float = constants.DEFAULT_LAYER_GAP,
 ) -> dict[Node, tuple[float, float]]:
     """平面向けの Brandes--Köpf アルゴリズムで座標を割り当てる。"""
 

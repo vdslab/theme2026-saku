@@ -1,5 +1,7 @@
 """Draw a random graph with a standalone radial Sugiyama framework."""
 
+from .constants import DEFAULT_SIZE, DEFAULT_SEED, DEFAULT_REWIRING_PROBABILITY, DEFAULT_ROUNDS
+
 import argparse
 from pathlib import Path
 
@@ -10,12 +12,6 @@ from .drawing import draw_radial_graph
 from .dummy_insertion import insert_dummy_nodes
 from .layer_assignment import assign_layers
 from .random_graph import generate_watts_strogatz_digraph
-
-
-DEFAULT_SIZE = 10
-DEFAULT_SEED = None
-DEFAULT_REWIRING_PROBABILITY = 0.15
-DEFAULT_ROUNDS = 4
 
 
 def parse_arguments() -> argparse.Namespace:

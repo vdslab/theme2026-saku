@@ -1,5 +1,7 @@
 """既存の4手法を、同じデータ契約で選択する。"""
 
+from .. import constants
+
 from collections.abc import Callable
 from ..models import (
     Node,
@@ -34,7 +36,7 @@ def balance_layers(
     graph: Graph,
     torus_count: int,
     layer_count: int,
-    method: BalanceMethod = "diff_square",
+    method: BalanceMethod = constants.DEFAULT_BALANCE_METHOD,
     *,
     w: Weights | None = None,
     lam: dict[Edge, int] | None = None,
@@ -63,7 +65,7 @@ def balance_diff(
 
 def assign_layers(
     graph: Graph,
-    method: BalanceMethod = "diff_square",
+    method: BalanceMethod = constants.DEFAULT_BALANCE_METHOD,
     *,
     w: Weights | None = None,
     lam: dict[Edge, int] | None = None,

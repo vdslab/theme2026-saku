@@ -1,5 +1,7 @@
 """通常の平面向け杉山フレームワークでランダムグラフを描画する。"""
 
+from .constants import DEFAULT_SIZE, DEFAULT_SEED, DEFAULT_REWIRING_PROBABILITY
+
 import argparse
 
 from .coordinate_assignment import assign_coordinates
@@ -9,11 +11,6 @@ from .drawing import draw_hierarchical_graph
 from .dummy_insertion import insert_dummy_nodes
 from .layer_assignment import assign_layers
 from .random_graph import generate_watts_strogatz_digraph
-
-
-DEFAULT_SIZE = 10
-DEFAULT_SEED = None
-DEFAULT_REWIRING_PROBABILITY = 0.15
 
 
 def parse_arguments() -> argparse.Namespace:

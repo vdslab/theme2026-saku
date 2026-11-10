@@ -1,5 +1,7 @@
 """ダミー挿入済みの同じ入力に、現在の交差削減を適用する。"""
 
+from .. import constants
+
 from ..models import SubdividedGraph, CrossingResult
 from .initialization import initial_orders
 from .sifting import run_sifting_with_global_guard
@@ -13,7 +15,7 @@ from .seam import optimize_seam
 
 
 def reduce_crossings(
-    graph: SubdividedGraph, rounds: int = 5, *, optimize_seams: bool = True
+    graph: SubdividedGraph, rounds: int = constants.DEFAULT_ROUNDS, *, optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS
 ) -> CrossingResult:
     """Run guarded radial sifting/rotation, then minimize seam segments.
 

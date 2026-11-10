@@ -5,6 +5,8 @@
 同論文をそのまま実装したものではない。
 """
 
+from . import constants
+
 from collections import defaultdict
 from statistics import median
 from typing import Hashable, Iterable, TypeAlias
@@ -16,7 +18,7 @@ Edge: TypeAlias = tuple[Node, Node]
 def reduce_crossings(
     layers: dict[int, Iterable[Node]],
     edges: Iterable[Edge],
-    sweeps: int = 12,
+    sweeps: int = constants.DEFAULT_CROSSING_SWEEPS,
 ) -> dict[int, tuple[Node, ...]]:
     """辺の交差が少なくなるように、各レイヤー内の頂点順序を求める。
 

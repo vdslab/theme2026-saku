@@ -1,5 +1,7 @@
 """Matplotlib rendering for a concentric radial hierarchy."""
 
+from . import constants
+
 from collections.abc import Hashable, Mapping, Sequence
 import math
 from pathlib import Path
@@ -26,7 +28,7 @@ def draw_radial_graph(
     reversed_edges: frozenset[Edge],
     *,
     save_path: str | Path | None = None,
-    show: bool = True,
+    show: bool = constants.DEFAULT_SHOW_DRAWING,
 ) -> None:
     """Render the radial drawing, optionally save it, and close the figure."""
 
@@ -43,7 +45,7 @@ def draw_radial_graph(
     if save_path is not None:
         output = Path(save_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        figure.savefig(output, dpi=180, bbox_inches="tight", facecolor="white")
+        figure.savefig(output, dpi=constants.DPI, bbox_inches="tight", facecolor="white")
     if show:
         plt.show()
     plt.close(figure)
@@ -65,7 +67,7 @@ def create_radial_figure(
 
     outer_radius = max(radii.values(), default=1.0)
     if figsize is None:
-        side = max(6.0, min(12.0, outer_radius * 1.5))
+        side = max(constants.FIGURE_MIN_SIDE, min(constants.FIGURE_MAX_SIDE, outer_radius * constants.FIGURE_RADIUS_SCALE))
         figsize = (side, side)
     figure, axis = plt.subplots(figsize=figsize)
     for radius in radii.values():
@@ -74,9 +76,9 @@ def create_radial_figure(
                 (0.0, 0.0),
                 radius,
                 fill=False,
-                linewidth=0.8,
-                linestyle=(0, (2, 3)),
-                edgecolor="#c7c7c7",
+                linewidth=constants.RING_WIDTH,
+                linestyle=constants.RING_LINESTYLE,
+                edgecolor=constants.RING_COLOR,
                 zorder=0,
             )
         )
@@ -104,20 +106,20 @@ def create_radial_figure(
         positions,
         nodelist=list(nodes),
         ax=axis,
-        node_size=430,
-        node_color="#a6cee3",
-        edgecolors="#1f4e79",
-        linewidths=0.9,
+        node_size=constants.NODE_SIZE,
+        node_color=constants.NODE_COLOR,
+        edgecolors=constants.NODE_EDGE_COLOR,
+        linewidths=constants.NODE_EDGE_WIDTH,
     )
     nx.draw_networkx_labels(
         graph,
         positions,
         labels={node: node for node in nodes},
         ax=axis,
-        font_size=9,
+        font_size=constants.FONT_SIZE,
     )
 
-    margin = 0.75
+    margin = constants.DRAWING_MARGIN
     limit = outer_radius + margin
     axis.set_xlim(-limit, limit)
     axis.set_ylim(-limit, limit)
@@ -137,7 +139,7 @@ def _sample_chain(
         radius_start, angle_start = polar_positions[source]
         radius_end, angle_end = polar_positions[target]
         angle_end += 2 * math.pi * winding[(source, target)]
-        steps = 24
+        steps = constants.CURVE_SAMPLE_STEPS
         segment = []
         for step in range(steps + 1):
             ratio = step / steps
@@ -151,21 +153,21 @@ def _sample_chain(
 def _draw_sampled_edge(axis, points: Sequence[Point], *, reversed_edge: bool) -> None:
     if len(points) < 2:
         return
-    color = "#d62728" if reversed_edge else "#333333"
-    linestyle = "--" if reversed_edge else "-"
+    color = constants.REVERSED_EDGE_COLOR if reversed_edge else constants.EDGE_COLOR
+    linestyle = constants.REVERSED_EDGE_LINESTYLE if reversed_edge else constants.EDGE_LINESTYLE
     xs, ys = zip(*points)
-    axis.plot(xs, ys, color=color, linestyle=linestyle, linewidth=1.15, zorder=1)
+    axis.plot(xs, ys, color=color, linestyle=linestyle, linewidth=constants.EDGE_WIDTH, zorder=1)
     arrow_start_index = max(0, len(points) - 4)
     axis.add_patch(
         FancyArrowPatch(
             points[arrow_start_index],
             points[-1],
             arrowstyle="-|>",
-            mutation_scale=13,
+            mutation_scale=constants.ARROW_SCALE,
             color=color,
-            linewidth=1.15,
+            linewidth=constants.EDGE_WIDTH,
             shrinkA=0,
-            shrinkB=13,
+            shrinkB=constants.ARROW_SHRINK,
             zorder=2,
         )
     )

@@ -1,5 +1,7 @@
 """旧描画関数の入力検証・座標補完・辺分類。"""
 
+from .. import constants
+
 from collections.abc import Mapping
 from os import PathLike
 from pathlib import Path
@@ -24,22 +26,22 @@ def prepare_drawing(
     t_val: Mapping[Edge, bool] | None = None,
     pos: Positions | None = None,
     save_path: str | PathLike[str] | None = None,
-    show: bool = True,
-    draw_dummy_nodes: bool = False,
-    align_edges: bool = True,
-    alignment_iterations: int = 8,
+    show: bool = constants.DEFAULT_SHOW_DRAWING,
+    draw_dummy_nodes: bool = constants.DEFAULT_DRAW_DUMMY_NODES,
+    align_edges: bool = constants.DEFAULT_ALIGN_EDGES,
+    alignment_iterations: int = constants.DEFAULT_DRAWING_ALIGNMENT_ITERATIONS,
     figsize: tuple[float, float] | None = None,
-    dpi: float = 300,
-    show_legend: bool = True,
-    show_layer_labels: bool = True,
-    node_size: float = 260,
-    dummy_node_size: float = 28,
-    font_size: float = 8,
-    edge_width: float = 0.9,
+    dpi: float = constants.DEFAULT_DPI,
+    show_legend: bool = constants.DEFAULT_SHOW_LEGEND,
+    show_layer_labels: bool = constants.DEFAULT_SHOW_LAYER_LABELS,
+    node_size: float = constants.DEFAULT_NODE_SIZE,
+    dummy_node_size: float = constants.DEFAULT_DUMMY_NODE_SIZE,
+    font_size: float = constants.DEFAULT_FONT_SIZE,
+    edge_width: float = constants.DEFAULT_EDGE_WIDTH,
     vertical_period: float | None = None,
-    tile_surroundings: bool = False,
-    surrounding_opacity: float = 0.8,
-    tile_gap: int = 0,
+    tile_surroundings: bool = constants.DEFAULT_TILE_SURROUNDINGS,
+    surrounding_opacity: float = constants.DEFAULT_SURROUNDING_OPACITY,
+    tile_gap: int = constants.DEFAULT_TILE_GAP,
 ) -> DrawingData:
     validate_drawing_parameters(
         dpi=dpi,

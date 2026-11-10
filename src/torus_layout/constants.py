@@ -1,0 +1,57 @@
+"""トーラス方式の既定値・調整値。値の変更は次回のプロセス起動から反映する。"""
+
+from typing import Final
+
+# CLIの入力グラフ設定。生成器そのものの既定値とは独立。
+DEFAULT_GRAPH_TYPE: Final = "watts_strogatz"
+DEFAULT_NODE_COUNT: Final = 25
+DEFAULT_RANDOM_SEED: Final = None
+DEFAULT_CYCLE_COUNT: Final = 2
+DEFAULT_EDGE_PROBABILITY: Final = 0.005
+DEFAULT_CYCLE_PROBABILITY: Final = 0.3
+DEFAULT_NEIGHBOR_COUNT: Final = 4
+DEFAULT_REWIRING_PROBABILITY: Final = 0.1
+DEFAULT_OUTPUT_DIR: Final = "output/torus_layout"
+
+# パイプライン・階層割当・交差削減・座標割当。
+DEFAULT_BALANCE_METHOD: Final = "diff_square"
+DEFAULT_ROUNDS: Final = 5
+DEFAULT_COORDINATE_METHOD: Final = "brandes_koepf"
+DEFAULT_BEND_WEIGHT: Final = 0.0
+DEFAULT_OPTIMIZE_SEAMS: Final = True
+MIN_NODE_GAP: Final = 1.0
+ALIGNMENT_ITERATIONS: Final = 4  # BK後の周期的な平滑化
+BARYCENTER_THRESHOLD: Final = 0.01
+BARYCENTER_MAX_ITERATIONS: Final = 100
+
+# 座標QP/LPの数値精度。変更時は制約・退化ケースを再検証する。
+COORDINATE_FEASIBILITY_TOL: Final = 1e-9
+COORDINATE_OPTIMALITY_TOL: Final = 1e-9
+COORDINATE_BARRIER_TOL: Final = 1e-10
+COORDINATE_DOMAIN_MARGIN: Final = 1e-8
+
+# 描画APIの既定値。配色・線種は drawing/styles.py にある。
+DEFAULT_SHOW_DRAWING: Final = True
+DEFAULT_DRAW_DUMMY_NODES: Final = False
+DEFAULT_ALIGN_EDGES: Final = True
+DEFAULT_DRAWING_ALIGNMENT_ITERATIONS: Final = 8  # 座標省略時の描画内整列
+DEFAULT_DPI: Final = 300
+DEFAULT_SHOW_LEGEND: Final = True
+DEFAULT_SHOW_LAYER_LABELS: Final = True
+DEFAULT_NODE_SIZE: Final = 260
+DEFAULT_DUMMY_NODE_SIZE: Final = 28
+DEFAULT_FONT_SIZE: Final = 8
+DEFAULT_EDGE_WIDTH: Final = 0.9
+DEFAULT_TILE_SURROUNDINGS: Final = False
+DEFAULT_SURROUNDING_OPACITY: Final = 0.8
+DEFAULT_TILE_GAP: Final = 0
+
+# CLIの表示・周辺タイルの既定値。
+DEFAULT_CLI_SHOW: Final = False
+DEFAULT_CLI_TILE_SURROUNDINGS: Final = True
+
+# タイル合成関数を単体利用するときの既定値。
+DEFAULT_TILE_IMAGE_OPACITY: Final = 0.2
+DEFAULT_TILE_BACKGROUND: Final = (255, 255, 255, 0)
+DEFAULT_TILE_BORDER_WIDTH: Final = 0
+DEFAULT_TILE_BORDER_COLOR: Final = (0, 0, 0, 72)

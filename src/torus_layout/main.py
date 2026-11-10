@@ -20,6 +20,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from generator import generate_graph
+from torus_layout import constants
 from torus_layout.coordinates import assign_coordinates
 from torus_layout.crossing import count_crossings, count_seam_segments, reduce_crossings
 from torus_layout.layering.lib.solver import use_local_license
@@ -56,41 +57,41 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--graph",
         choices=["cyclic", "watts_strogatz", "random", "dag", "mixed"],
-        default="cyclic",
+        default=constants.DEFAULT_GRAPH_TYPE,
     )
     parser.add_argument(
-        "--nodes", "--node", type=int, default=25, help="元ノード数（既定: 25）"
+        "--nodes", "--node", type=int, default=constants.DEFAULT_NODE_COUNT, help=f"元ノード数（既定: {constants.DEFAULT_NODE_COUNT}）"
     )
-    parser.add_argument("--seed", type=int, default=42, help="再現用seed（既定: 42）")
-    parser.add_argument("--cycles", type=int, default=2, help="cyclic生成器の閉路数")
-    parser.add_argument("--edge-prob", type=_probability, default=0.005)
+    parser.add_argument("--seed", type=int, default=constants.DEFAULT_RANDOM_SEED, help=f"再現用seed（既定: {constants.DEFAULT_RANDOM_SEED}）")
+    parser.add_argument("--cycles", type=int, default=constants.DEFAULT_CYCLE_COUNT, help="cyclic生成器の閉路数")
+    parser.add_argument("--edge-prob", type=_probability, default=constants.DEFAULT_EDGE_PROBABILITY)
     parser.add_argument(
         "--cycle-prob",
         type=_probability,
-        default=0.3,
+        default=constants.DEFAULT_CYCLE_PROBABILITY,
         help="mixed生成器の閉路ノード確率",
     )
     parser.add_argument(
-        "--neighbors", type=int, default=4, help="Watts–Strogatzの近傍数k"
+        "--neighbors", type=int, default=constants.DEFAULT_NEIGHBOR_COUNT, help="Watts–Strogatzの近傍数k"
     )
     parser.add_argument(
         "--rewire-prob",
         type=_probability,
-        default=0.1,
+        default=constants.DEFAULT_REWIRING_PROBABILITY,
         help="Watts–Strogatzの張替確率p",
     )
     parser.add_argument(
         "--balance-method",
         choices=["diff", "diff_square", "qp", "barycenter"],
-        default="diff_square",
+        default=constants.DEFAULT_BALANCE_METHOD,
     )
-    parser.add_argument("--rounds", type=_nonnegative_int, default=5)
+    parser.add_argument("--rounds", type=_nonnegative_int, default=constants.DEFAULT_ROUNDS)
     parser.add_argument(
         "--coordinate-method",
         choices=["torus_qp", "torus_lp", "brandes_koepf"],
-        default="brandes_koepf",
+        default=constants.DEFAULT_COORDINATE_METHOD,
     )
-    parser.add_argument("--bend-weight", type=_nonnegative_float, default=0.0)
+    parser.add_argument("--bend-weight", type=_nonnegative_float, default=constants.DEFAULT_BEND_WEIGHT)
     parser.add_argument(
         "--no-optimize-seams", action="store_true", help="境界最適化DPを無効化"
     )
@@ -99,7 +100,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="同一階層割当で境界最適化前の結果も計算・描画",
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("output/torus_layout"))
+    parser.add_argument("--output-dir", type=Path, default=Path(constants.DEFAULT_OUTPUT_DIR))
     parser.add_argument(
         "--show", action="store_true", help="保存に加えて描画画面を表示"
     )
@@ -107,7 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tile-surroundings",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=constants.DEFAULT_CLI_TILE_SURROUNDINGS,
         help="周辺タイルを表示（既定: 有効、--no-tile-surroundingsで無効化）",
     )
     parser.add_argument(

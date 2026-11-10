@@ -1,5 +1,7 @@
 """工程間で受け渡すデータ。入力順と辺の重複を保持する。"""
 
+from . import constants
+
 from dataclasses import dataclass
 from typing import Literal
 
@@ -79,8 +81,8 @@ class PipelineResult:
 
 @dataclass(frozen=True)
 class PipelineConfig:
-    balance_method: BalanceMethod = "diff_square"
-    rounds: int = 5
-    coordinate_method: str = "brandes_koepf"
-    coordinate_bend_weight: float = 0.0
-    optimize_seams: bool = True
+    balance_method: BalanceMethod = constants.DEFAULT_BALANCE_METHOD
+    rounds: int = constants.DEFAULT_ROUNDS
+    coordinate_method: str = constants.DEFAULT_COORDINATE_METHOD
+    coordinate_bend_weight: float = constants.DEFAULT_BEND_WEIGHT
+    optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS

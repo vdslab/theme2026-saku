@@ -1,5 +1,7 @@
 """既存と同じ画像保存・表示・Figureの後処理。"""
 
+from .. import constants
+
 from os import PathLike
 from io import BytesIO
 import matplotlib.pyplot as plt
@@ -16,7 +18,7 @@ def output_figure(
     *,
     options: DrawingOptions,
     save_path: str | PathLike[str] | None = None,
-    show: bool = True
+    show: bool = constants.DEFAULT_SHOW_DRAWING
 ) -> None:
     ax = fig.axes[0]
     tile_surroundings = options.tile_surroundings
@@ -85,7 +87,7 @@ def draw_layout(
     *,
     options: DrawingOptions | None = None,
     save_path: str | PathLike[str] | None = None,
-    show: bool = True
+    show: bool = constants.DEFAULT_SHOW_DRAWING
 ) -> None:
     options = DrawingOptions() if options is None else options
     figure = create_figure(

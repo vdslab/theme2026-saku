@@ -1,5 +1,7 @@
 """固定されたトーラス辺のフラグを維持する重心法。"""
 
+from ... import constants
+
 import time
 from collections import defaultdict
 from ...models import Node, Edge, Flags, Weights
@@ -31,8 +33,8 @@ def optimize_barycenter(
     for u, v in A:
         in_edges[v].append(u)
         out_edges[u].append(v)
-    threshold = 0.01
-    max_iterations = 100
+    threshold = constants.BARYCENTER_THRESHOLD
+    max_iterations = constants.BARYCENTER_MAX_ITERATIONS
     iteration = 0
     while iteration < max_iterations:
         total_change = 0.0

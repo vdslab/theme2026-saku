@@ -1,26 +1,28 @@
 """描画設定と前処理済みデータ。新しい描画設定は追加しない。"""
 
+from .. import constants
+
 from dataclasses import dataclass
 from ..models import Node, Edge, Positions
 
 
 @dataclass(frozen=True)
 class DrawingOptions:
-    draw_dummy_nodes: bool = False
-    align_edges: bool = True
-    alignment_iterations: int = 8
+    draw_dummy_nodes: bool = constants.DEFAULT_DRAW_DUMMY_NODES
+    align_edges: bool = constants.DEFAULT_ALIGN_EDGES
+    alignment_iterations: int = constants.DEFAULT_DRAWING_ALIGNMENT_ITERATIONS
     figsize: tuple[float, float] | None = None
-    dpi: float = 300
-    show_legend: bool = True
-    show_layer_labels: bool = True
-    node_size: float = 260
-    dummy_node_size: float = 28
-    font_size: float = 8
-    edge_width: float = 0.9
+    dpi: float = constants.DEFAULT_DPI
+    show_legend: bool = constants.DEFAULT_SHOW_LEGEND
+    show_layer_labels: bool = constants.DEFAULT_SHOW_LAYER_LABELS
+    node_size: float = constants.DEFAULT_NODE_SIZE
+    dummy_node_size: float = constants.DEFAULT_DUMMY_NODE_SIZE
+    font_size: float = constants.DEFAULT_FONT_SIZE
+    edge_width: float = constants.DEFAULT_EDGE_WIDTH
     vertical_period: float | None = None
-    tile_surroundings: bool = False
-    surrounding_opacity: float = 0.8
-    tile_gap: int = 0
+    tile_surroundings: bool = constants.DEFAULT_TILE_SURROUNDINGS
+    surrounding_opacity: float = constants.DEFAULT_SURROUNDING_OPACITY
+    tile_gap: int = constants.DEFAULT_TILE_GAP
 
 
 @dataclass(frozen=True)

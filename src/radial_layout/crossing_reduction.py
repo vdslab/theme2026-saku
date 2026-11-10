@@ -1,5 +1,7 @@
 """Crossing reduction for vertices arranged on concentric circles."""
 
+from . import constants
+
 from collections import defaultdict
 from dataclasses import dataclass
 import math
@@ -20,7 +22,7 @@ def reduce_crossings(
     layers: dict[int, Iterable[Node]],
     edges: Iterable[Edge],
     *,
-    rounds: int = 4,
+    rounds: int = constants.DEFAULT_ROUNDS,
 ) -> RadialEmbedding:
     """Optimize cyclic layer orders using circular barycenters and sifting."""
 

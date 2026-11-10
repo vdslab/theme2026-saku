@@ -48,3 +48,11 @@ CLI は `-m radial_layout` または `-m radial_layout.main` で実行します�
 交差数計算は辺対の計算を含め、このパッケージ専用の実装を使用します。
 階層割当の方針、交差削減の探索、座標割当、描画はこのパッケージに残しています。
 依存関係と分離理由は [layout_common/README.md](../layout_common/README.md) を参照してください。
+
+## 既定値の変更
+
+この方式のCLI入力、交差削減の反復数、同心円の間隔、描画設定は
+[`constants.py`](constants.py) にまとめています。
+`DEFAULT_ROUNDS` が交差削減回数、`DEFAULT_INNER_RADIUS` が最内周の半径、
+`DEFAULT_LAYER_GAP` が層間隔です。変更は次回のプロセス起動から反映されます。
+CLI引数やAPI引数の明示指定が優先されます。共有生成器そのものの関数既定値は変更しません。

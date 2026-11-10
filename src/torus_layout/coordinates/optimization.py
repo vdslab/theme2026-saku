@@ -4,6 +4,8 @@ Winding numbers and the cut order remain fixed. All edges, including horizontal
 wraps, participate. The drawing uses end.y + psi * period in its universal cover.
 """
 
+from .. import constants
+
 from collections import defaultdict
 import math
 import gurobipy as gp
@@ -22,7 +24,7 @@ def optimize_positions(
     min_gap: float,
     *,
     method: str,
-    bend_weight: float = 0.0,
+    bend_weight: float = constants.DEFAULT_BEND_WEIGHT,
 ) -> Positions:
     """Minimize weighted lifted L1 or squared displacement plus dummy bends.
 
@@ -47,10 +49,10 @@ def optimize_positions(
         incoming[v].append(i)
         outgoing[u].append(i)
     with create_gurobi_env() as env, gp.Model(env=env) as model:
-        model.Params.FeasibilityTol = 1e-9
-        model.Params.OptimalityTol = 1e-9
-        model.Params.BarConvTol = 1e-10
-        margin = max(1e-8, min_gap * 1e-8)
+        model.Params.FeasibilityTol = constants.COORDINATE_FEASIBILITY_TOL
+        model.Params.OptimalityTol = constants.COORDINATE_OPTIMALITY_TOL
+        model.Params.BarConvTol = constants.COORDINATE_BARRIER_TOL
+        margin = max(constants.COORDINATE_DOMAIN_MARGIN, min_gap * constants.COORDINATE_DOMAIN_MARGIN)
         y = {node: model.addVar(lb=-min_gap / 2 + margin,
                                ub=period - min_gap / 2 - margin)
              for node in initial}

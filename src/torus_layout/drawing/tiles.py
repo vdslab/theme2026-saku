@@ -1,3 +1,5 @@
+
+from .. import constants
 from ..validation import is_image_path, is_integer, is_number, is_sequence
 
 """既存のタイル画像の合成・保存。"""
@@ -12,12 +14,12 @@ type Color = tuple[int, int, int, int] | list[int]
 def create_torus_context_image(
     image: Image.Image | str | PathLike[str],
     *,
-    opacity: float = 0.2,
-    gap: int = 0,
+    opacity: float = constants.DEFAULT_TILE_IMAGE_OPACITY,
+    gap: int = constants.DEFAULT_TILE_GAP,
     output_path: str | PathLike[str] | None = None,
-    background: Color = (255, 255, 255, 0),
-    border_width: int = 0,
-    border_color: Color = (0, 0, 0, 72),
+    background: Color = constants.DEFAULT_TILE_BACKGROUND,
+    border_width: int = constants.DEFAULT_TILE_BORDER_WIDTH,
+    border_color: Color = constants.DEFAULT_TILE_BORDER_COLOR,
 ) -> Image.Image:
     """中心画像の周囲8方向に、半透明の同一画像の一部を配置する。
 
@@ -50,11 +52,10 @@ def create_torus_context_image(
     canvas = Image.new(
         "RGBA", (width * 2 + gap * 2, height * 2 + gap * 2), tuple(background)
     )
-    faded = source.copy()
-
     def alpha_value(alpha: float) -> int:
         return round(alpha * opacity)
 
+    faded = source.copy()
     faded.putalpha(source.getchannel("A").point(alpha_value))
     placements = [
         ((x_split, y_split, width, height), (0, 0)),
@@ -96,11 +97,11 @@ def load_rgba_image(image: Image.Image | str | PathLike[str]) -> Image.Image:
 
 
 def validate_torus_context_options(
-    opacity: float = 0.2,
-    gap: int = 0,
-    background: Color = (255, 255, 255, 0),
-    border_width: int = 0,
-    border_color: Color = (0, 0, 0, 72),
+    opacity: float = constants.DEFAULT_TILE_IMAGE_OPACITY,
+    gap: int = constants.DEFAULT_TILE_GAP,
+    background: Color = constants.DEFAULT_TILE_BACKGROUND,
+    border_width: int = constants.DEFAULT_TILE_BORDER_WIDTH,
+    border_color: Color = constants.DEFAULT_TILE_BORDER_COLOR,
 ) -> None:
     """合成オプションを検証する。値が不正な場合は ``ValueError`` を送出する。"""
     if (

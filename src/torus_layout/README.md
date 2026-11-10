@@ -1,5 +1,14 @@
 # 独立したトーラス階層レイアウト
 
+## 既定値の変更
+
+この方式のCLI入力、階層割当・交差削減・座標割当、描画の既定値は
+[`constants.py`](constants.py) にまとめています。反復数は `DEFAULT_ROUNDS`、
+最小頂点間隔は `MIN_NODE_GAP`、平滑化回数は `ALIGNMENT_ITERATIONS` です。
+配色・線種は `drawing/styles.py` にあります。
+定数を編集した場合はプロセスを起動し直してください。CLI引数やAPI引数の明示指定が優先されます。
+CLIと描画APIで従来から異なる周辺タイル表示の既定値は、別の定数で維持しています。
+
 比較実験用の旧実装は [`src/old_torus_layout/`](../old_torus_layout/README.md) にまとめています。
 旧モジュールのimportは `old_torus_layout.layer_assignment` などを使用します。
 
@@ -15,9 +24,9 @@ PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 
 グラフ生成 → 階層割当 → ダミー挿入 → sifting・回転 → 境界最適化DP →
 BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
-既定値はcyclic、25ノード、閉路数2、追加辺確率0.005、seed 42、
+既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
 階層バランス`diff_square`、sifting 5回、境界最適化有効、座標方式`brandes_koepf`です。
-乱数seedを固定して、同じ入力を再生成できるようにしています。
+`--seed` で乱数seedを固定すると同じ入力を再生成できます。
 
 出力先の既定値は `output/torus_layout/` です。画面表示は `--show` で追加できます。
 周辺タイルは既定で有効です。`--no-tile-surroundings` で無効化できます。
