@@ -51,4 +51,4 @@ Watts--Strogatz グラフの辺を張り替える確率 `p` です。画像フ�
 `PYTHONPATH=src` を指定し、`sugiyama_layout` から各処理を import できます。
 CLI は `-m sugiyama_layout` または `-m sugiyama_layout.main` で実行します。
 `main.py` の直接実行には対応しません。
-元の examples は既存の呼び出しとの互換性のため、そのまま残しています。
+移植元の `examples/sugiyama` は削除済みです。import は `sugiyama_layout` を使用してください。
