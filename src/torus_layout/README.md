@@ -20,6 +20,7 @@ BK系＋周期平滑化による座標割当 → 評価表示・描画保存、�
 乱数seedを固定して、同じ入力を再生成できるようにしています。
 
 出力先の既定値は `output/torus_layout/` です。画面表示は `--show` で追加できます。
+周辺タイルは既定で有効です。`--no-tile-surroundings` で無効化できます。
 
 | 出力 | 内容 |
 | --- | --- |
@@ -209,11 +210,19 @@ PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-
 ネットワーク接続を伴う通常のライセンス環境での完走は未確認です。
 ローカルGurobi環境をテスト内で渡した旧mainは、画像保存まで実行・比較しています。
 
-`tests/fixtures/protected_files.json` は実装開始時点の既存ソースと設定74ファイルのハッシュです。
+`tests/fixtures/protected_files.json` は移植時の既存ソースと設定のハッシュです。
 `check_legacy_files` で変更がないことを確認できます。
 このハッシュは旧コードを意図的に更新する将来の移行時に、比較基準とともに更新する対象です。
+不要テストの整理に伴い、旧IQPの実行例、画面表示のみの描画テスト、
+現行テストと重複する旧階層割当・生成器のテスト計4ファイルを削除し、保護対象からも外しました。
+交差・座標・描画の固有の回帰ケースと、現行パッケージ・実験コードのテストは維持しています。
+現在の保護対象は51ファイルです。残したテストは次のコマンドでまとめて実行できます。
 
 旧実装の `old_torus_layout` への移動に合わせ、保護対象のパスとimport変更後のハッシュを更新しています。
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-mpl PYTHONPATH=src ./theme2026-saku/bin/python -m pytest src -q -p no:cacheprovider
+```
 
 ### 型検査
 

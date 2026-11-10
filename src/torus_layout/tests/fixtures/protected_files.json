@@ -46,12 +46,8 @@
   "src/old_torus_layout/main.py": "6275505d41d3d986037e579bed8e0ac3f2e04c1692621e054c7de7479046c40e",
   "src/test/test_coordinate_assignment.py": "4040408e1ae79ccdc5e95be167f12b8de07f12fc880e33fa2b368ac96caf4290",
   "src/test/test_draw_radial_torus.py": "ad18fd44789dd493b278d32972f8c83bb40810f614eaf1d7dbd6260dd0d00501",
-  "src/test/test_draw_torus.py": "54e205909455571bb3520a029ac55df3f7bdcc8650e83512d7810fcf07ce6277",
-  "src/test/test_generate_torus_graph.py": "22371eea2002f735d1ea96287887aba95952f9a846b1de75ea848810510f05f1",
   "src/test/test_radial_crossings.py": "72bafd3d44f9792f4e11e041b4a4723b988dd04e7a7e1a601aabebe7fcb50c3b",
   "src/test/test_radial_example.py": "d18e5c0b2dc3555e4afd7f758cbce805abf4c7bd9b4dc1bc830cada87a36d2e8",
   "src/test/test_radial_sifting.py": "9194a60bc8ec841f5366c1a6679cd2d0dd9304f2d634323c8de32171f0cb6802",
-  "src/test/test_torus.py": "69fa2e51e8f9c1ac6a281e216547883d02dd76c6e8b4d7251822ead01dbc1628",
-  "src/test/test_torus_balance.py": "d1dbb5bb50a1ba10bff8dad326e9c5f72ab6f8ad62fb028ac844842283513643",
   "src/test/test_torus_sweep_experiment.py": "6543fd435e9b53f7c54494f85c991c2969cab2d198a336013905bc098e9e71eb"
 }

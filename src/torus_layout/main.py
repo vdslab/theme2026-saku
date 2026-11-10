@@ -104,7 +104,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--show", action="store_true", help="保存に加えて描画画面を表示"
     )
     parser.add_argument("--draw-dummy-nodes", action="store_true")
-    parser.add_argument("--tile-surroundings", action="store_true")
+    parser.add_argument(
+        "--tile-surroundings",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="周辺タイルを表示（既定: 有効、--no-tile-surroundingsで無効化）",
+    )
     parser.add_argument(
         "--local-license",
         action="store_true",
