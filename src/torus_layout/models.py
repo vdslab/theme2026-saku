@@ -81,3 +81,6 @@ class PipelineResult:
 class PipelineConfig:
     balance_method: BalanceMethod = "diff_square"
     rounds: int = 5
+    coordinate_method: str = "brandes_koepf"
+    coordinate_bend_weight: float = 0.0
+    optimize_seams: bool = True

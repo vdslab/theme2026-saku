@@ -35,7 +35,9 @@ def test_pipeline_matches_existing_path(
     positions, _ = legacy.coordinate_assignment(
         order, divided_layers, divided_edges, divided_flags, winding, list(nodes)
     )
-    actual = run_pipeline(graph, PipelineConfig(method, 2))
+    actual = run_pipeline(graph, PipelineConfig(
+        method, 2, coordinate_method="brandes_koepf", optimize_seams=False,
+    ))
     assert actual is not None
     assert actual.assignment.layers == layers
     assert actual.assignment.torus_flags == flags
@@ -89,7 +91,9 @@ def test_original_main_and_new_pipeline_save_identical_image(
         nodes, edges, _ = generate_cyclic_graph(6, num_cycles=2, edge_prob=0, seed=42)
     finally:
         random.setstate(state)
-    result = run_pipeline(Graph(tuple(nodes), tuple(edges)), PipelineConfig(rounds=2))
+    result = run_pipeline(Graph(tuple(nodes), tuple(edges)), PipelineConfig(
+        rounds=2, coordinate_method="brandes_koepf", optimize_seams=False,
+    ))
     assert result is not None
     draw_layout(
         result.subdivided,

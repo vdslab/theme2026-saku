@@ -9,9 +9,17 @@ from .lib.embedding import (
     postprocess_sifting_rotations,
 )
 from .lib.crossings import count_all_crossings
+from .seam import optimize_seam
 
 
-def reduce_crossings(graph: SubdividedGraph, rounds: int = 5) -> CrossingResult:
+def reduce_crossings(
+    graph: SubdividedGraph, rounds: int = 5, *, optimize_seams: bool = True
+) -> CrossingResult:
+    """Run guarded radial sifting/rotation, then minimize seam segments.
+
+    Set optimize_seams=False to retain the legacy cut selection. The seam
+    optimizer requires a proper graph with cyclic adjacent-layer segments.
+    """
     layers = sorted(graph.layers)
     edges = list(graph.graph.edges)
     order = initial_orders(graph.layers, layers, edges)[0]
@@ -26,7 +34,8 @@ def reduce_crossings(graph: SubdividedGraph, rounds: int = 5) -> CrossingResult:
     if count_all_crossings(order, winding, layers, edges) > guarded_count:
         order = guarded_order
         winding = guarded_winding
-    return CrossingResult(order, winding)
+    result = CrossingResult(order, winding)
+    return optimize_seam(graph, result) if optimize_seams else result
 
 
 def count_crossings(graph: SubdividedGraph, crossing: CrossingResult) -> int:

@@ -21,11 +21,16 @@ def run_pipeline(
     # The old crossing timer includes dummy insertion.
     started = perf_counter()
     subdivided = insert_dummy_nodes(graph, assignment)
-    crossing = reduce_crossings(subdivided, rounds=config.rounds)
+    crossing = reduce_crossings(
+        subdivided, rounds=config.rounds, optimize_seams=config.optimize_seams
+    )
     crossing_time = perf_counter() - started
 
     started = perf_counter()
-    coordinates = assign_coordinates(subdivided, crossing)
+    coordinates = assign_coordinates(
+        subdivided, crossing, method=config.coordinate_method,
+        bend_weight=config.coordinate_bend_weight,
+    )
     coordinate_time = perf_counter() - started
     return PipelineResult(
         graph,

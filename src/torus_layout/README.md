@@ -1,5 +1,101 @@
 # 独立したトーラス階層レイアウト
 
+## フレームワーク全体を実行する
+
+リポジトリルートから、以下のどちらかを実行します。
+
+```sh
+./theme2026-saku/bin/python src/torus_layout/main.py
+# モジュールとして実行する場合:
+PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
+```
+
+グラフ生成 → 階層割当 → ダミー挿入 → sifting・回転 → 境界最適化DP →
+BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
+既定値はcyclic、25ノード、閉路数2、追加辺確率0.005、seed 42、
+階層バランス`diff_square`、sifting 5回、境界最適化有効、座標方式`brandes_koepf`です。
+乱数seedを固定して、同じ入力を再生成できるようにしています。
+
+出力先の既定値は `output/torus_layout/` です。画面表示は `--show` で追加できます。
+
+| 出力 | 内容 |
+| --- | --- |
+| `layout.png` | 提案手法による描画 |
+| `result.json` | 設定、生成入力グラフ、階層割当、層内順序、各線分の巻き数、座標、評価値、時間 |
+| `before_seam.png` | `--compare-seams` 指定時の境界最適化前の描画 |
+
+同じ出力先への再実行では、今回の出力ファイルを上書きします。
+比較したい実行は `--output-dir` を分けてください。
+
+```sh
+# 同じ階層割当を使って境界最適化前後を比較・描画する。
+./theme2026-saku/bin/python src/torus_layout/main.py \
+  --nodes 25 --seed 2 --edge-prob 0.01 --compare-seams \
+  --output-dir output/torus_layout_seed2
+
+# Watts–Strogatz生成器とBK座標割当を使う。
+./theme2026-saku/bin/python src/torus_layout/main.py \
+  --graph watts_strogatz --nodes 25 --neighbors 4 --rewire-prob 0.1 \
+  --coordinate-method brandes_koepf --output-dir output/torus_layout_ws
+
+# 全オプションの一覧。
+./theme2026-saku/bin/python src/torus_layout/main.py --help
+```
+
+生成器は `cyclic` / `watts_strogatz` / `random` / `dag` / `mixed`、
+座標方式は `torus_qp` / `torus_lp` / `brandes_koepf` から選べます。
+`--no-optimize-seams` で境界最適化を無効化できます。
+比較モードでは、通過線分数が増加せず、辺同士の交差数が変わらないことも検証し、
+違反した場合は終了コード1を返します。
+
+通常はルート `.env` のGurobi WLS設定を使います。ローカルライセンスを明示的に
+選ぶ場合だけ `--local-license` を付けます。接続失敗時の自動切替はしません。
+ローカルライセンスには問題サイズの制限がある場合があります。
+
+この環境では、変更前のQP設定に `--local-license --compare-seams` を付けた実行で、
+25ノードの入力から境界通過線分数4→2、交差数0→0を確認しました。
+Watts–Strogatz・8ノードのLP座標割当も保存まで実行しています。
+
+追加した入口は `main.py` と `__main__.py`、テストは `tests/test_main.py` です。
+明示的なローカルライセンス選択を `layering/lib/solver.py` に追加し、
+その選択は実行スコープを抜けると元に戻るようにしています。
+
+> 座標割当の既定値は、新パイプライン・CLI・座標APIともにBK系です。
+> `--coordinate-method torus_qp` または `torus_lp` でQP・LPを明示的に選べます。
+> `PipelineConfig(coordinate_method="torus_qp")` と `coordinate_bend_weight` も利用可能です。
+> [定式化・比較実験・手法選定](../../documents/torus_coordinate_assignment.md)を参照してください。
+> 以下の旧実装との一致の記述は、座標方式に`brandes_koepf`を指定し、
+> 境界最適化を`optimize_seams=False`で無効化した場合に適用されます。
+
+## 境界通過線分数の最適化（追加機能）
+
+現在の `reduce_crossings` / `run_pipeline` は、従来のsiftingと回転の後に、
+各レイヤーの切れ目を選ぶ厳密DPをデフォルトで実行します。
+`crossing/seam.py` の区間加算・最小値セグメント木で候補値を差分更新し、
+全隣接ペアの密な通過数表は構築しません。
+循環順序と整数周の選択を固定し、上下境界を通過するダミー挿入後の線分数を
+最小化します。左右境界の通過数や、元の辺単位の重複除去は目的に含めません。
+通過数が同じなら入力の配置を維持します。
+
+```python
+# 比較用に新しい後処理を無効化する。
+config = PipelineConfig(optimize_seams=False)
+# 交差削減だけを呼ぶ場合:
+# crossing = reduce_crossings(subdivided, rounds=5, optimize_seams=False)
+```
+
+`crossing.optimize_seam(subdivided, crossing)` で既存の結果に単独適用でき、
+`crossing.count_seam_segments(subdivided, crossing)` で通過線分数を数えられます。
+入力は循環隣接レイヤー間の辺に分割済みであることが必要です。
+空レイヤーは動かさない1候補とし、0・1レイヤーの場合は入力を維持します。
+この追加によって、デフォルトの切れ目と座標は旧経路と異なる場合があります。
+旧 `src/main.py` の処理は変更していません。
+
+理論と実行結果は [境界最適化の検討](../../documents/torus_seam_optimization.md)、
+再実行には `experiments/evaluate_seam_optimization.py` を参照してください。
+
+## 移植時の構成
+
 既存の `main.py` の計算を、責務ごとの小さなモジュールへ移植したパッケージです。
 既存ファイル・実行経路はそのまま残し、通常実行コードから旧実装をimportしません。
 変更したのは構造と入出力の表現です。目的関数、制約、初期化、探索・反復順、同点の選択、
@@ -18,7 +114,7 @@ from torus_layout.pipeline import run_pipeline
 from torus_layout.reporting import report_pipeline
 from torus_layout.drawing import DrawingOptions, draw_layout
 
-nodes, edges = generate_graph("cyclic", n=8, num_cycles=2, edge_prob=0.01, seed=42)
+nodes, edges, used_seed = generate_graph("cyclic", n=8, num_cycles=2, edge_prob=0.01, seed=42)
 result = run_pipeline(Graph(tuple(nodes), tuple(edges)), PipelineConfig(
     balance_method="diff_square", rounds=5,
 ))

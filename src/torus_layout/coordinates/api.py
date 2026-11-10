@@ -127,18 +127,66 @@ def assign_coordinates(
     crossing: CrossingResult,
     *,
     min_gap: float = 1.0,
-    smooth_iterations: int = 4
+    smooth_iterations: int = 4,
+    method: str = "brandes_koepf",
+    bend_weight: float = 0.0,
 ) -> CoordinateResult:
-    """元のBK系計算と、その計算に使用した周期を返す。"""
-    positions = compute_positions(
-        crossing.order,
-        graph.layers,
-        list(graph.graph.edges),
-        graph.torus_flags,
-        crossing.winding_numbers,
-        min_gap,
-        smooth_iterations,
-        graph.original_nodes,
-    )
+    """Assign coordinates with legacy BK, fixed-winding QP, or L1 LP.
+
+    ``smooth_iterations`` applies to BK only. Optimizers keep the existing
+    period and embedding, and use graph.weights. ``bend_weight`` penalizes
+    changes in slope at degree-two dummy nodes (proper layered edges only).
+    """
+    if method not in ("brandes_koepf", "torus_qp", "torus_lp"):
+        raise ValueError(f"unknown coordinate method: {method!r}")
+    validate_parameters(min_gap, smooth_iterations)
     period = drawing_period(graph.layers, min_gap)
+    if method == "brandes_koepf":
+        positions = compute_positions(
+            crossing.order,
+            graph.layers,
+            list(graph.graph.edges),
+            graph.torus_flags,
+            crossing.winding_numbers,
+            min_gap,
+            smooth_iterations,
+            graph.original_nodes,
+        )
+    else:
+        from .optimization import optimize_positions
+
+        order = complete_order(crossing.order, graph.layers, sorted(graph.layers))
+        validate_graph(order, list(graph.graph.edges), crossing.winding_numbers)
+        find_dummy_nodes(order, graph.original_nodes)
+        # Optimizers need only x and node identities; do not run planar BK first.
+        positions = {
+            node: (float(i), float(j) * min_gap)
+            for i, layer in enumerate(sorted(order))
+            for j, node in enumerate(order[layer])
+        }
+        if bend_weight:
+            indices = {layer: i for i, layer in enumerate(sorted(graph.layers))}
+            node_layer = {
+                node: indices[layer] for layer, nodes in order.items() for node in nodes
+            }
+            for u, v in graph.graph.edges:
+                dx = (
+                    node_layer[v]
+                    - node_layer[u]
+                    + int(graph.torus_flags.get((u, v), False)) * len(order)
+                )
+                if dx != 1:
+                    raise ValueError("bend penalty requires unit horizontal edge spans")
+        positions = optimize_positions(
+            positions,
+            order,
+            list(graph.graph.edges),
+            crossing.winding_numbers,
+            graph.weights,
+            graph.dummy_nodes,
+            period,
+            min_gap,
+            method=method,
+            bend_weight=bend_weight,
+        )
     return CoordinateResult(positions, period)
