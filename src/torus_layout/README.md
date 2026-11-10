@@ -70,6 +70,10 @@ BK系＋周期平滑化による座標割当 → 評価表示・描画保存、�
 Watts–Strogatz・8ノードのLP座標割当も保存まで実行しています。
 
 追加した入口は `main.py` と `__main__.py`、テストは `tests/test_main.py` です。
+
+CLIの引数定義・検証は `cli_arguments.py`、境界最適化の比較は `seam_comparison.py`、
+画像・JSONの保存と保存後の表示は `cli_output.py` に分離しています。
+`main.py` はグラフ生成と設定の組み立て、各処理の呼び出し、エラー処理を担当します。
 明示的なローカルライセンス選択を `layering/lib/solver.py` に追加し、
 その選択は実行スコープを抜けると元に戻るようにしています。
 
