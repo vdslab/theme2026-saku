@@ -3,7 +3,7 @@
 from .cyclic import generate_cyclic_graph
 from .dag import generate_dag
 from .lib.randomness import resolve_seed
-from .lib.types import Graph, SeededGraph
+from .lib.types import SeededGraph
 from .mixed import generate_mixed_graph
 from .random_connected import generate_random_connected_graph
 from .watts_strogatz import generate_watts_strogatz_graph
@@ -22,13 +22,12 @@ def generate_graph(
     n: int,
     *,
     seed: int | None = None,
-    return_seed: bool = False,
     **parameters,
-) -> Graph | SeededGraph:
-    """手法固有の引数を転送し、共通の (頂点, 有向辺) 形式で返す。
+) -> SeededGraph:
+    """手法固有の引数を転送し、常に (頂点, 有向辺, シード) を返す。
 
     graph_type は random / dag / cyclic / mixed / watts_strogatz。
-    return_seed=True なら、どの手法でも (頂点, 有向辺, シード) を返す。
+    seed未指定時も確定したシードを返し、同じ入力を再生成できる。
     未知の手法は ValueError、手法にない引数は TypeError となる。
     """
     try:
@@ -41,6 +40,4 @@ def generate_graph(
 
     resolved_seed = resolve_seed(seed)
     vertices, edges = generator(n, seed=resolved_seed, **parameters)
-    if return_seed:
-        return vertices, edges, resolved_seed
-    return vertices, edges
+    return vertices, edges, resolved_seed

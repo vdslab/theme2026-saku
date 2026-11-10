@@ -11,13 +11,13 @@
 ```python
 from generator import generate_graph
 
-vertices, edges = generate_graph("dag", n=20, edge_prob=0.1, seed=42)
+vertices, edges, used_seed = generate_graph("dag", n=20, edge_prob=0.1, seed=42)
 
-vertices, edges = generate_graph(
+vertices, edges, used_seed = generate_graph(
     "cyclic", n=20, num_cycles=3, edge_prob=0.2, seed=42
 )
 
-vertices, edges = generate_graph(
+vertices, edges, used_seed = generate_graph(
     "watts_strogatz", n=20, k=4, p=0.25, seed=42
 )
 ```
@@ -32,17 +32,17 @@ config = {
     "cycle_prob": 0.3,
     "seed": 42,
 }
-vertices, edges = generate_graph(**config)
+vertices, edges, used_seed = generate_graph(**config)
 ```
 
-戻り値は既存と同じ `(vertices, edges)` です。頂点は `0` から `n - 1`
-までの整数リスト、有向辺は `(始点, 終点)` のリストです。
-`return_seed=True` では、すべての手法で `(vertices, edges, seed)` を返します。
+戻り値は、すべての手法で常に `(vertices, edges, used_seed)` です。
+頂点は `0` から `n - 1` までの整数リスト、有向辺は `(始点, 終点)` のリストです。
+共通入口の `return_seed` 引数は廃止しました。
 
 ```python
-vertices, edges, used_seed = generate_graph("random", n=20, return_seed=True)
+vertices, edges, used_seed = generate_graph("random", n=20)
 # 未指定だったシードを使って、同じグラフを再生成できる。
-assert (vertices, edges) == generate_graph("random", n=20, seed=used_seed)
+assert (vertices, edges, used_seed) == generate_graph("random", n=20, seed=used_seed)
 ```
 
 同じ手法・引数・シードで再現できます。乱数は生成処理ごとに独立しており、

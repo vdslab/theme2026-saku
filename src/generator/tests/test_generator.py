@@ -41,8 +41,10 @@ def test_seeded_results_match_legacy(
     finally:
         random.setstate(state)
 
-    assert new_generator(n, seed=seed) == expected
-    assert generate_graph(graph_type, n, seed=seed) == expected
+    # The legacy cyclic generator already returns a third seed value.
+    expected_vertices, expected_edges = expected[:2]
+    assert new_generator(n, seed=seed) == (expected_vertices, expected_edges)
+    assert generate_graph(graph_type, n, seed=seed) == (expected_vertices, expected_edges, seed)
 
 
 @pytest.mark.parametrize(
@@ -65,19 +67,18 @@ def test_router_forwards_method_specific_parameters(graph_type, parameters):
         expected = old_generator(20, seed=42, **parameters)
     finally:
         random.setstate(state)
-    assert generate_graph(graph_type, 20, seed=42, **parameters) == expected
+    expected_vertices, expected_edges = expected[:2]
+    assert generate_graph(graph_type, 20, seed=42, **parameters) == (expected_vertices, expected_edges, 42)
 
 
 @pytest.mark.parametrize("graph_type", [name for name, _, _ in GENERATORS])
 @pytest.mark.parametrize("seed", [None, 42])
 def test_returned_seed_reproduces_graph(graph_type, seed):
-    vertices, edges, used_seed = generate_graph(
-        graph_type, 20, seed=seed, return_seed=True
-    )
+    vertices, edges, used_seed = generate_graph(graph_type, 20, seed=seed)
     assert isinstance(used_seed, int)
     if seed is not None:
         assert used_seed == seed
-    assert generate_graph(graph_type, 20, seed=used_seed) == (vertices, edges)
+    assert generate_graph(graph_type, 20, seed=used_seed) == (vertices, edges, used_seed)
 
 
 @pytest.mark.parametrize("graph_type,new_generator,old_generator", GENERATORS)
@@ -93,7 +94,7 @@ def test_generation_preserves_global_random_state(
 
 @pytest.mark.parametrize("graph_type", [name for name, _, _ in GENERATORS])
 def test_graphs_are_weakly_connected_with_valid_vertices(graph_type):
-    vertices, edges = generate_graph(graph_type, 20, seed=42)
+    vertices, edges, _ = generate_graph(graph_type, 20, seed=42)
     assert vertices == list(range(20))
     assert all(
         source in vertices and target in vertices and source != target
@@ -109,7 +110,7 @@ def test_graphs_are_weakly_connected_with_valid_vertices(graph_type):
 @pytest.mark.parametrize("n", [0, 1, 2])
 @pytest.mark.parametrize("graph_type", ["random", "dag", "mixed"])
 def test_small_graphs(graph_type, n):
-    vertices, edges = generate_graph(graph_type, n, seed=42)
+    vertices, edges, _ = generate_graph(graph_type, n, seed=42)
     assert vertices == list(range(n))
     assert is_connected(vertices, edges)
     assert all(source in vertices and target in vertices for source, target in edges)
@@ -117,7 +118,7 @@ def test_small_graphs(graph_type, n):
 
 @pytest.mark.parametrize("edge_prob", [0, 0.3, 1])
 def test_dag_remains_acyclic_after_connectivity_completion(edge_prob):
-    vertices, edges = generate_graph("dag", 20, edge_prob=edge_prob, seed=42)
+    vertices, edges, _ = generate_graph("dag", 20, edge_prob=edge_prob, seed=42)
     graph = nx.DiGraph()
     graph.add_nodes_from(vertices)
     graph.add_edges_from(edges)
@@ -127,7 +128,7 @@ def test_dag_remains_acyclic_after_connectivity_completion(edge_prob):
 
 @pytest.mark.parametrize("n,num_cycles", [(3, 2), (4, 2), (5, 2), (8, 3), (10, 100)])
 def test_cyclic_graph_handles_insufficient_vertices(n, num_cycles):
-    vertices, edges = generate_graph(
+    vertices, edges, _ = generate_graph(
         "cyclic", n, num_cycles=num_cycles, edge_prob=0, seed=42
     )
     assert all(source in vertices and target in vertices for source, target in edges)
@@ -144,7 +145,7 @@ def test_direct_cyclic_seed_can_be_reused():
 
 
 def test_unrewired_watts_strogatz_contains_clockwise_cycle():
-    vertices, edges = generate_graph("watts_strogatz", 10, k=2, p=0, seed=42)
+    vertices, edges, _ = generate_graph("watts_strogatz", 10, k=2, p=0, seed=42)
     assert len(edges) == 10
     assert {(vertex, (vertex + 1) % 10) for vertex in vertices}.issubset(edges)
 
