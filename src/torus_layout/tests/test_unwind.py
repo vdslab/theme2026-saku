@@ -72,10 +72,52 @@ def test_two_layer_reverse_edges_and_duplicates_are_updated_once(minimum):
     assert graph.graph.edges == edges
 
 
+def test_pair_without_inner_segments_uses_all_segments():
+    layers = {0: [0, 2], 1: [1, 3]}
+    edges = ((0, 1), (0, 3), (2, 1))
+    graph = SubdividedGraph(Graph((0, 1, 2, 3), edges), layers, {}, {}, (0, 1))
+    crossing = CrossingResult(layers, {e: 2 for e in edges})
+    result = unwind_levels(graph, crossing)
+    assert all(value == 0 for value in result.winding_numbers.values())
+    assert count_crossings(graph, result) == count_crossings(graph, crossing)
 
 
+def test_ten_and_eleven_closing_edges_do_not_need_three_turns():
+    layers = {0: [12], 20: [10], 21: [11, 52]}
+    edges = ((10, 11), (10, 52), (52, 12), (11, 12))
+    graph = SubdividedGraph(
+        Graph((10, 11, 12, 52), edges), layers,
+        {(52, 12): True, (11, 12): True}, {}, (10, 11, 12),
+    )
+    crossing = CrossingResult(layers, {(10, 11): 0, (10, 52): 0, (52, 12): 3, (11, 12): 3})
+    before = copy.deepcopy((graph, crossing))
+    result = unwind_levels(graph, crossing)
+    assert result.winding_numbers[52, 12] == result.winding_numbers[11, 12] == 0
+    assert count_crossings(graph, result) == count_crossings(graph, crossing) == 0
+    assert count_seam_segments(graph, crossing) == 2
+    assert count_seam_segments(graph, result) == 0
+    assert result.order == crossing.order
+    assert (graph, crossing) == before
 
 
+def test_full_ws_case_removes_ten_and_eleven_wraps_after_seam_selection():
+    nodes, edges, _ = generate_graph("watts_strogatz", 25, seed=1392931424, k=4, p=0.1)
+    originals_by_layer = [
+        [12], [13], [14], [15], [16], [17], [18, 19], [20], [21], [22, 23],
+        [24], [0], [1], [2], [3], [4, 5], [6], [7], [8], [9], [10], [11],
+    ]
+    ranks = {node: layer for layer, members in enumerate(originals_by_layer) for node in members}
+    ranks = {node: ranks[node] for node in nodes}
+    assignment = LayerAssignmentResult(ranks, {e: ranks[e[0]] > ranks[e[1]] for e in edges}, 0)
+    graph = insert_dummy_nodes(Graph(tuple(nodes), tuple(edges)), assignment)
+    baseline = reduce_crossings(graph, rounds=5, unwind=False)
+    result = reduce_crossings(graph, rounds=5)
+    assert baseline.winding_numbers[52, 12] == baseline.winding_numbers[11, 12] == 3
+    assert result.winding_numbers[10, 52] == 0
+    assert result.winding_numbers[52, 12] == result.winding_numbers[11, 12] == 0
+    assert count_crossings(graph, baseline) == count_crossings(graph, result) == 2
+    assert count_seam_segments(graph, baseline) == 8
+    assert count_seam_segments(graph, result) == 3
 
 
 def test_inner_minimum_zero_takes_precedence_over_all_edge_minimum():
@@ -86,10 +128,34 @@ def test_inner_minimum_zero_takes_precedence_over_all_edge_minimum():
     assert unwind_levels(graph, crossing) is crossing
 
 
+def test_fallback_does_not_create_more_wraps_from_a_negative_outlier():
+    layers = {0: [0, 2, 4], 1: [1, 3, 5]}
+    edges = ((0, 1), (2, 3), (4, 5))
+    graph = SubdividedGraph(Graph(tuple(range(6)), edges), layers, {}, {}, tuple(range(6)))
+    crossing = CrossingResult(layers, {(0, 1): -3, (2, 3): 0, (4, 5): 0})
+    assert unwind_levels(graph, crossing) is crossing
 
 
+def test_fallback_counts_duplicate_occurrences_when_choosing_shift():
+    layers = {0: [0, 2, 4], 1: [1, 3, 5]}
+    edges = ((0, 1), (0, 1), (0, 1), (2, 3), (4, 5))
+    graph = SubdividedGraph(Graph(tuple(range(6)), edges), layers, {}, {}, tuple(range(6)))
+    crossing = CrossingResult(layers, {(0, 1): -2, (2, 3): 0, (4, 5): 0})
+    result = unwind_levels(graph, crossing)
+    assert result.winding_numbers == {(0, 1): 0, (2, 3): 2, (4, 5): 2}
+    assert count_seam_segments(graph, result) == 2
+    assert count_crossings(graph, result) == count_crossings(graph, crossing)
 
 
+@pytest.mark.parametrize("minimum", [-3, 3])
+def test_no_inner_segments_with_reverse_edges_and_duplicates(minimum):
+    layers = {0: [0, 2], 1: [1, 3]}
+    edges = ((0, 1), (0, 1), (3, 2))
+    graph = SubdividedGraph(Graph((0, 1, 2, 3), edges), layers, {}, {}, (0, 1, 2, 3))
+    crossing = CrossingResult(layers, {(0, 1): minimum, (3, 2): -minimum})
+    result = unwind_levels(graph, crossing)
+    assert result.winding_numbers == {(0, 1): 0, (3, 2): 0}
+    assert count_crossings(graph, result) == count_crossings(graph, crossing)
 
 
 @pytest.mark.parametrize("seed", range(20))
@@ -137,11 +203,3 @@ def test_nonadjacent_segments_are_rejected():
     graph = SubdividedGraph(Graph(tuple(range(4)), ((0, 2),)), layers, {}, {}, ())
     with pytest.raises(ValueError, match="adjacent"):
         unwind_levels(graph, CrossingResult(layers, {(0, 2): 1}))
-
-
-def test_pair_without_inner_segments_is_unchanged():
-    layers = {0: [0, 2], 1: [1, 3]}
-    edges = ((0, 1), (0, 3), (2, 1))
-    graph = SubdividedGraph(Graph((0, 1, 2, 3), edges), layers, {}, {}, (0, 1))
-    crossing = CrossingResult(layers, {edge: 2 for edge in edges})
-    assert unwind_levels(graph, crossing) is crossing

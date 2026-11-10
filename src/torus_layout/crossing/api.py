@@ -11,7 +11,7 @@ from .lib.embedding import (
     postprocess_sifting_rotations,
 )
 from .lib.crossings import count_all_crossings
-from .seam import optimize_seam
+from .seam import optimize_seam, count_seam_segments
 from .unwind import unwind_levels
 
 
@@ -41,10 +41,26 @@ def reduce_crossings(
     if count_all_crossings(order, winding, layers, edges) > guarded_count:
         order = guarded_order
         winding = guarded_winding
-    result = CrossingResult(order, winding)
+    rotated = CrossingResult(order, winding)
+    result = rotated
     if unwind:
         result = unwind_levels(graph, result)
-    return optimize_seam(graph, result) if optimize_seams else result
+    if not optimize_seams:
+        return result
+    early_unwind = result
+    result = optimize_seam(graph, result)
+    if unwind:
+        # A different cut can expose a common turn that was hidden beforehand.
+        # Compare the new fallback before/after DP; retain the better result.
+        inner_only = unwind_levels(graph, rotated, include_non_inner=False)
+        cut_first = result if inner_only == early_unwind else optimize_seam(graph, inner_only)
+        late_unwind = unwind_levels(graph, cut_first)
+        candidate = (
+            optimize_seam(graph, late_unwind) if late_unwind != cut_first else cut_first
+        )
+        if count_seam_segments(graph, candidate) < count_seam_segments(graph, result):
+            result = candidate
+    return result
 
 
 def count_crossings(graph: SubdividedGraph, crossing: CrossingResult) -> int:
