@@ -6,7 +6,8 @@ from collections.abc import Mapping
 from os import PathLike
 from pathlib import Path
 import math
-from ..models import Node, Edge, Layers, Positions
+from ..models import Node, Edge, Layers, Positions, Winding
+from ..validation import is_number
 from .models import DrawingData
 from .geometry import (
     validate_drawing_parameters,
@@ -105,9 +106,13 @@ def prepare_drawing(
     horizontal_positive_wrap_edges: list[Edge] = []
     horizontal_negative_wrap_edges: list[Edge] = []
     normal_edges: list[Edge] = []
+    winding_numbers: Winding = {}
     for u, v in A:
         is_lr_torus = bool(t_val.get((u, v), False))
         winding = psi.get((u, v), 0)
+        if not is_number(winding) or not math.isfinite(winding) or winding != int(winding):
+            raise ValueError(f"psi must contain finite integer winding numbers: {(u, v)!r}")
+        winding_numbers[u, v] = int(winding)
         if is_lr_torus and winding > 0:
             horizontal_positive_wrap_edges.append((u, v))
         elif is_lr_torus and winding < 0:
@@ -137,4 +142,5 @@ def prepare_drawing(
         horizontal_positive_wrap_edges,
         horizontal_negative_wrap_edges,
         normal_edges,
+        winding_numbers,
     )

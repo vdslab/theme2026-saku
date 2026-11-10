@@ -205,6 +205,10 @@ TIME_LIMIT / SUBOPTIMAL時の扱いは元と同じです。探索結果の最適
 
 ## 検証
 
+描画器は境界最適化後の巻き数をそのまま使い、`|ψ| > 1` の辺も全ての境界で分割します。
+旧描画器は巻き数を符号だけで扱っていたため、複数巻きの辺については旧版と画像が異なります。
+回帰テストは実際の描画線分の変位・終点・矢印を検証し、単一巻きの既存描画との一致も維持しています。
+
 ```sh
 PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-mpl PYTHONPATH=src ./theme2026-saku/bin/python -m pytest src/torus_layout/tests -q -p no:cacheprovider
 PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-mpl PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout.checks.check_imports

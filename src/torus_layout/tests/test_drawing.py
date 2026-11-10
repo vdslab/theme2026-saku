@@ -114,3 +114,57 @@ def test_tiled_vector_path_is_rejected_as_before(tmp_path):
             save_path=tmp_path / "invalid.svg",
             show=False,
         )
+
+
+@pytest.mark.parametrize("winding", [2, -2, 3, -3])
+@pytest.mark.parametrize("horizontal_wrap", [False, True])
+def test_drawn_edge_preserves_full_winding(monkeypatch, winding, horizontal_wrap):
+    """Check actual renderer segments, not just the unused geometry helper."""
+    from torus_layout.drawing import artists
+
+    layers = {0: [0, 2, 3, 4], 1: [1, 5, 6, 7]}
+    source_x, target_x = (1.0, 0.0) if horizontal_wrap else (0.0, 1.0)
+    if horizontal_wrap:
+        layers = {0: [1, 2, 3, 4], 1: [0, 5, 6, 7]}
+    source_y, target_y = (3.0, 0.0) if winding > 0 else (0.0, 3.0)
+    positions = {node: (float(layer), float(index))
+                 for layer, nodes in layers.items() for index, node in enumerate(nodes)}
+    positions.update({0: (source_x, source_y), 1: (target_x, target_y)})
+    edge = (0, 1)
+    graph = SubdividedGraph(
+        Graph(tuple(positions), (edge,)), layers, {edge: horizontal_wrap},
+        {edge: 1}, (0, 1),
+    )
+    calls = []
+
+    def capture(ax, start, end, style, edge_width, **kwargs):
+        calls.append((start, end, kwargs))
+
+    monkeypatch.setattr(artists, "add_edge_patch", capture)
+    figure = create_figure(
+        graph, CrossingResult(layers, {edge: winding}),
+        CoordinateResult(positions, 4.0),
+    )
+    plt.close(figure)
+    assert calls[0][0] == positions[0]
+    assert calls[-1][1] == pytest.approx(positions[1])
+    assert sum(end[0] - start[0] for start, end, _ in calls) == pytest.approx(
+        target_x - source_x + 2 * int(horizontal_wrap)
+    )
+    assert sum(end[1] - start[1] for start, end, _ in calls) == pytest.approx(
+        target_y - source_y + 4 * winding
+    )
+    assert sum(options["arrow"] for _, _, options in calls) == 1
+    assert calls[-1][2]["arrow"] is True
+    for _, _, options in calls[1:]:
+        assert options.get("shrink_a", 0) == 0
+    for _, _, options in calls[:-1]:
+        assert options.get("shrink_b", 0) == 0
+
+
+@pytest.mark.parametrize("winding", [1.5, float("nan"), float("inf")])
+def test_drawing_rejects_winding_without_a_periodic_endpoint(winding):
+    graph, crossing, coordinates = drawing_case()
+    crossing.winding_numbers[1, 3] = winding
+    with pytest.raises(ValueError, match="integer winding"):
+        create_figure(graph, crossing, coordinates)

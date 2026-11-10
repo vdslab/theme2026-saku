@@ -3,7 +3,7 @@
 from .. import constants
 
 from dataclasses import dataclass
-from ..models import Node, Edge, Positions
+from ..models import Node, Edge, Positions, Winding
 
 
 @dataclass(frozen=True)
@@ -43,3 +43,4 @@ class DrawingData:
     horizontal_positive_wrap_edges: list[Edge]
     horizontal_negative_wrap_edges: list[Edge]
     normal_edges: list[Edge]
+    winding_numbers: Winding

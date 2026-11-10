@@ -79,6 +79,22 @@ def draw_edges(ax: Axes, data: DrawingData, options: DrawingOptions) -> None:
     def edge_has_arrow(target: Node) -> bool:
         return draw_dummy_nodes or target in V_set
 
+    def draw_periodic_edge(u: Node, v: Node, style: EdgeStyle, horizontal: int) -> None:
+        # Keep the full winding: a seam change can produce |psi| > 1.
+        segments = periodic_edge_segments(
+            pos[u], pos[v],
+            x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max,
+            horizontal_winding=horizontal,
+            vertical_winding=data.winding_numbers.get((u, v), 0),
+        )
+        for index, (start, end) in enumerate(segments):
+            add_edge_patch(
+                ax, start, end, style, edge_width,
+                arrow=index == len(segments) - 1 and edge_has_arrow(v),
+                shrink_a=node_shrink(u) if index == 0 else 0.0,
+                shrink_b=node_shrink(v) if index == len(segments) - 1 else 0.0,
+            )
+
     for u, v in normal_edges:
         add_edge_patch(
             ax,
@@ -120,30 +136,13 @@ def draw_edges(ax: Axes, data: DrawingData, options: DrawingOptions) -> None:
         (horizontal_positive_wrap_edges, 1, EDGE_STYLES["horizontal_positive_wrap"]),
         (horizontal_negative_wrap_edges, -1, EDGE_STYLES["horizontal_negative_wrap"]),
     )
-    for edges, vertical_winding, style in combined_wrap_groups:
+    for edges, _vertical_sign, style in combined_wrap_groups:
         for u, v in edges:
-            segments = periodic_edge_segments(
-                pos[u],
-                pos[v],
-                x_min=x_min,
-                x_max=x_max,
-                y_min=y_min,
-                y_max=y_max,
-                horizontal_winding=1,
-                vertical_winding=vertical_winding,
-            )
-            for index, (start, end) in enumerate(segments):
-                add_edge_patch(
-                    ax,
-                    start,
-                    end,
-                    style,
-                    edge_width,
-                    arrow=index == len(segments) - 1 and edge_has_arrow(v),
-                    shrink_a=node_shrink(u) if index == 0 else 0.0,
-                    shrink_b=node_shrink(v) if index == len(segments) - 1 else 0.0,
-                )
+            draw_periodic_edge(u, v, style, horizontal=1)
     for u, v in positive_wrap_edges:
+        if data.winding_numbers[u, v] > 1:
+            draw_periodic_edge(u, v, EDGE_STYLES["positive_wrap"], horizontal=0)
+            continue
         u_pos = pos[u]
         v_pos = pos[v]
         dist_to_top = y_max - u_pos[1]
@@ -170,6 +169,9 @@ def draw_edges(ax: Axes, data: DrawingData, options: DrawingOptions) -> None:
             shrink_b=node_shrink(v),
         )
     for u, v in negative_wrap_edges:
+        if data.winding_numbers[u, v] < -1:
+            draw_periodic_edge(u, v, EDGE_STYLES["negative_wrap"], horizontal=0)
+            continue
         u_pos = pos[u]
         v_pos = pos[v]
         dist_to_bottom = u_pos[1] - y_min
@@ -272,9 +274,16 @@ def draw_legend(ax: Axes, data: DrawingData, options: DrawingOptions) -> None:
             present_styles.append("horizontal_positive_wrap")
         if horizontal_negative_wrap_edges:
             present_styles.append("horizontal_negative_wrap")
-        handles = [
-            legend_handle(EDGE_STYLES[key], edge_width) for key in present_styles
-        ]
+        handles: list[Line2D] = []
+        for key in present_styles:
+            style = EDGE_STYLES[key]
+            # The shared color indicates the sign, not necessarily one turn.
+            if any(abs(value) > 1 for value in data.winding_numbers.values()):
+                style = {
+                    **style,
+                    "label": style["label"].replace("\\psi=+1", "\\psi>0").replace("\\psi=-1", "\\psi<0"),
+                }
+            handles.append(legend_handle(style, edge_width))
         if draw_dummy_nodes and dummy_nodes:
             handles.append(
                 Line2D(
