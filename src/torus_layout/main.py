@@ -47,13 +47,14 @@ def _run(args: argparse.Namespace) -> None:
         coordinate_method=args.coordinate_method,
         coordinate_bend_weight=args.bend_weight,
         optimize_seams=not args.no_optimize_seams,
+        unwind_levels=args.unwind,
     )
     print(
         f"グラフ: {args.graph}, ノード数: {len(nodes)}, 辺数: {len(edges)}, seed: {used_seed}"
     )
     print(
         f"階層割当: {config.balance_method}, 座標割当: {config.coordinate_method}, "
-        f"境界最適化: {config.optimize_seams}"
+        f"UNWIND: {config.unwind_levels}, 境界最適化: {config.optimize_seams}"
     )
     print(
         "Gurobi: " + ("local（明示指定）" if args.local_license else ".env WLS設定"),

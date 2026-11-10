@@ -74,6 +74,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-optimize-seams", action="store_true", default=not constants.DEFAULT_OPTIMIZE_SEAMS, help="境界最適化DPを無効化"
     )
     parser.add_argument(
+        "--unwind",
+        action=argparse.BooleanOptionalAction,
+        default=constants.DEFAULT_UNWIND_LEVELS,
+        help="Algo2後にUNWIND-LEVELを実行（--no-unwindで無効化）",
+    )
+    parser.add_argument(
         "--compare-seams",
         action="store_true",
         help="同一階層割当で境界最適化前の結果も計算・描画",

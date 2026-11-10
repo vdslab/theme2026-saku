@@ -22,7 +22,8 @@ def run_pipeline(
     started = perf_counter()
     subdivided = insert_dummy_nodes(graph, assignment)
     crossing = reduce_crossings(
-        subdivided, rounds=config.rounds, optimize_seams=config.optimize_seams
+        subdivided, rounds=config.rounds, optimize_seams=config.optimize_seams,
+        unwind=config.unwind_levels,
     )
     crossing_time = perf_counter() - started
 

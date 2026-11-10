@@ -27,6 +27,7 @@ def compare_seams(
 
     baseline = reduce_crossings(
         result.subdivided, rounds=config.rounds, optimize_seams=False,
+        unwind=config.unwind_levels,
     )
     before_seams = count_seam_segments(result.subdivided, baseline)
     before_crossings = count_crossings(result.subdivided, baseline)

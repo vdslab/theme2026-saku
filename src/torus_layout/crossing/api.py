@@ -12,14 +12,19 @@ from .lib.embedding import (
 )
 from .lib.crossings import count_all_crossings
 from .seam import optimize_seam
+from .unwind import unwind_levels
 
 
 def reduce_crossings(
-    graph: SubdividedGraph, rounds: int = constants.DEFAULT_ROUNDS, *, optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS
+    graph: SubdividedGraph,
+    rounds: int = constants.DEFAULT_ROUNDS,
+    *,
+    optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS,
+    unwind: bool = constants.DEFAULT_UNWIND_LEVELS,
 ) -> CrossingResult:
-    """Run guarded radial sifting/rotation, then minimize seam segments.
+    """Run guarded sifting/rotation, UNWIND-LEVEL, then seam selection.
 
-    Set optimize_seams=False to retain the legacy cut selection. The seam
+    Disable both unwind and optimize_seams to retain the legacy path. The seam
     optimizer requires a proper graph with cyclic adjacent-layer segments.
     """
     layers = sorted(graph.layers)
@@ -37,6 +42,8 @@ def reduce_crossings(
         order = guarded_order
         winding = guarded_winding
     result = CrossingResult(order, winding)
+    if unwind:
+        result = unwind_levels(graph, result)
     return optimize_seam(graph, result) if optimize_seams else result
 
 

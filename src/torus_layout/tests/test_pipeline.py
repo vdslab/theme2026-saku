@@ -36,7 +36,7 @@ def test_pipeline_matches_existing_path(
         order, divided_layers, divided_edges, divided_flags, winding, list(nodes)
     )
     actual = run_pipeline(graph, PipelineConfig(
-        method, 2, coordinate_method="brandes_koepf", optimize_seams=False,
+        method, 2, coordinate_method="brandes_koepf", optimize_seams=False, unwind_levels=False,
     ))
     assert actual is not None
     assert actual.assignment.layers == layers
@@ -92,7 +92,7 @@ def test_original_main_and_new_pipeline_save_identical_image(
     finally:
         random.setstate(state)
     result = run_pipeline(Graph(tuple(nodes), tuple(edges)), PipelineConfig(
-        rounds=2, coordinate_method="brandes_koepf", optimize_seams=False,
+        rounds=2, coordinate_method="brandes_koepf", optimize_seams=False, unwind_levels=False,
     ))
     assert result is not None
     draw_layout(

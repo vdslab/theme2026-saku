@@ -86,3 +86,4 @@ class PipelineConfig:
     coordinate_method: str = constants.DEFAULT_COORDINATE_METHOD
     coordinate_bend_weight: float = constants.DEFAULT_BEND_WEIGHT
     optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS
+    unwind_levels: bool = constants.DEFAULT_UNWIND_LEVELS

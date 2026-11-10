@@ -22,10 +22,10 @@ CLIと描画APIで従来から異なる周辺タイル表示の既定値は、�
 PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 ```
 
-グラフ生成 → 階層割当 → ダミー挿入 → sifting・回転 → 境界最適化DP →
+グラフ生成 → 階層割当 → ダミー挿入 → sifting・回転 → UNWIND-LEVEL → 境界最適化DP →
 BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
 既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
-階層バランス`diff_square`、sifting 5回、境界最適化有効、座標方式`brandes_koepf`です。
+階層バランス`diff_square`、sifting 5回、UNWIND・境界最適化有効、座標方式`brandes_koepf`です。
 `--seed` で乱数seedを固定すると同じ入力を再生成できます。
 
 出力先の既定値は `output/torus_layout/` です。
@@ -62,6 +62,7 @@ BK系＋周期平滑化による座標割当 → 評価表示・描画保存、�
 生成器は `cyclic` / `watts_strogatz` / `random` / `dag` / `mixed`、
 座標方式は `torus_qp` / `torus_lp` / `brandes_koepf` から選べます。
 `--no-optimize-seams` で境界最適化を無効化できます。
+`--no-unwind` でUNWIND-LEVELを無効化できます。
 比較モードでは、通過線分数が増加せず、辺同士の交差数が変わらないことも検証し、
 違反した場合は終了コード1を返します。
 
@@ -86,11 +87,28 @@ CLIの引数定義・検証は `cli_arguments.py`、境界最適化の比較は 
 > `PipelineConfig(coordinate_method="torus_qp")` と `coordinate_bend_weight` も利用可能です。
 > [定式化・比較実験・手法選定](../../documents/torus_coordinate_assignment.md)を参照してください。
 > 以下の旧実装との一致の記述は、座標方式に`brandes_koepf`を指定し、
-> 境界最適化を`optimize_seams=False`で無効化した場合に適用されます。
+> 境界最適化を`optimize_seams=False`、UNWINDを`unwind_levels=False`で無効化した場合に適用されます。
+
+## UNWIND-LEVEL
+
+Algo2の回転・交差チェックの後、切れ目DPの前に、層間の共通の整数巻きを取り除きます。
+各層間でダミー間線分の最小巻き数 `m` を求め、その層間の全線分から `m` を引きます。
+内部線分がない層間は変更しません。
+逆向き辺は同じ向きに換算し、重複辺の巻き数は一度だけ更新します。
+頂点順序は変わらず、交差評価に使う巻き数の差も保存されます。
+
+原論文のAlgorithm 3の操作を循環階層へ適用したもので、原論文のタイプ3競合除去全体の実装ではありません。
+任意の入力で境界通過線分数が必ず減るという保証はありません。
+指摘画像の再現例では、上下の境界通過線分数3→0、交差数0→0を確認しました。
+[Algo2との違い・検証記録](../../documents/algo2_common_turn_check.md)も参照してください。
+
+`PipelineConfig(unwind_levels=False)` または `reduce_crossings(..., unwind=False)` で無効化できます。
+旧版を再現する場合は、さらに `optimize_seams=False` を指定します。
+`--compare-seams` の比較前後には同じUNWIND設定を適用します。
 
 ## 境界通過線分数の最適化（追加機能）
 
-現在の `reduce_crossings` / `run_pipeline` は、従来のsiftingと回転の後に、
+現在の `reduce_crossings` / `run_pipeline` は、sifting・回転・UNWINDの後に、
 各レイヤーの切れ目を選ぶ厳密DPをデフォルトで実行します。
 `crossing/seam.py` の区間加算・最小値セグメント木で候補値を差分更新し、
 全隣接ペアの密な通過数表は構築しません。

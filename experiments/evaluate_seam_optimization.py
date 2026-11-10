@@ -123,6 +123,7 @@ def evaluate(args: argparse.Namespace) -> None:
         "reduction_fraction": (before - after) / before if before else 0,
         "all_crossings_preserved": True,
         "coordinate_method": config.coordinate_method,
+        "unwind_levels": config.unwind_levels,
         "rounds": config.rounds, "edge_probability": 0.01,
         "license_mode": "local" if args.local_license else "application_env",
     }

@@ -30,7 +30,7 @@ def test_crossing_matches_legacy(seed, rounds):
     expected = radial_sifting_global_guard_heuristic(
         list(nodes), list(edges), assignment.layers, flags, rounds
     )
-    actual = reduce_crossings(divided, rounds, optimize_seams=False)
+    actual = reduce_crossings(divided, rounds, optimize_seams=False, unwind=False)
     assert actual.order == expected[0]
     assert actual.winding_numbers == expected[4]
     assert divided.layers == expected[1]
@@ -55,5 +55,5 @@ def test_sparse_or_single_layers_match_legacy(layers):
     expected = radial_sifting_global_guard_heuristic(
         list(nodes), list(edges), layers, assignment.torus_flags, 1
     )
-    actual = reduce_crossings(divided, 1, optimize_seams=False)
+    actual = reduce_crossings(divided, 1, optimize_seams=False, unwind=False)
     assert (actual.order, actual.winding_numbers) == (expected[0], expected[4])
