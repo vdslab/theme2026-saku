@@ -56,7 +56,7 @@ def run_layout(package, kind, nodes, edges, output):
     return normalize((acyclic, ranks, hierarchy, reduced, coordinates))
 
 
-@pytest.mark.parametrize("kind", ["radial"])
+@pytest.mark.parametrize("kind", ["sugiyama", "radial"])
 @pytest.mark.parametrize("seed", [0, 7, 42])
 def test_port_preserves_layout_and_drawing(kind, seed, tmp_path):
     generator = importlib.import_module(f"{kind}_layout.random_graph")
@@ -67,7 +67,7 @@ def test_port_preserves_layout_and_drawing(kind, seed, tmp_path):
     assert (tmp_path / "ported.png").read_bytes() == (tmp_path / "original.png").read_bytes()
 
 
-@pytest.mark.parametrize("package", ["radial_layout"])
+@pytest.mark.parametrize("package", ["sugiyama_layout", "radial_layout"])
 def test_import_and_cli_with_only_src_on_path(package, tmp_path):
     src = Path(__file__).resolve().parents[1]
     env = {**os.environ, "PYTHONPATH": str(src), "MPLBACKEND": "Agg"}
