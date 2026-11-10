@@ -1,7 +1,8 @@
 """Assign DAG vertices to concentric radial levels."""
 
-from collections import deque
 from typing import Hashable, Iterable, TypeAlias
+
+from layout_common.dag import topological_adjacency
 
 Node: TypeAlias = Hashable
 Edge: TypeAlias = tuple[Node, Node]
@@ -14,27 +15,7 @@ def assign_layers(nodes: Iterable[Node], edges: Iterable[Edge]) -> dict[Node, in
     outermost level, while every edge still points strictly outwards.
     """
 
-    node_list = tuple(dict.fromkeys(nodes))
-    edge_list = tuple(edges)
-    successors = {node: [] for node in node_list}
-    indegree = {node: 0 for node in node_list}
-    for source, target in edge_list:
-        if source not in successors or target not in successors:
-            raise ValueError("every edge endpoint must occur in nodes")
-        successors[source].append(target)
-        indegree[target] += 1
-
-    queue = deque(node for node in node_list if indegree[node] == 0)
-    topological_order: list[Node] = []
-    while queue:
-        node = queue.popleft()
-        topological_order.append(node)
-        for target in successors[node]:
-            indegree[target] -= 1
-            if indegree[target] == 0:
-                queue.append(target)
-    if len(topological_order) != len(node_list):
-        raise ValueError("radial layer assignment requires an acyclic graph")
+    topological_order, successors, _ = topological_adjacency(nodes, edges)
 
     distance_to_sink: dict[Node, int] = {}
     for node in reversed(topological_order):

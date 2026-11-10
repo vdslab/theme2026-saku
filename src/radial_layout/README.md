@@ -40,3 +40,11 @@ are level guides; dummy vertices are used only as hidden bend points.
 CLI は `-m radial_layout` または `-m radial_layout.main` で実行します。
 `main.py` の直接実行には対応しません。
 移植元の `examples/radial` は削除済みです。import は `radial_layout` を使用してください。
+
+## 共通処理と手法固有の処理
+
+閉路除去・DAG走査・長辺分割は `layout_common`、乱数グラフ生成は
+`generator.random_oriented_watts_strogatz` を使用します。
+交差数計算は辺対の計算を含め、このパッケージ専用の実装を使用します。
+階層割当の方針、交差削減の探索、座標割当、描画はこのパッケージに残しています。
+依存関係と分離理由は [layout_common/README.md](../layout_common/README.md) を参照してください。
