@@ -145,7 +145,7 @@
 | 交差削減 | 重心初期値、sifting、guard、掃引順序 | [交差比較](../experiments/evaluate_crossing_reduction.py)、[WS100](../experiments/evaluate_torus_sweep_ws100.py) |
 | 回転・構成要素 | 回転前後の幾何品質、順序・巻き数・guardの分離 | [回転](../experiments/evaluate_rotation_geometry.py)、[アブレーション](../experiments/evaluate_torus_framework_ablation.py) |
 | 座標・切れ目 | BK/QP/LP比較、DP前後比較 | [座標比較](../experiments/evaluate_coordinate_methods.py)、[切れ目比較](../experiments/evaluate_seam_optimization.py) |
-| フレームワーク | 通常のSugiyama法との比較、放射型描画の実装 | [交差比較](../experiments/evaluate_framework_crossings.py)、[比較入口](../src/compare_frameworks.py) |
+| フレームワーク | 通常のSugiyama法との比較、放射型描画の実装 | [交差比較](../experiments/evaluate_framework_crossings.py)（旧版の目視比較入口 `compare_frameworks.py` は整理に伴い削除） |
 | 処理時間 | 全体・工程別時間と規模の関係 | [evaluate_pipeline_runtime.py](../experiments/evaluate_pipeline_runtime.py)、`experiments/plot_pipeline_runtime_*.py` |
 
 **スクリプトの存在は、全設定の実行済み・優劣の確認済みを意味しない。**

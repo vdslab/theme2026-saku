@@ -3,7 +3,6 @@
   ".vscode/settings.json": "067366711310442397cd2d306861469f4e173ae601ebd84dd47a796e892e8e46",
   "AGENTS.md": "e39650c7f1c96ed1cc358a7927c3df82b9a163e24b10db1906cb58d6b6aad09e",
   "experiments/tests/test_torus_sweep_experiment.py": "6543fd435e9b53f7c54494f85c991c2969cab2d198a336013905bc098e9e71eb",
-  "src/compare_frameworks.py": "a4a00438fcd46485e4d8aefdb0dd305feebf0fb3175021515cee2f158da5d547",
   "src/generator/__init__.py": "504c8b07847831c0e5e631ef1c9d083504f10d30ed4b2ca9477b6f228f2249b4",
   "src/generator/cyclic.py": "0b99bd80854935a1a0ddda2dff17be5a41369b186140ecb6b54795eca5334960",
   "src/generator/dag.py": "d54a086d6931f59e4b77131ba4bc492b3ed5d5ce86ecfb27c77e247e5d268942",
