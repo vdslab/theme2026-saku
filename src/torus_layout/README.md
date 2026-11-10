@@ -219,9 +219,11 @@ PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-
 現在の保護対象は51ファイルです。残したテストは次のコマンドでまとめて実行できます。
 
 旧実装の `old_torus_layout` への移動に合わせ、保護対象のパスとimport変更後のハッシュを更新しています。
+テストは対象ごとの `tests/` に配置し、移動した保護対象のパスも更新しています。
+配置の詳細は [テスト案内](../../documents/testing.md) を参照してください。
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-mpl PYTHONPATH=src ./theme2026-saku/bin/python -m pytest src -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-mpl PYTHONPATH=src ./theme2026-saku/bin/python -m pytest src experiments/tests -q -p no:cacheprovider
 ```
 
 ### 型検査

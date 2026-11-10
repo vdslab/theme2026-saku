@@ -55,7 +55,7 @@ def test_existing_coordinate_regressions_with_new_implementation(monkeypatch):
     from pathlib import Path
     from torus_layout.coordinates.api import compute_positions
 
-    path = Path(__file__).resolve().parents[2] / "test/test_coordinate_assignment.py"
+    path = Path(__file__).resolve().parents[2] / "old_torus_layout/tests/test_coordinate_assignment.py"
     spec = importlib.util.spec_from_file_location("coordinate_regressions", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

@@ -62,7 +62,7 @@ def test_port_pipeline_and_drawing(kind, seed, tmp_path):
 
 @pytest.mark.parametrize("package", ["sugiyama_layout", "radial_layout"])
 def test_import_and_cli_with_only_src_on_path(package, tmp_path):
-    src = Path(__file__).resolve().parents[1]
+    src = Path(__file__).resolve().parents[2]
     env = {**os.environ, "PYTHONPATH": str(src), "MPLBACKEND": "Agg"}
     result = subprocess.run(
         [sys.executable, "-c", f"import {package}.main; import sys; "

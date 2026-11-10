@@ -48,4 +48,5 @@ PYTHONPATH=src ./theme2026-saku/bin/python experiments/evaluate_crossing_reducti
 ```
 
 各方式の狙いと現在の位置づけは [試行錯誤の整理](../../documents/research_history.md) を参照してください。
-旧実装を使う既存テストは `src/test/`、現行実装との比較テストは `src/torus_layout/tests/` にあります。
+旧実装単体のテストは `src/old_torus_layout/tests/`、現行実装との比較テストは
+`src/torus_layout/tests/` にあります。全体の配置と実行方法は [テスト案内](../../documents/testing.md) を参照してください。
