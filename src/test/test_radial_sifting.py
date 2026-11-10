@@ -1,4 +1,4 @@
-import crossing_reduction.radial as radial
+import old_torus_layout.crossing_reduction.radial as radial
 
 
 def test_rounds_repeat_each_pair_during_two_forward_passes(monkeypatch):

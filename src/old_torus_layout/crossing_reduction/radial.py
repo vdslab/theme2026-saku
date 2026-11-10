@@ -1,7 +1,7 @@
 from collections import defaultdict
 import math
 
-from lib.insert_dummy_node import insert_dummy_node
+from old_torus_layout.lib.insert_dummy_node import insert_dummy_node
 
 OFFSET_VALUES = (-1, 0, 1)
 

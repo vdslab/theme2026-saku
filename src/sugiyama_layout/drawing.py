@@ -22,7 +22,7 @@ def draw_hierarchical_graph(
     """画像を保存せず、Matplotlibで描画結果を表示する。
 
     頂点の大きさ、色、ラベル、矢印の形式、余白、動的な図の大きさは、意図的に
-    ``src/drawing/draw_torus.py`` に合わせている。
+    ``src/old_torus_layout/drawing/draw_torus.py`` に合わせている。
     """
     figure = create_hierarchical_figure(
         nodes,

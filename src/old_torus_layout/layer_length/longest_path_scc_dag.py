@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 
-from lib.scc_decomposition import scc_decomposition
+from old_torus_layout.lib.scc_decomposition import scc_decomposition
 
 
 def build_scc_dag(sccs, node_to_scc, A):

@@ -19,9 +19,9 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-import crossing_reduction.radial as radial
-from layer_assignment.torus_balance import balance_layer_assignment
-from lib.generate_torus_graph import generate_watts_strogatz_graph
+import old_torus_layout.crossing_reduction.radial as radial
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.lib.generate_torus_graph import generate_watts_strogatz_graph
 
 OUTPUT = ROOT / "experiments/results/torus_sweep_direction"
 PARAMETERS = ROOT / "experiments/results/layer_count_search/raw_results.csv"

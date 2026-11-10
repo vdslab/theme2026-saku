@@ -206,7 +206,7 @@ reporting → 結果の型
 ## 5. Pylanceで公開名がUnknownにならないための設計
 
 提示された `assign_coordinates` の診断は、公開名の定義・公開方法・解決先を確認する対象である。
-現行の `src/coordinate_assignment` が公開する名前は `assign_torus_brandes_koepf_coordinates` であり、
+現行の `src/old_torus_layout/coordinate_assignment` が公開する名前は `assign_torus_brandes_koepf_coordinates` であり、
 別の `examples/sugiyama` には `assign_coordinates` が存在する。これらの名前を混同しない。
 提示された診断の発生箇所そのものは未特定であり、既存コードの修正まで完了したとは扱わない。
 

@@ -7,7 +7,7 @@
 
 from typing import Dict, List, Tuple
 import copy
-from lib.insert_dummy_node import insert_dummy_node
+from old_torus_layout.lib.insert_dummy_node import insert_dummy_node
 
 
 def count_crossings(

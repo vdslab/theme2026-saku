@@ -19,14 +19,14 @@ from sugiyama_layout.cycle_removal import remove_cycles
 from sugiyama_layout.drawing import create_hierarchical_figure
 from sugiyama_layout.dummy_insertion import insert_dummy_nodes
 from sugiyama_layout.layer_assignment import assign_layers
-from lib.generate_torus_graph import generate_watts_strogatz_graph
-from main import (
+from old_torus_layout.lib.generate_torus_graph import generate_watts_strogatz_graph
+from old_torus_layout.main import (
     coordinate_assignment,
     layer_assignment,
     reduce_crossings_radial,
 )
-from crossing_reduction.radial import count_radial_crossings
-from drawing.draw_radial_torus import draw_radial_torus
+from old_torus_layout.crossing_reduction.radial import count_radial_crossings
+from old_torus_layout.drawing.draw_radial_torus import draw_radial_torus
 
 
 @dataclass(frozen=True)

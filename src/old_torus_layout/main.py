@@ -8,16 +8,23 @@
 5. 平坦トーラスの切開図を描画
 """
 
-from layer_assignment.torus_balance import balance_layer_assignment
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
+# ファイルを直接実行する場合も、srcを起点に同じパッケージを読み込む。
+if __name__ == "__main__" and not __package__:
+    import sys
+    from pathlib import Path
 
-from crossing_reduction.radial import (
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
+
+from old_torus_layout.crossing_reduction.radial import (
     count_radial_crossings,
     radial_sifting_global_guard_heuristic,
 )
-from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
-from drawing.draw_radial_torus import draw_radial_torus
-from lib.generate_torus_graph import (
+from old_torus_layout.coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
+from old_torus_layout.drawing.draw_radial_torus import draw_radial_torus
+from old_torus_layout.lib.generate_torus_graph import (
     generate_cyclic_graph,
     generate_watts_strogatz_graph,
 )

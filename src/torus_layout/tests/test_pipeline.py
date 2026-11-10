@@ -6,8 +6,8 @@ from torus_layout.pipeline import run_pipeline
 from torus_layout.reporting import report_pipeline
 from torus_layout.layering.balance import diff, diff_square, qp
 from torus_layout.layering import minimize_wraps
-from layer_assignment import torus_balance as old_balance, torus_two_stage as old_min
-import main as legacy
+from old_torus_layout.layer_assignment import torus_balance as old_balance, torus_two_stage as old_min
+import old_torus_layout.main as legacy
 
 CASES = [
     ((0, 1, 2), ((0, 1), (1, 2))),
@@ -68,7 +68,7 @@ def test_original_main_and_new_pipeline_save_identical_image(
     import random
     from PIL import Image
     from torus_layout.drawing import draw_layout
-    from lib.generate_torus_graph import generate_cyclic_graph
+    from old_torus_layout.lib.generate_torus_graph import generate_cyclic_graph
 
     for module in (diff, diff_square, qp, minimize_wraps, old_balance, old_min):
         monkeypatch.setattr(module, "create_gurobi_env", local_solver)

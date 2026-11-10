@@ -1,6 +1,6 @@
 import gurobipy as gp
 from gurobipy import GRB
-from lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 from collections import defaultdict
 

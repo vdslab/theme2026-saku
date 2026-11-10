@@ -7,15 +7,15 @@ import statistics
 import time
 from pathlib import Path
 
-from crossing_reduction.radial import (
+from old_torus_layout.crossing_reduction.radial import (
     cartesian_barycenter_heuristic,
     count_radial_crossings,
     radial_sifting_global_guard_heuristic,
     radial_sifting_heuristic,
 )
-from layer_assignment.torus_balance import balance_layer_assignment
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
-from evaluate_layer_count_search import FAMILIES, NODE_COUNTS, SEEDS, generate_graph
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
+from benchmark_step2_by_node_count import FAMILIES, NODE_COUNTS, SEEDS, generate_graph
 
 
 ROUNDS = 5

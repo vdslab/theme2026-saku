@@ -22,7 +22,7 @@ for path in (ROOT, SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from crossing_reduction.radial import (  # noqa: E402
+from old_torus_layout.crossing_reduction.radial import (  # noqa: E402
     count_radial_crossings,
     radial_sifting_global_guard_heuristic,
 )
@@ -33,8 +33,8 @@ from sugiyama_layout.crossing_reduction import (  # noqa: E402
 from sugiyama_layout.cycle_removal import remove_cycles  # noqa: E402
 from sugiyama_layout.dummy_insertion import insert_dummy_nodes  # noqa: E402
 from sugiyama_layout.layer_assignment import assign_layers  # noqa: E402
-from layer_assignment.torus_balance import balance_layer_assignment  # noqa: E402
-from layer_assignment.torus_binary_search import (  # noqa: E402
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment  # noqa: E402
+from old_torus_layout.layer_assignment.torus_binary_search import (  # noqa: E402
     find_minimum_torus_configuration,
 )
 

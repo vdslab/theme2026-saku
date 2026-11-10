@@ -16,7 +16,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, Rectangle
 from PIL import Image
 
-from drawing.tile_image import (
+from old_torus_layout.drawing.tile_image import (
     create_torus_context_image,
     validate_torus_context_options,
 )

@@ -14,7 +14,7 @@ from generator import (
     generate_watts_strogatz_graph,
 )
 from generator.lib.connectivity import is_connected
-from lib import generate_torus_graph as legacy
+from old_torus_layout.lib import generate_torus_graph as legacy
 
 GENERATORS = [
     ("random", generate_random_connected_graph, legacy.generate_random_connected_graph),

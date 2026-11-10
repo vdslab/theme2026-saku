@@ -6,12 +6,12 @@ import csv
 import statistics
 import time
 
-from coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
-from crossing_reduction import radial
-from layer_assignment.torus_balance import balance_layer_assignment
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
+from old_torus_layout.coordinate_assignment.brandes_koepf import assign_torus_brandes_koepf_coordinates
+from old_torus_layout.crossing_reduction import radial
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
-from evaluate_layer_count_search import FAMILIES, NODE_COUNTS, SEEDS, generate_graph
+from benchmark_step2_by_node_count import FAMILIES, NODE_COUNTS, SEEDS, generate_graph
 from evaluate_torus_framework_ablation import (
     OUTPUT_DIR,
     geometry_metrics,

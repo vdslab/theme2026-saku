@@ -8,9 +8,9 @@ import time
 from pprint import pprint
 
 if __name__ == "__main__":
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from layer_assignment.torus_two_stage import minimize_torus_edges
+from old_torus_layout.layer_assignment.torus_two_stage import minimize_torus_edges
 
 
 def find_minimum_torus_configuration(V, A, w=None, lam=None):
@@ -123,7 +123,7 @@ def test_binary_search_correctness(num_tests=10, verbose=True):
         成功したテスト数、失敗したテスト数
     """
     import random
-    from lib.generate_torus_graph import generate_cyclic_graph
+    from old_torus_layout.lib.generate_torus_graph import generate_cyclic_graph
 
     success_count = 0
     failure_count = 0

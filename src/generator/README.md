@@ -1,6 +1,6 @@
 # グラフ生成
 
-`src/lib/generate_torus_graph.py` にある5種類の生成処理を、手法ごとに
+`src/old_torus_layout/lib/generate_torus_graph.py` にある5種類の生成処理を、手法ごとに
 分けた追加パッケージです。既存ファイルと呼び出し箇所はそのままです。
 
 ## 共通の入口

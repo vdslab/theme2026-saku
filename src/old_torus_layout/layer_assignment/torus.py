@@ -1,11 +1,11 @@
 import gurobipy as gp
 from gurobipy import GRB
-from lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 from collections import defaultdict
 
 
-def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
+def torus(V, A, w=None, lam=None, alpha=100, beta=1, gamma=1000):
     """
     トーラスを含む階層グラフの階層割当を最適化
     目的関数の分散を利用しない式
@@ -13,14 +13,16 @@ def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
     Args:
         V: ノード集合 list[int]
         A: エッジ集合 list[tuple(int, int)]
-        L: レイヤー数 int
         w: エッジ重み dict[(int,int): float] (デフォルト: すべて1)
         lam: エッジの最小階層差 dict[(int,int): int] (デフォルト: すべて1)
+        alpha: 階層数の重み (デフォルト: 100)
+        beta: エッジスパンの重み (デフォルト: 1)
+        gamma: トーラス辺数の重み (デフォルト: 1000)
 
     Returns:
         y_val: 各ノードの階層 dict[int: int]
         t_val: 各エッジがトーラス辺か dict[(int,int): bool]
-        layer_dict: レイヤー集合 dict[int: list[int]]
+        L: レイヤー集合 dict[int: list[int]]
     """
 
     # エッジの重複を除去
@@ -35,6 +37,9 @@ def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
     n = len(V)
     M = n  # Big-M定数（十分大きな値）
 
+    alpha = max(10, n * 0.5)  # ノード数に応じて調整
+    beta = n  # エッジスパンの重要度を上げる
+
     env = create_gurobi_env()
 
     with gp.Model(name="Torus_Layout", env=env) as m:
@@ -47,10 +52,13 @@ def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
         # t[u,v]: エッジ(u,v)がトーラス辺なら1、通常辺なら0
         t = m.addVars(A, vtype=GRB.BINARY, name="t")
 
+        # L_max: 使用される最大階層数
+        L_max = m.addVar(vtype=GRB.INTEGER, lb=0, ub=n - 1, name="L_max")
+
         # ========== 制約 ==========
 
         # 1. 最大階層の定義
-        m.addConstrs((y[v] <= L for v in V), name="max_layer")
+        m.addConstrs((y[v] <= L_max for v in V), name="max_layer")
 
         # 2. トーラス辺の定義（Big-M法）
         # t[u,v] = 1 ⇔ y[u] > y[v]
@@ -75,8 +83,21 @@ def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
 
         # ========== 目的関数 ==========
 
-        # トーラス辺数の最小化
-        obj = gp.quicksum(t[u, v] for (u, v) in A)
+        # 階層数を最小化しつつ、エッジスパンの分散とトーラス辺数も考慮
+        obj = (
+            alpha * L_max  # 階層数を最小化
+            + beta
+            * gp.quicksum(
+                w[(u, v)] * (y[v] - y[u] + M * t[u, v]) for (u, v) in A
+            )  # エッジスパン
+            # + beta
+            # * gp.quicksum(
+            #     w[(u, v)] * (y[v] - y[u] + M * t[u, v]) * (y[v] - y[u] + M * t[u, v])
+            #     for (u, v) in A
+            # )  # エッジスパンの2乗（分散）
+            + gamma
+            * gp.quicksum(t[u, v] for (u, v) in A)  # トーラス辺の数を直接ペナルティ
+        )
 
         m.setObjective(obj, GRB.MINIMIZE)
 
@@ -113,4 +134,5 @@ def torus_minimize_torus_edge(V, A, L, w=None, lam=None):
                     print(f"  {c.constrName}")
 
         run_time = m.Runtime
+
     return y_val, t_val, layer_dict, run_time

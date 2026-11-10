@@ -7,7 +7,7 @@ from torus_layout.layering import (
 )
 from torus_layout.layering.balance import diff, diff_square, qp
 from torus_layout.layering import minimize_wraps
-from layer_assignment import (
+from old_torus_layout.layer_assignment import (
     torus_balance as old_balance,
     torus_two_stage as old_min,
     torus_binary_search as old_search,

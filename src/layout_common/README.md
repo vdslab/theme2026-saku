@@ -17,7 +17,7 @@ import しません。既存の公開 import パスは再エクスポートで�
 
 交差数計算（辺対の計算を含む）・交差削減・座標割当・描画・パイプラインの結果型は各手法に残します。
 平面の非周期座標、radial の極座標、torus の周期座標と境界処理を
-単一の型や条件分岐の多い処理に統合しません。旧 `src/main.py` の実装は維持します。
+単一の型や条件分岐の多い処理に統合しません。旧 `src/old_torus_layout/main.py` の実装は維持します。
 
 杉山・radial の `DummyNode` と `ProperHierarchy`、`CycleRemovalResult` は
 共通の型になりました。既存モジュールからの import は引き続き利用できます。

@@ -1,4 +1,4 @@
-from lib.scc_decomposition import scc_decomposition
+from old_torus_layout.lib.scc_decomposition import scc_decomposition
 
 
 def scc_node_count(V, A):

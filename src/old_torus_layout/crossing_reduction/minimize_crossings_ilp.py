@@ -7,8 +7,8 @@
 import itertools
 import gurobipy as gp
 from gurobipy import GRB
-from lib.create_gurobi_env import create_gurobi_env
-from lib.insert_dummy_node import insert_dummy_node
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.insert_dummy_node import insert_dummy_node
 
 
 def minimize_crossings_ilp(V, A, L, t_val, w=None):

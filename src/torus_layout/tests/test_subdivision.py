@@ -3,7 +3,7 @@ import pytest
 from torus_layout import Graph
 from torus_layout.models import LayerAssignmentResult
 from torus_layout.subdivision import insert_dummy_nodes
-from lib.insert_dummy_node import insert_dummy_node as legacy
+from old_torus_layout.lib.insert_dummy_node import insert_dummy_node as legacy
 
 CASES = [
     ((0, 1, 2), ((0, 2), (2, 0)), {0: [0], 1: [1], 2: [2]}, {(2, 0): True}),

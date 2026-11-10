@@ -2,7 +2,7 @@ import gurobipy as gp
 from gurobipy import GRB
 
 from collections import defaultdict
-from lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 
 def torus_ilp(V, A, L=None, w=None, lam=None):

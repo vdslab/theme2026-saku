@@ -4,9 +4,9 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 
-import drawing.draw_radial_torus as radial_torus
-from drawing.draw_radial_torus import _periodic_edge_segments, draw_radial_torus
-from drawing.tile_image import create_torus_context_image
+import old_torus_layout.drawing.draw_radial_torus as radial_torus
+from old_torus_layout.drawing.draw_radial_torus import _periodic_edge_segments, draw_radial_torus
+from old_torus_layout.drawing.tile_image import create_torus_context_image
 from PIL import Image
 
 

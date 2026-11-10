@@ -8,9 +8,9 @@ import statistics
 import time
 from pathlib import Path
 
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
-from layer_assignment.torus_two_stage import minimize_torus_edges
-from lib.generate_torus_graph import generate_watts_strogatz_graph
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
+from old_torus_layout.layer_assignment.torus_two_stage import minimize_torus_edges
+from old_torus_layout.lib.generate_torus_graph import generate_watts_strogatz_graph
 
 
 # 5頂点規模 × 2近傍数 × 2再配線確率 × 5 seed = 100グラフ。

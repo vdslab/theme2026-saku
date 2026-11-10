@@ -166,7 +166,7 @@ coords = assign_coordinates(subdivided, crossing, method="torus_qp", bend_weight
 coords = assign_coordinates(subdivided, crossing, method="torus_lp")
 ```
 
-互換性のため`assign_coordinates`単体のmethod省略時は従来BKとし、`compute_positions`、旧`src/main.py`、旧`src/coordinate_assignment/brandes_koepf.py`も従来動作を維持した。**旧mainをそのまま実行しても新方式には切り替わらない。** 新方式は上記の新パイプラインまたは座標APIから使用する。旧比較実験を再現する際は`PipelineConfig(coordinate_method="brandes_koepf")`を明示する。
+互換性のため`assign_coordinates`単体のmethod省略時は従来BKとし、`compute_positions`、旧`src/old_torus_layout/main.py`、旧`src/old_torus_layout/coordinate_assignment/brandes_koepf.py`も従来動作を維持した。**旧mainをそのまま実行しても新方式には切り替わらない。** 新方式は上記の新パイプラインまたは座標APIから使用する。旧比較実験を再現する際は`PipelineConfig(coordinate_method="brandes_koepf")`を明示する。
 
 QP/LPにBKの前処理は不要なので実行しない。`smooth_iterations`はBKだけに適用する。QP/LPは既存の`.env`によるGurobi環境を用い、ライセンス失敗や非最適終了を黙ってBKへフォールバックしない。頂点サイズ、ラベルの衝突、辺とノードの重なり、同層辺のルーティングを解決する機能は含まない。
 

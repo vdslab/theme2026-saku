@@ -5,7 +5,7 @@ from torus_layout import Graph
 from torus_layout.models import LayerAssignmentResult
 from torus_layout.subdivision import insert_dummy_nodes
 from torus_layout.crossing import reduce_crossings, count_crossings
-from crossing_reduction.radial import (
+from old_torus_layout.crossing_reduction.radial import (
     radial_sifting_global_guard_heuristic,
     count_radial_crossings,
 )

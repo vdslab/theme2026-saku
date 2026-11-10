@@ -1,5 +1,8 @@
 # 独立したトーラス階層レイアウト
 
+比較実験用の旧実装は [`src/old_torus_layout/`](../old_torus_layout/README.md) にまとめています。
+旧モジュールのimportは `old_torus_layout.layer_assignment` などを使用します。
+
 ## フレームワーク全体を実行する
 
 リポジトリルートから、以下のどちらかを実行します。
@@ -89,7 +92,7 @@ config = PipelineConfig(optimize_seams=False)
 入力は循環隣接レイヤー間の辺に分割済みであることが必要です。
 空レイヤーは動かさない1候補とし、0・1レイヤーの場合は入力を維持します。
 この追加によって、デフォルトの切れ目と座標は旧経路と異なる場合があります。
-旧 `src/main.py` の処理は変更していません。
+旧 `src/old_torus_layout/main.py` の処理は変更していません。
 
 理論と実行結果は [境界最適化の検討](../../documents/torus_seam_optimization.md)、
 再実行には `experiments/evaluate_seam_optimization.py` を参照してください。
@@ -209,6 +212,8 @@ PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg MPLCONFIGDIR=/private/tmp/torus-layout-
 `tests/fixtures/protected_files.json` は実装開始時点の既存ソースと設定74ファイルのハッシュです。
 `check_legacy_files` で変更がないことを確認できます。
 このハッシュは旧コードを意図的に更新する将来の移行時に、比較基準とともに更新する対象です。
+
+旧実装の `old_torus_layout` への移動に合わせ、保護対象のパスとimport変更後のハッシュを更新しています。
 
 ### 型検査
 

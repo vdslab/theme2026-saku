@@ -10,7 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from benchmark_step2_by_node_count import DENSITY, FAMILIES, NODE_COUNTS, SEEDS, generate_graph
-from layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
 
 
 METHODS = ("diff", "diff_square", "barycenter")

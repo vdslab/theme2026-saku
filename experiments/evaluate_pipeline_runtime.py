@@ -7,18 +7,18 @@ import statistics
 import time
 from pathlib import Path
 
-from coordinate_assignment.brandes_koepf import (
+from old_torus_layout.coordinate_assignment.brandes_koepf import (
     assign_torus_brandes_koepf_coordinates,
 )
-from crossing_reduction.radial import radial_sifting_global_guard_heuristic
+from old_torus_layout.crossing_reduction.radial import radial_sifting_global_guard_heuristic
 from evaluate_layer_count_search import (
     NEIGHBOR_COUNTS,
     REWIRING_PROBABILITIES,
     SEEDS,
     generate_graph,
 )
-from layer_assignment.torus_balance import balance_layer_assignment
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
 
 BALANCE_METHOD = "diff_square"

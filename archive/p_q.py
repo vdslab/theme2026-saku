@@ -3,7 +3,7 @@ from gurobipy import GRB
 
 from archive.longest_path import longest_path
 
-from src.lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 
 def pq(label, V, A, w, lam, V0, Vl):

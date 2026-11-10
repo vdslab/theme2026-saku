@@ -1,6 +1,6 @@
 from archive import p_l
 from archive import p_g, p_g2
-from src.lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 from archive import p_q
 from archive.intersection_reduction import intersection_reduction

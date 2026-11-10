@@ -17,7 +17,7 @@ from benchmark_step2_by_node_count import (
     SEEDS,
     generate_graph,
 )
-from layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
 
 
 TARGET_METHODS = ("diff", "diff_square", "barycenter")

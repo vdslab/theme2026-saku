@@ -7,9 +7,9 @@ import statistics
 import time
 from pathlib import Path
 
-from layer_assignment.torus_balance import balance_layer_assignment
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
-from lib.generate_torus_graph import (
+from old_torus_layout.layer_assignment.torus_balance import balance_layer_assignment
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
+from old_torus_layout.lib.generate_torus_graph import (
     generate_cyclic_graph,
     generate_dag,
     generate_mixed_graph,
@@ -58,9 +58,10 @@ def generate_graph(family, nodes, seed):
             nodes, edge_prob=DENSITY, cycle_prob=0.3, seed=seed
         )
     if family == "cyclic":
-        return generate_cyclic_graph(
+        vertices, edges, _seed = generate_cyclic_graph(
             nodes, num_cycles=2, edge_prob=DENSITY, seed=seed
         )
+        return vertices, edges
     if family == "random":
         return generate_random_connected_graph(
             nodes, edge_prob=DENSITY, seed=seed

@@ -10,9 +10,9 @@ import gurobipy as gp
 from gurobipy import GRB
 
 if __name__ == "__main__":
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 
 def _build_layer_dict(y_val):
@@ -223,7 +223,7 @@ def torus_two_stage_with_diameter(V, A, L, w=None, lam=None):
 
 
 if __name__ == "__main__":
-    from lib.generate_torus_graph import generate_cyclic_graph
+    from old_torus_layout.lib.generate_torus_graph import generate_cyclic_graph
 
     V, A = generate_cyclic_graph(n=18, num_cycles=2, edge_prob=0.01, seed=42)
     result = torus_two_stage_with_diameter(V, A)

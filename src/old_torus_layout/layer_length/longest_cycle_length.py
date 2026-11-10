@@ -1,7 +1,7 @@
 import networkx as nx
 from collections import defaultdict
 
-from lib.scc_decomposition import scc_decomposition
+from old_torus_layout.lib.scc_decomposition import scc_decomposition
 
 
 def longest_cycle_length(V, A):

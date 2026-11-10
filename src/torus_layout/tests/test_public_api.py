@@ -31,6 +31,7 @@ def test_runtime_modules_do_not_import_old_implementations():
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and not node.level:
                 assert node.module.split(".")[0] not in {
+                    "old_torus_layout",
                     "main",
                     "lib",
                     "layer_assignment",

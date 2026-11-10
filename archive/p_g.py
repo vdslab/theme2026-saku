@@ -1,7 +1,7 @@
 import gurobipy as gp
 from gurobipy import GRB
 
-from src.lib.create_gurobi_env import create_gurobi_env
+from old_torus_layout.lib.create_gurobi_env import create_gurobi_env
 
 
 def pg(label, V, A, w, lam, V0, Vl):

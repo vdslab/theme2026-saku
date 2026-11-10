@@ -1,7 +1,7 @@
 # 平面上の杉山フレームワークの実装例
 
 このパッケージは `examples/sugiyama` から移植した独立実装です。
-既存の `src/main.py`、`torus_layout`、examples には依存しません。
+既存の `src/old_torus_layout/main.py`、`torus_layout`、examples には依存しません。
 乱数シードに基づいて生成・方向付けした Watts--Strogatz グラフを、通常の
 ユークリッド平面上に描画します。最初のレイヤーを左端に置き、後続の
 レイヤーを右方向へ並べます。

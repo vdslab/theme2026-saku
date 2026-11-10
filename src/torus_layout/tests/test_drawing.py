@@ -10,7 +10,7 @@ from torus_layout import Graph
 from torus_layout.models import SubdividedGraph, CrossingResult, CoordinateResult
 from torus_layout.drawing import DrawingOptions, create_figure, draw_layout
 from torus_layout.drawing.geometry import periodic_edge_segments
-from drawing.draw_radial_torus import draw_radial_torus, _periodic_edge_segments
+from old_torus_layout.drawing.draw_radial_torus import draw_radial_torus, _periodic_edge_segments
 
 
 def drawing_case():

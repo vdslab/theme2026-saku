@@ -3,7 +3,7 @@
 import importlib.util
 from pathlib import Path
 
-import crossing_reduction.radial as radial
+import old_torus_layout.crossing_reduction.radial as radial
 
 spec = importlib.util.spec_from_file_location(
     "sweep_experiment", Path(__file__).resolve().parents[2] / "experiments/evaluate_torus_sweep_direction.py"

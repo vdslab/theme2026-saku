@@ -1,6 +1,6 @@
 import math
 
-from coordinate_assignment.brandes_koepf import (
+from old_torus_layout.coordinate_assignment.brandes_koepf import (
     assign_torus_brandes_koepf_coordinates,
 )
 

@@ -1,4 +1,4 @@
-from crossing_reduction.radial import _crossings_between_edges
+from old_torus_layout.crossing_reduction.radial import _crossings_between_edges
 
 
 def test_shared_target_edges_can_cross_away_from_the_target():

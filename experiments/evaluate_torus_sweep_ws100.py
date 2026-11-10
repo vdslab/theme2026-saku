@@ -17,7 +17,7 @@ import statistics
 import time
 
 import evaluate_torus_sweep_direction as base
-from layer_assignment.torus_binary_search import find_minimum_torus_configuration
+from old_torus_layout.layer_assignment.torus_binary_search import find_minimum_torus_configuration
 
 OUTPUT = base.OUTPUT / "ws100"
 NODE_COUNTS = tuple(range(10, 101, 10))
@@ -262,7 +262,7 @@ def run(quick=False, resume=False, summarize_only=False, workers=1):
         return
     config = {"rounds": rounds, "parameters": parameters(quick), "generator": "generate_watts_strogatz_graph",
               "radial_source_sha256": hashlib.sha256(Path(base.radial.__file__).read_bytes()).hexdigest(),
-              "generator_source_sha256": hashlib.sha256((base.ROOT / "src/lib/generate_torus_graph.py").read_bytes()).hexdigest()}
+              "generator_source_sha256": hashlib.sha256((base.ROOT / "src/old_torus_layout/lib/generate_torus_graph.py").read_bytes()).hexdigest()}
     meta_path = output / "metadata.json"
     if resume and meta_path.exists() and json.loads(meta_path.read_text()) != config:
         raise ValueError("Saved experiment configuration differs; use a fresh output")
