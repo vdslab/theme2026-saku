@@ -33,7 +33,7 @@ def save_outputs(
         result.coordinates,
         options=options,
         save_path=output / "layout.png",
-        show=args.show,
+        show=False,
     )
     if comparison.baseline is not None and comparison.baseline_coordinates is not None:
         draw_layout(
@@ -101,3 +101,14 @@ def save_outputs(
     if comparison.baseline is not None:
         print(f"比較画像: {output / 'before_seam.png'}")
     print(f"設定・グラフ・座標・評価値: {output / 'result.json'}", flush=True)
+    if args.show:
+        _show_saved_image(output / "layout.png")
+
+
+def _show_saved_image(path: Path) -> None:
+    """Display the saved result after every output file has been written."""
+    from PIL import Image
+    from torus_layout.drawing.output import show_image
+
+    with Image.open(path) as image:
+        show_image(image)

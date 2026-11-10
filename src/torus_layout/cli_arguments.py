@@ -81,9 +81,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=Path(constants.DEFAULT_OUTPUT_DIR))
     parser.add_argument(
         "--show",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         default=constants.DEFAULT_CLI_SHOW,
-        help="保存に加えて描画画面を表示",
+        help="全処理の完了後に描画画面を表示（--no-showで保存のみ）",
     )
     parser.add_argument("--draw-dummy-nodes", action="store_true", default=constants.DEFAULT_DRAW_DUMMY_NODES)
     parser.add_argument(

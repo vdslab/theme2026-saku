@@ -6,7 +6,7 @@ from ..validation import is_image_path, is_integer, is_number, is_sequence
 from pathlib import Path
 from os import PathLike
 import math
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 type Color = tuple[int, int, int, int] | list[int]
 
@@ -15,20 +15,22 @@ def create_torus_context_image(
     image: Image.Image | str | PathLike[str],
     *,
     opacity: float = constants.DEFAULT_TILE_IMAGE_OPACITY,
+    gray_out: bool = constants.DEFAULT_GRAY_OUT_SURROUNDINGS,
     gap: int = constants.DEFAULT_TILE_GAP,
     output_path: str | PathLike[str] | None = None,
     background: Color = constants.DEFAULT_TILE_BACKGROUND,
     border_width: int = constants.DEFAULT_TILE_BORDER_WIDTH,
     border_color: Color = constants.DEFAULT_TILE_BORDER_COLOR,
 ) -> Image.Image:
-    """中心画像の周囲8方向に、半透明の同一画像の一部を配置する。
+    """中心画像の周囲8方向に、グレーアウトした同一画像の一部を配置する。
 
     中央画像を大きく見せるため、上下には中央へ接する半分、左右には
     中央へ接する半分、四隅には中央へ接する1/4だけを表示する。
 
     Args:
         image: 入力画像のパス、または ``PIL.Image.Image``。
-        opacity: 周囲8枚の不透明度。0.0（透明）から1.0（不透明）。
+        opacity: 周辺の図の濃さ（0〜1）。gray_out=Falseの場合は不透明度。
+        gray_out: 周辺を無彩色にし、薄い灰色の背景へ重ねる。中央は変更しない。
         gap: タイル間の間隔（pixel）。
         output_path: 指定した場合は合成結果を保存する。
         background: 出力キャンバスのRGBA背景色。
@@ -55,8 +57,14 @@ def create_torus_context_image(
     def alpha_value(alpha: float) -> int:
         return round(alpha * opacity)
 
-    faded = source.copy()
-    faded.putalpha(source.getchannel("A").point(alpha_value))
+    if gray_out:
+        faded = Image.new("RGBA", source.size, constants.SURROUNDING_GRAY_COLOR)
+        foreground = ImageOps.grayscale(source).convert("RGBA")
+        foreground.putalpha(source.getchannel("A").point(alpha_value))
+        faded.alpha_composite(foreground)
+    else:
+        faded = source.copy()
+        faded.putalpha(source.getchannel("A").point(alpha_value))
     placements = [
         ((x_split, y_split, width, height), (0, 0)),
         ((0, y_split, width, height), (center_x, 0)),

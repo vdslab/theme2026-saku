@@ -58,6 +58,7 @@ def test_rendered_pixels_match_legacy(tmp_path, tile, show_dummy, supplied_posit
         tile_surroundings=tile,
         surrounding_opacity=0.5,
         tile_gap=2,
+        gray_out_surroundings=False,
     )
     draw_layout(
         graph,
@@ -168,3 +169,39 @@ def test_drawing_rejects_winding_without_a_periodic_endpoint(winding):
     crossing.winding_numbers[1, 3] = winding
     with pytest.raises(ValueError, match="integer winding"):
         create_figure(graph, crossing, coordinates)
+
+
+def test_surrounding_tiles_are_gray_and_center_is_unchanged():
+    from torus_layout.drawing.tiles import create_torus_context_image
+
+    source = Image.new("RGBA", (4, 4), "white")
+    source.putpixel((1, 1), (255, 0, 0, 120))
+    result = create_torus_context_image(source)
+    assert result.crop((2, 2, 6, 6)).tobytes() == source.tobytes()
+    assert result.getpixel((6, 6))[0] < 255  # white becomes a gray background
+    for point in ((6, 6), (7, 7)):
+        red, green, blue, alpha = result.getpixel(point)
+        assert red == green == blue
+        assert alpha == 255
+
+
+@pytest.mark.parametrize("size", [(1200, 400), (400, 1200)])
+def test_image_window_matches_aspect_ratio_without_margins(monkeypatch, size):
+    from torus_layout.drawing.output import show_image
+
+    before = plt.get_fignums()
+    calls = []
+
+    def show(*, block):
+        figure = plt.gcf()
+        figure.canvas.draw()
+        width, height = figure.get_size_inches()
+        assert width / height == pytest.approx(size[0] / size[1])
+        assert figure.axes[0].get_position().bounds == pytest.approx((0, 0, 1, 1))
+        assert block is True
+        calls.append(figure)
+
+    monkeypatch.setattr(plt, "show", show)
+    show_image(Image.new("RGB", size, "white"))
+    assert len(calls) == 1
+    assert plt.get_fignums() == before

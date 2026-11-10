@@ -48,6 +48,7 @@ def output_figure(
             tiled_image = create_torus_context_image(
                 rendered,
                 opacity=surrounding_opacity,
+                gray_out=options.gray_out_surroundings,
                 gap=tile_gap,
                 output_path=save_path,
                 border_width=1,
@@ -56,14 +57,7 @@ def output_figure(
         buffer.close()
         plt.close(fig)
         if show:
-            tiled_fig, tiled_ax = plt.subplots(
-                figsize=(fig.get_figwidth() * 2, fig.get_figheight() * 2),
-                constrained_layout=True,
-            )
-            tiled_ax.imshow(tiled_image)
-            tiled_ax.set_axis_off()
-            plt.show()
-            plt.close(tiled_fig)
+            show_image(tiled_image)
     elif save_path:
         with plt.rc_context(
             {"pdf.fonttype": 42, "ps.fonttype": 42, "svg.fonttype": "none"}
@@ -78,6 +72,23 @@ def output_figure(
     if show and (not tile_surroundings):
         plt.show()
     plt.close(fig)
+
+
+def show_image(image: Image.Image) -> None:
+    """Fit a window to the image aspect ratio, with no subplot margins."""
+    width, height = image.size
+    scale = min(constants.DISPLAY_MAX_WIDTH / width, constants.DISPLAY_MAX_HEIGHT / height)
+    figure = plt.figure(figsize=(width * scale, height * scale))
+    try:
+        manager = figure.canvas.manager
+        if manager is not None:
+            manager.set_window_title("Torus layout")
+        axis = figure.add_axes((0, 0, 1, 1))
+        axis.imshow(image)
+        axis.set_axis_off()
+        plt.show(block=True)
+    finally:
+        plt.close(figure)
 
 
 def draw_layout(

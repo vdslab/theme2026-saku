@@ -22,6 +22,7 @@ class DrawingOptions:
     vertical_period: float | None = None
     tile_surroundings: bool = constants.DEFAULT_TILE_SURROUNDINGS
     surrounding_opacity: float = constants.DEFAULT_SURROUNDING_OPACITY
+    gray_out_surroundings: bool = constants.DEFAULT_GRAY_OUT_SURROUNDINGS
     tile_gap: int = constants.DEFAULT_TILE_GAP
 
 

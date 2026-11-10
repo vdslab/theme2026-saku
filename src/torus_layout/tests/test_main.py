@@ -25,7 +25,7 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
         environment.pop("PYTHONPATH", None)
     command = [str(ROOT / "theme2026-saku/bin/python"), *entry,
                "--nodes", "12", "--seed", "0", "--rounds", "1",
-               "--local-license", "--compare-seams", "--output-dir", str(tmp_path)]
+               "--local-license", "--compare-seams", "--no-show", "--output-dir", str(tmp_path)]
     completed = subprocess.run(command, cwd=ROOT, env=environment,
                                capture_output=True, text=True, timeout=60)
     assert completed.returncode == 0, completed.stdout + completed.stderr
@@ -47,10 +47,16 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
     assert "境界通過線分数" in completed.stdout
 
 
-def test_cli_can_disable_dp_and_select_bk(tmp_path, capsys):
+def test_cli_can_disable_dp_and_select_bk(tmp_path, capsys, monkeypatch):
+    import matplotlib.pyplot as plt
+
+    def unexpected_show(*args, **kwargs):
+        pytest.fail("--no-show must not open a window")
+
+    monkeypatch.setattr(plt, "show", unexpected_show)
     assert main(["--nodes", "6", "--seed", "0", "--rounds", "0",
                  "--local-license", "--no-optimize-seams", "--compare-seams",
-                 "--no-tile-surroundings",
+                 "--no-tile-surroundings", "--no-show",
                  "--coordinate-method", "brandes_koepf", "--output-dir", str(tmp_path)]) == 0
     payload = json.loads((tmp_path / "result.json").read_text())
     assert payload["settings"]["pipeline"]["optimize_seams"] is False
@@ -81,3 +87,33 @@ def test_failure_returns_nonzero_and_restores_license_scope(monkeypatch, capsys)
     assert main(["--local-license", "--nodes", "6"]) == 1
     assert _local_license.get() is False
     assert "solver failure for test" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("compare_seams", [False, True])
+def test_default_display_waits_until_all_outputs_are_saved(tmp_path, monkeypatch, capsys, compare_seams):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    before = plt.get_fignums()
+    calls = []
+
+    def show(*, block):
+        assert block is True
+        payload = json.loads((tmp_path / "result.json").read_text())
+        assert payload["status"] == "completed"
+        if compare_seams:
+            assert (tmp_path / "before_seam.png").exists()
+        figure = plt.gcf()
+        with Image.open(tmp_path / "layout.png") as saved:
+            assert np.array_equal(figure.axes[0].images[0].get_array(), np.asarray(saved))
+        assert "設定・グラフ・座標・評価値" in capsys.readouterr().out
+        calls.append(figure)
+
+    monkeypatch.setattr(plt, "show", show)
+    arguments = ["--nodes", "6", "--seed", "0", "--rounds", "0", "--local-license",
+                 "--output-dir", str(tmp_path)]
+    if compare_seams:
+        arguments.append("--compare-seams")
+    assert main(arguments) == 0
+    assert len(calls) == 1
+    assert plt.get_fignums() == before
