@@ -139,7 +139,12 @@ def _sample_chain(
         radius_start, angle_start = polar_positions[source]
         radius_end, angle_end = polar_positions[target]
         angle_end += 2 * math.pi * winding[(source, target)]
-        steps = constants.CURVE_SAMPLE_STEPS
+        if radius_start == 0:
+            angle_start = angle_end
+        # Eq. (5): sampling density grows with the outer radius and angle span.
+        angular_turns = abs(angle_end - angle_start) / math.tau
+        radial_level = radius_end / (radius_end - radius_start)
+        steps = max(1, math.ceil(radial_level * angular_turns * constants.CURVE_SAMPLES_PER_TURN))
         segment = []
         for step in range(steps + 1):
             ratio = step / steps

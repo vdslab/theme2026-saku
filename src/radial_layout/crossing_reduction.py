@@ -1,11 +1,14 @@
 """Crossing reduction for vertices arranged on concentric circles."""
 
-from . import constants
-
 from collections import defaultdict
 from dataclasses import dataclass
-import math
+from fractions import Fraction
+from math import floor
 from typing import Hashable, Iterable, TypeAlias
+
+from layout_common.hierarchy import DummyNode, validate_proper_hierarchy
+
+from . import constants
 
 Node: TypeAlias = Hashable
 Edge: TypeAlias = tuple[Node, Node]
@@ -24,42 +27,138 @@ def reduce_crossings(
     *,
     rounds: int = constants.DEFAULT_ROUNDS,
 ) -> RadialEmbedding:
-    """Optimize cyclic layer orders using circular barycenters and sifting."""
-
+    """Apply Bachmaier (2007) §4.4 to consecutive pairs of levels."""
     if rounds < 1:
         raise ValueError("rounds must be positive")
-    edge_list = tuple(edges)
+    edge_list = tuple(dict.fromkeys(edges))
     order = {layer: list(nodes) for layer, nodes in sorted(layers.items())}
-    _validate_proper_hierarchy(order, edge_list)
-
-    incoming: dict[Node, list[Node]] = defaultdict(list)
-    outgoing: dict[Node, list[Node]] = defaultdict(list)
-    for source, target in edge_list:
-        outgoing[source].append(target)
-        incoming[target].append(source)
-
+    node_layers = validate_proper_hierarchy(order, edge_list)
+    boundaries = defaultdict(list)
+    for edge in edge_list:
+        boundaries[node_layers[edge[0]]].append(edge)
+    inner_edges = tuple(edge for edge in edge_list if _is_inner(edge))
+    winding = dict.fromkeys(edge_list, 0)
     best = _copy_order(order)
-    best_crossings = count_crossings(best, edge_list)
-    layer_ids = sorted(order)
+    best_winding = winding.copy()
+
+    def score():
+        return (
+            count_crossings(order, inner_edges, winding),
+            count_crossings(order, edge_list, winding),
+        )
+
+    best_score = score()
+    seen = set()
     for _ in range(rounds):
+        state = tuple(tuple(nodes) for nodes in order.values()), tuple(winding.values())
+        if state in seen:
+            break
+        seen.add(state)
         for downward in (True, False):
-            visited = layer_ids[1:] if downward else list(reversed(layer_ids[:-1]))
-            neighbors = incoming if downward else outgoing
-            reference_offset = -1 if downward else 1
-            for layer in visited:
-                reference = order[layer + reference_offset]
-                _circular_barycenter_sort(order[layer], reference, neighbors)
-                _choose_best_rotation(order, edge_list, layer)
-                _sift_layer(order, edge_list, layer)
-                crossings = count_crossings(order, edge_list)
-                if crossings < best_crossings:
-                    best = _copy_order(order)
-                    best_crossings = crossings
-        order = _copy_order(best)
+            levels = sorted(boundaries, reverse=not downward)
+            for layer in levels:
+                if downward:
+                    _sift_boundary(order[layer], order[layer + 1], boundaries[layer], winding)
+                else:
+                    reversed_edges = [(v, u) for u, v in boundaries[layer]]
+                    reversed_winding = {(v, u): -winding[u, v] for u, v in boundaries[layer]}
+                    _sift_boundary(order[layer + 1], order[layer], reversed_edges, reversed_winding)
+                    winding.update({(v, u): -offset for (u, v), offset in reversed_winding.items()})
+            current = score()
+            if current < best_score:
+                best, best_winding, best_score = _copy_order(order), winding.copy(), current
+
+    # Algorithm 2 changes the ray and offsets together, preserving crossings.
+    for layer, boundary in sorted(boundaries.items()):
+        fixed, free = best[layer], best[layer + 1]
+        fixed_pos = {node: i for i, node in enumerate(fixed)}
+        free_pos = {node: i for i, node in enumerate(free)}
+        span = sum(Fraction(fixed_pos[u], len(fixed)) - Fraction(free_pos[v], len(free))
+                   + best_winding[u, v] for u, v in boundary)
+        rotation = floor(span * len(free) / len(boundary) + Fraction(1, 2))
+        rotate_level(best, best_winding, layer + 1, rotation,
+                     boundary, boundaries.get(layer + 1, ()))
 
     frozen = {layer: tuple(nodes) for layer, nodes in best.items()}
-    winding = assign_winding_numbers(frozen, edge_list)
-    return RadialEmbedding(frozen, winding, best_crossings)
+    return RadialEmbedding(frozen, best_winding, best_score[1])
+
+
+def rotate_level(order, winding, layer, steps, incoming, outgoing):
+    """Move the ray clockwise by steps, preserving the radial embedding."""
+    nodes = order[layer]
+    if not nodes or not steps:
+        return
+    size = len(nodes)
+    turns, split = divmod(steps, size)
+    moved = set(nodes[:split])
+    order[layer] = nodes[split:] + nodes[:split]
+    for edge in incoming:
+        winding[edge] -= turns + (edge[1] in moved)
+    for edge in outgoing:
+        winding[edge] += turns + (edge[0] in moved)
+
+
+def _is_inner(edge):
+    return all(isinstance(node, DummyNode) for node in edge)
+
+
+def _sift_boundary(fixed, free, edges, winding):
+    """One round of Algorithm 1, with the §5.1.1 inner crossing weight."""
+    fixed_pos = {node: i for i, node in enumerate(fixed)}
+    moving_pos = {node: i for i, node in enumerate(free)}
+    incident = defaultdict(list)
+    for edge in edges:
+        incident[edge[1]].append(edge)
+    inner = {edge for edge in edges if _is_inner(edge)}
+
+    def crossings(first, second):
+        count = _crossings_from_signs(
+            _sign(fixed_pos[second[0]] - fixed_pos[first[0]]),
+            _sign(moving_pos[second[1]] - moving_pos[first[1]]),
+            winding[second] - winding[first],
+        )
+        return count * len(edges) if first in inner and second in inner else count
+
+    for node in tuple(free):
+        moving = sorted(incident[node], key=lambda edge: fixed_pos[edge[0]])
+        if not moving:
+            continue
+        free.remove(node)
+        free.insert(0, node)
+        moving_pos.update((member, i) for i, member in enumerate(free))
+        for edge in moving:
+            winding[edge] = 1
+        best_position = 0
+        best_offsets = [1] * len(moving)
+        best_change = change = 0
+        parting = 0
+
+        for position in range(len(free) - 1):
+            while parting < 2 * len(moving):
+                edge = moving[parting % len(moving)]
+                before = sum(crossings(edge, other) for other in edges if other != edge)
+                winding[edge] -= 1
+                after = sum(crossings(edge, other) for other in edges if other != edge)
+                if after > before:
+                    winding[edge] += 1
+                    break
+                change += after - before
+                parting += 1
+
+            if change < best_change:
+                best_position, best_change = position, change
+                best_offsets = [winding[edge] for edge in moving]
+            if position + 1 < len(free):
+                successor = free[position + 1]
+                change -= sum(crossings(a, b) for a in moving for b in incident[successor])
+                free[position], free[position + 1] = successor, node
+                moving_pos[successor], moving_pos[node] = position, position + 1
+                change += sum(crossings(a, b) for a in moving for b in incident[successor])
+
+        free.remove(node)
+        free.insert(best_position, node)
+        moving_pos.update((member, i) for i, member in enumerate(free))
+        winding.update(zip(moving, best_offsets))
 
 
 def assign_winding_numbers(
@@ -92,21 +191,17 @@ def count_crossings(
     edges: Iterable[Edge],
     winding: dict[Edge, int] | None = None,
 ) -> int:
-    """Count radial edge crossings from cyclic orders and winding numbers."""
+    """Count radial crossings, with zero offsets for an initial order."""
 
     normalized = {layer: tuple(nodes) for layer, nodes in order.items()}
     edge_list = tuple(edges)
-    _validate_proper_hierarchy(normalized, edge_list)
+    node_layers = validate_proper_hierarchy(normalized, edge_list)
     if winding is None:
-        winding = assign_winding_numbers(normalized, edge_list)
-    positions = {
-        node: (layer, index)
-        for layer, nodes in normalized.items()
-        for index, node in enumerate(nodes)
-    }
+        winding = dict.fromkeys(edge_list, 0)
+    positions = {node: index for nodes in normalized.values() for index, node in enumerate(nodes)}
     by_boundary: dict[int, list[Edge]] = defaultdict(list)
     for edge in edge_list:
-        by_boundary[positions[edge[0]][0]].append(edge)
+        by_boundary[node_layers[edge[0]]].append(edge)
 
     total = 0
     for boundary_edges in by_boundary.values():
@@ -119,110 +214,18 @@ def count_crossings(
 def _pair_crossings(
     first: Edge,
     second: Edge,
-    positions: dict[Node, tuple[int, int]],
+    positions: dict[Node, int],
     winding: dict[Edge, int],
 ) -> int:
-    source_sign = _sign(positions[second[0]][1] - positions[first[0]][1])
-    target_sign = _sign(positions[second[1]][1] - positions[first[1]][1])
+    source_sign = _sign(positions[second[0]] - positions[first[0]])
+    target_sign = _sign(positions[second[1]] - positions[first[1]])
     winding_delta = winding[second] - winding[first]
-    value = (
-        abs(winding_delta + (target_sign - source_sign) / 2)
-        + (abs(source_sign) + abs(target_sign)) / 2
-        - 1
-    )
-    return max(0, int(round(value)))
+    return _crossings_from_signs(source_sign, target_sign, winding_delta)
 
 
-def _circular_barycenter_sort(
-    free_nodes: list[Node],
-    fixed_nodes: list[Node],
-    neighbors: dict[Node, list[Node]],
-) -> None:
-    if len(free_nodes) < 2 or not fixed_nodes:
-        return
-    free_count = len(free_nodes)
-    fixed_count = len(fixed_nodes)
-    fixed_position = {node: index for index, node in enumerate(fixed_nodes)}
-    old_position = {node: index for index, node in enumerate(free_nodes)}
-
-    def angle(node: Node) -> tuple[float, int]:
-        neighbor_positions = [
-            fixed_position[neighbor]
-            for neighbor in neighbors[node]
-            if neighbor in fixed_position
-        ]
-        if not neighbor_positions:
-            return (2 * math.pi * old_position[node] / free_count, old_position[node])
-        x = sum(
-            math.cos(2 * math.pi * position / fixed_count)
-            for position in neighbor_positions
-        )
-        y = sum(
-            math.sin(2 * math.pi * position / fixed_count)
-            for position in neighbor_positions
-        )
-        circular_angle = math.atan2(y, x) % (2 * math.pi)
-        return (circular_angle, old_position[node])
-
-    free_nodes.sort(key=angle)
-
-
-def _choose_best_rotation(
-    order: dict[int, list[Node]], edges: tuple[Edge, ...], layer: int
-) -> None:
-    nodes = order[layer]
-    if len(nodes) < 2:
-        return
-    best = list(nodes)
-    best_crossings = count_crossings(order, edges)
-    for shift in range(1, len(nodes)):
-        candidate = nodes[shift:] + nodes[:shift]
-        order[layer] = candidate
-        crossings = count_crossings(order, edges)
-        if crossings < best_crossings:
-            best = list(candidate)
-            best_crossings = crossings
-    order[layer] = best
-
-
-def _sift_layer(
-    order: dict[int, list[Node]], edges: tuple[Edge, ...], layer: int
-) -> None:
-    if len(order[layer]) < 2:
-        return
-    for node in tuple(order[layer]):
-        current = list(order[layer])
-        current.remove(node)
-        best = list(order[layer])
-        best_crossings = count_crossings(order, edges)
-        for position in range(len(current) + 1):
-            candidate = list(current)
-            candidate.insert(position, node)
-            order[layer] = candidate
-            crossings = count_crossings(order, edges)
-            if crossings < best_crossings:
-                best = candidate
-                best_crossings = crossings
-        order[layer] = best
-
-
-def _validate_proper_hierarchy(
-    layers: dict[int, Iterable[Node]], edges: tuple[Edge, ...]
-) -> None:
-    node_to_layer: dict[Node, int] = {}
-    for layer, nodes_iterable in layers.items():
-        nodes = tuple(nodes_iterable)
-        if len(nodes) != len(set(nodes)):
-            raise ValueError(f"layer {layer!r} contains duplicate vertices")
-        for node in nodes:
-            if node in node_to_layer:
-                raise ValueError(f"vertex {node!r} occurs in multiple layers")
-            node_to_layer[node] = layer
-    for source, target in edges:
-        if source not in node_to_layer or target not in node_to_layer:
-            raise ValueError("every edge endpoint must occur in layers")
-        if node_to_layer[target] != node_to_layer[source] + 1:
-            raise ValueError("radial crossing reduction requires a proper hierarchy")
+def _crossings_from_signs(source_sign: int, target_sign: int, delta: int) -> int:
+    return max(0, (abs(2 * delta + target_sign - source_sign)
+                   + abs(source_sign) + abs(target_sign) - 2) // 2)
 
 
 def _copy_order(order: dict[int, list[Node]]) -> dict[int, list[Node]]:

@@ -74,8 +74,9 @@ def generate_graph(nodes: int, seed: int, orientation: str):
 def evaluate_sugiyama(vertices, edges):
     started = time.perf_counter()
     acyclic = remove_cycles(vertices, edges)
-    ranks = assign_layers(acyclic.nodes, acyclic.edges)
-    hierarchy = insert_dummy_nodes(acyclic.nodes, acyclic.edges, ranks)
+    layout_edges = tuple(dict.fromkeys(acyclic.edges))
+    ranks = assign_layers(acyclic.nodes, layout_edges)
+    hierarchy = insert_dummy_nodes(acyclic.nodes, layout_edges, ranks)
     initial = count_crossings(hierarchy.layers, hierarchy.edges)
     order = reduce_crossings(
         hierarchy.layers, hierarchy.edges, sweeps=SUGIYAMA_SWEEPS
@@ -226,7 +227,7 @@ def write_report(rows, summaries):
         f"- 構造: Watts–Strogatz、平均次数 {NEIGHBOR_COUNT}、再配線確率 {REWIRING_PROBABILITY}。辺数を約2nに保ち、サイズと密度の交絡を抑えつつ、規則性とランダム性を併せ持つ連結構造を使う。",
         "- 向き付け: random と clockwise を各10件。提案法が利用する円環構造に沿う向きだけに偏らないかを確認する。",
         "- 対応比較: 各ケースの頂点・有向辺・seedを固定し、両手法へ同一入力を渡す。",
-        f"- 既存法: cycle removal + longest-path layering + dummy insertion + median/transpose（{SUGIYAMA_SWEEPS} sweeps、既存実装の既定値）。",
+        f"- 既存法: cycle removal + longest-path layering + dummy insertion + Sugiyama et al. (1981) の2相BC法（各相の反復上限 {SUGIYAMA_SWEEPS}）。閉路除去は元の頂点・辺を保つための Eades–Lin–Smyth 法。",
         f"- 提案法: 最小トーラス辺探索 + diff_square balance + global-guard radial sifting（{PROPOSED_ROUNDS} rounds、既存実験の既定値）。",
         "- 主指標: `100 × (杉山法交差数 − 提案法交差数) / 杉山法交差数`。正なら提案法が削減。分母0のケースは相対率から除外し、件数を別掲する。",
         f"- 不確実性: 同一ケースの差を保つ paired bootstrap {BOOTSTRAP_REPETITIONS:,} 回（固定seed={BOOTSTRAP_SEED}）で平均相対削減率の95%区間を求める。",

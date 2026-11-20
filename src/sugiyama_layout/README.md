@@ -1,70 +1,18 @@
-# 平面上の杉山フレームワークの実装例
+# Sugiyama, Tagawa, Toda (1981) の平面階層描画
 
-このパッケージは `examples/sugiyama` から移植した独立実装です。
-既存の `src/old_torus_layout/main.py`、`torus_layout`、examples には依存しません。
-乱数シードに基づいて生成・方向付けした Watts--Strogatz グラフを、通常の
-ユークリッド平面上に描画します。最初のレイヤーを左端に置き、後続の
-レイヤーを右方向へ並べます。
+Zoteroの原著（アイテム `NTSHFT3W`）に基づき、実用例で使われた **BC＋PR** を実装しています。[原著 §I–V](https://doi.org/10.1109/TSMC.1981.4308636)
 
-コードは次の処理段階に分かれています。
+1. CLIでは閉路を強連結成分に縮約し、最長経路で層を割り当てます。長辺は各中間層にダミー頂点を挿入します。既に層が与えられている場合、交差削減と座標割当のAPIへ直接渡せます。
+2. BC法のPhase 1は、層の片側にある隣接頂点の位置から重心を計算し、安定ソートを上下交互に適用します。Phase 2は同じ重心を持つグループを反転してPhase 1を再実行します。
+3. PR法は方向別の次数とダミー頂点の優先度を使い、先行する層の隣接頂点の重心へ整数座標を近づけます。頂点の順序を保ちながら、優先度の低い頂点を必要な分だけ移動します。描画ではダミーを折れ点として元の長辺を復元します。
 
-1. `random_graph.py` は NetworkX の `watts_strogatz_graph` を呼び出し、
-   再現可能な方法で各辺に向きを与えます。
-2. `cycle_removal.py` はフィードバック辺を一時的に反転し、循環を除去します。
-3. `layer_assignment.py` は最長経路に基づいて各頂点のランクを割り当てます。
-4. `dummy_insertion.py` は複数レイヤーにまたがる長い辺を、隣接レイヤー間の
-   区間に分割します。
-5. `crossing_reduction.py` は中央値スイープと隣接頂点の交換を適用し、
-   辺の交差を削減します。
-6. `coordinate_assignment.py` は平面向けの Brandes--Köpf 法で座標を
-   割り当てます。
-7. `drawing.py` は辺を元の向きに戻し、`plt.show()` を呼び出して描画します。
-
-リポジトリのルートから次のように実行します。
+原著が初期値として指定する反復上限、PR法の最後のDOWNの開始層には、この実装でそれぞれ12と第2層を設定しました。BC法で参照層に隣接頂点がない頂点の位置は保持します。PR法の同優先度は層内順、整数の丸めで等距離なら偶数側を選びます。表示は既存APIに合わせて左から右へ進みます。PR法の詳細を参照する1979年の技術報告と著者の実行コードは入手できておらず、著者の実行結果との点ごとの一致は未検証です。
 
 ```sh
-PYTHONPATH=src MPLCONFIGDIR=/tmp/theme2026-saku-matplotlib \
-  ./theme2026-saku/bin/python -m sugiyama_layout \
+PYTHONPATH=src ./theme2026-saku/bin/python -m sugiyama_layout \
   --size 20 --seed 7 --neighbors 4 --prob 0.25
 ```
 
-`--neighbors` はリング上の近傍数 `k` で、偶数を指定します。`--prob` は
-Watts--Strogatz グラフの辺を張り替える確率 `p` です。画像ファイルへの保存は
-行いません。
+比較実験では `sugiyama_1981` が強連結成分を縮約する条件です。循環グラフ上で提案法と同じ全頂点・全辺を採点する `sugiyama` は、Eades–Lin–Smyth の辺反転を前処理に使うBC＋PR条件です。出力に前処理名と処理後の頂点・辺数を記録します。縮約条件と提案法の対応差はDAGだけで集計します。
 
-## 使用しているアルゴリズム
-
-各処理段階では、杉山フレームワークの実装で一般的に使われている、確立された
-アルゴリズムを採用しています。
-
-- 循環除去：Eades--Lin--Smyth の貪欲フィードバック辺集合ヒューリスティック
-- レイヤー割当：最長経路レイヤリング
-- 正規化：途中の各レイヤーへのダミー頂点の挿入
-- 交差削減：交互方向の中央値スイープと隣接頂点の交換
-- 座標割当：4方向の Brandes--Köpf 法
-
-各段階で採用している手法は、1981年の論文に記載された個々のヒューリスティックを
-そのまま再実装したものではなく、現代の実装で一般的に使われている手法です。
-
-## Import / 実行方法
-
-`PYTHONPATH=src` を指定し、`sugiyama_layout` から各処理を import できます。
-CLI は `-m sugiyama_layout` または `-m sugiyama_layout.main` で実行します。
-`main.py` の直接実行には対応しません。
-移植元の `examples/sugiyama` は削除済みです。import は `sugiyama_layout` を使用してください。
-
-## 共通処理と手法固有の処理
-
-閉路除去・DAG走査・長辺分割は `layout_common`、乱数グラフ生成は
-`generator.random_oriented_watts_strogatz` を使用します。
-交差数計算は辺対の計算を含め、このパッケージ専用の実装を使用します。
-階層割当の方針、交差削減の探索、座標割当、描画はこのパッケージに残しています。
-依存関係と分離理由は [layout_common/README.md](../layout_common/README.md) を参照してください。
-
-## 既定値の変更
-
-この方式のCLI入力、交差削減の反復数、座標間隔、描画設定は
-[`constants.py`](constants.py) にまとめています。
-`DEFAULT_CROSSING_SWEEPS` が交差削減回数、`DEFAULT_NODE_GAP` と
-`DEFAULT_LAYER_GAP` が座標間隔です。変更は次回のプロセス起動から反映されます。
-CLI引数やAPI引数の明示指定が優先されます。共有生成器そのものの関数既定値は変更しません。
+公開実装ではGravistoの重心法とGrandalfの座標割当を照合しました。Gravistoは重心の同値を隣接位置による辞書順で解消し、GrandalfはBrandes–Köpf法で座標を割り当てます。[Gravistoの重心法](https://github.com/Gravisto/Gravisto/blob/ed688bbab011ae26ff25f9cf2d62d905070de1e3/Graffiti_Plugins/org/graffiti/plugins/algorithms/sugiyama/crossmin/BaryCenter.java) · [Grandalfの座標割当](https://github.com/bdcht/grandalf/blob/master/grandalf/layouts.py)

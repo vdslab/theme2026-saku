@@ -45,15 +45,16 @@ def main() -> None:
         rewiring_probability=args.prob,
     )
     acyclic = remove_cycles(original_nodes, original_edges)
-    ranks = assign_layers(acyclic.nodes, acyclic.edges)
-    hierarchy = insert_dummy_nodes(acyclic.nodes, acyclic.edges, ranks)
+    layout_edges = tuple(dict.fromkeys(acyclic.edges))
+    ranks = assign_layers(acyclic.nodes, layout_edges)
+    hierarchy = insert_dummy_nodes(acyclic.nodes, layout_edges, ranks)
     crossings_before = count_crossings(hierarchy.layers, hierarchy.edges)
     embedding = reduce_crossings(
         hierarchy.layers,
         hierarchy.edges,
         rounds=args.rounds,
     )
-    coordinates = assign_coordinates(embedding.order)
+    coordinates = assign_coordinates(embedding)
 
     print(f"seed: {args.seed}")
     print(f"nodes: {len(original_nodes)}")
@@ -70,7 +71,7 @@ def main() -> None:
         coordinates.polar,
         coordinates.radii,
         hierarchy.chains,
-        embedding.winding,
+        coordinates.winding,
         acyclic.reversed_edges,
         save_path=args.save,
         show=not args.no_show,

@@ -6,7 +6,7 @@ import argparse
 
 from .coordinate_assignment import assign_coordinates
 from .crossing_reduction import count_crossings, reduce_crossings
-from .cycle_removal import remove_cycles
+from .condensation import condense_cycles
 from .drawing import draw_hierarchical_graph
 from .dummy_insertion import insert_dummy_nodes
 from .layer_assignment import assign_layers
@@ -59,7 +59,7 @@ def main() -> None:
         rewiring_probability=args.prob,
     )
 
-    acyclic = remove_cycles(original_nodes, original_edges)
+    acyclic = condense_cycles(original_nodes, original_edges)
     ranks = assign_layers(acyclic.nodes, acyclic.edges)
     hierarchy = insert_dummy_nodes(acyclic.nodes, acyclic.edges, ranks)
     crossings_before = count_crossings(hierarchy.layers, hierarchy.edges)
@@ -74,13 +74,14 @@ def main() -> None:
     print(f"乱数シード: {args.seed}")
     print(f"頂点数: {len(original_nodes)}")
     print(f"辺数: {len(original_edges)}")
+    print(f"縮約後の頂点数と辺数: {len(acyclic.nodes)}, {len(acyclic.edges)}")
     print(f"辺を張り替える確率: {args.prob}")
     print(f"レイヤー数: {max(ranks.values(), default=-1) + 1}")
     print(f"交差数: {crossings_before} -> {crossings_after}")
 
     draw_hierarchical_graph(
         acyclic.nodes,
-        original_edges,
+        acyclic.edges,
         positions,
         hierarchy.chains,
         acyclic.reversed_edges,

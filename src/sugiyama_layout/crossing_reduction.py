@@ -1,15 +1,10 @@
-"""ステップ3：中央値スイープと隣接交換により辺の交差を削減する。
-
-これは現代の杉山フレームワークで一般的に採用される手法である。1981年の
-原論文では代わりに重心（BC）手続きが使われているため、このモジュールは
-同論文をそのまま実装したものではない。
-"""
-
-from . import constants
+"""Two-phase n-level barycentric crossing reduction (Sugiyama et al., §III)."""
 
 from collections import defaultdict
-from statistics import median
+from fractions import Fraction
 from typing import Hashable, Iterable, TypeAlias
+
+from . import constants
 
 Node: TypeAlias = Hashable
 Edge: TypeAlias = tuple[Node, Node]
@@ -20,57 +15,108 @@ def reduce_crossings(
     edges: Iterable[Edge],
     sweeps: int = constants.DEFAULT_CROSSING_SWEEPS,
 ) -> dict[int, tuple[Node, ...]]:
-    """辺の交差が少なくなるように、各レイヤー内の頂点順序を求める。
-
-    杉山フレームワークで使われる標準的な2層間戦略として、下向きと上向きの
-    中央値スイープを交互に行い、総交差数が減る場合に隣接頂点を交換する。
-    """
-
+    """Repeat stable BC sweeps and reverse equal-barycenter groups in Phase 2."""
     if sweeps < 1:
-        raise ValueError("sweeps は正の値である必要があります")
-    order = {layer: list(nodes) for layer, nodes in sorted(layers.items())}
-    edge_list = tuple(edges)
-    incoming: dict[Node, list[Node]] = defaultdict(list)
-    outgoing: dict[Node, list[Node]] = defaultdict(list)
-    for source, target in edge_list:
-        outgoing[source].append(target)
-        incoming[target].append(source)
-
-    best = _copy_order(order)
+        raise ValueError("sweeps must be positive")
+    order = {layer: tuple(nodes) for layer, nodes in sorted(layers.items())}
+    edge_list = tuple(dict.fromkeys(edges))
+    best = order.copy()
     best_crossings = count_crossings(best, edge_list)
-    layer_ids = sorted(order)
+    if len(order) < 2:
+        return best
 
-    for sweep in range(sweeps):
-        downward = sweep % 2 == 0
-        visited = layer_ids[1:] if downward else list(reversed(layer_ids[:-1]))
-        neighbors = incoming if downward else outgoing
-        reference_layer_offset = -1 if downward else 1
+    incoming = defaultdict(list)
+    outgoing = defaultdict(list)
+    for source, target in edge_list:
+        incoming[target].append(source)
+        outgoing[source].append(target)
+    levels = list(order)
+    directions = ((levels[1:], incoming, -1), (levels[-2::-1], outgoing, 1))
 
-        for layer in visited:
-            reference = order[layer + reference_layer_offset]
-            reference_position = {node: index for index, node in enumerate(reference)}
-            old_position = {node: index for index, node in enumerate(order[layer])}
-
-            def key(node: Node) -> tuple[float, int]:
-                positions = [
-                    reference_position[neighbor]
-                    for neighbor in neighbors[node]
-                    if neighbor in reference_position
-                ]
-                return (
-                    float(median(positions)) if positions else float(old_position[node]),
-                    old_position[node],
-                )
-
-            order[layer].sort(key=key)
-            _transpose(order, edge_list, layer)
-
+    def remember():
+        nonlocal best, best_crossings
         crossings = count_crossings(order, edge_list)
         if crossings < best_crossings:
-            best = _copy_order(order)
-            best_crossings = crossings
+            best, best_crossings = order.copy(), crossings
 
-    return {layer: tuple(nodes) for layer, nodes in best.items()}
+    def matrix_signature():
+        # The occupied entries of the adjacency matrices, in order.
+        positions = {node: (level, index) for level, nodes in order.items()
+                     for index, node in enumerate(nodes)}
+        return tuple(sorted((positions[u], positions[v]) for u, v in edge_list))
+
+    def phase_one(first_direction):
+        seen = {matrix_signature()}
+        for _ in range(sweeps):
+            for direction in (first_direction, 1 - first_direction):
+                visited, neighbors, offset = directions[direction]
+                for level in visited:
+                    order[level] = _barycentric_order(order[level], order.get(level + offset, ()), neighbors)
+                remember()
+            state = matrix_signature()
+            if state in seen:
+                break
+            seen.add(state)
+        return 1 - first_direction
+
+    if len(levels) == 2:
+        upper, lower = levels
+        # Follow the two-level example (M0–M5): rows first, then columns.
+        phase_one(1)
+        for _ in range(sweeps):
+            for level, reference, neighbors, opposite in (
+                (lower, upper, incoming, outgoing),
+                (upper, lower, outgoing, incoming),
+            ):
+                order[level] = _barycentric_order(
+                    order[level], order[reference], neighbors, reverse_ties=True
+                )
+                if order[reference] != _barycentric_order(
+                    order[reference], order[level], opposite
+                ):
+                    phase_one(1)
+                    break
+            else:
+                break
+        return best
+
+    direction = phase_one(0)
+    seen = set()
+    for _ in range(sweeps):
+        state = direction, matrix_signature()
+        if state in seen:
+            break
+        seen.add(state)
+        for phase_direction in (direction, 1 - direction):
+            visited, neighbors, offset = directions[phase_direction]
+            for level in visited:
+                reordered = _barycentric_order(
+                    order[level], order.get(level + offset, ()), neighbors, reverse_ties=True
+                )
+                if reordered != order[level]:
+                    order[level] = reordered
+                    remember()
+                    phase_one(phase_direction)
+    return best
+
+
+def _barycentric_order(nodes, reference, neighbors, *, reverse_ties=False):
+    positions = {node: index for index, node in enumerate(reference, start=1)}
+    active = [node for node in nodes if neighbors[node]]
+    barycenter = {
+        node: Fraction(sum(positions[v] for v in neighbors[node]), len(neighbors[node]))
+        for node in active
+    }
+    if reverse_ties:
+        # Phase 2 retains the order of the groups and reverses each group.
+        groups = defaultdict(list)
+        for node in active:
+            groups[barycenter[node]].append(node)
+        active = [groups[barycenter[node]].pop() for node in active]
+    else:
+        active.sort(key=barycenter.__getitem__)
+    replacement = iter(active)
+    return tuple(next(replacement) if node in barycenter else node for node in nodes)
 
 
 def count_crossings(
@@ -101,31 +147,3 @@ def count_crossings(
                 lower_delta = positions[v1][1] - positions[v2][1]
                 total += upper_delta * lower_delta < 0
     return total
-
-
-def _transpose(
-    order: dict[int, list[Node]], edges: tuple[Edge, ...], layer: int
-) -> None:
-    improved = True
-    while improved:
-        improved = False
-        index = 0
-        while index + 1 < len(order[layer]):
-            before = count_crossings(order, edges)
-            order[layer][index], order[layer][index + 1] = (
-                order[layer][index + 1],
-                order[layer][index],
-            )
-            after = count_crossings(order, edges)
-            if after < before:
-                improved = True
-            else:
-                order[layer][index], order[layer][index + 1] = (
-                    order[layer][index + 1],
-                    order[layer][index],
-                )
-            index += 1
-
-
-def _copy_order(order: dict[int, list[Node]]) -> dict[int, list[Node]]:
-    return {layer: list(nodes) for layer, nodes in order.items()}

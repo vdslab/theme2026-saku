@@ -68,3 +68,24 @@ def insert_dummy_nodes(
         dummy_nodes=frozenset(dummy_nodes),
         chains=chains,
     )
+
+
+def validate_proper_hierarchy(
+    layers: dict[int, list[Node] | tuple[Node, ...]], edges: tuple[Edge, ...]
+) -> dict[Node, int]:
+    """Validate a proper hierarchy and return each vertex’s level."""
+    node_to_layer: dict[Node, int] = {}
+    for layer, nodes in layers.items():
+        if len(nodes) != len(set(nodes)):
+            raise ValueError(f"レイヤー {layer!r} に重複した頂点が含まれています")
+        for node in nodes:
+            if node in node_to_layer:
+                raise ValueError(f"頂点 {node!r} が複数のレイヤーに存在します")
+            node_to_layer[node] = layer
+
+    for source, target in edges:
+        if source not in node_to_layer or target not in node_to_layer:
+            raise ValueError("すべての辺の端点が layers に含まれている必要があります")
+        if node_to_layer[target] != node_to_layer[source] + 1:
+            raise ValueError("すべての辺が隣接レイヤーを結ぶ必要があります")
+    return node_to_layer

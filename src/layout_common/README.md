@@ -7,9 +7,9 @@
 
 | 処理 | 共通化の範囲 | 分離する仕様 |
 | --- | --- | --- |
-| `cycle_removal` | 杉山・radial の閉路除去 | torus は閉路を残す |
+| `cycle_removal` | 放射型と全頂点・全辺を採点する平面比較の辺反転 | torus は閉路を残す |
 | `dag.topological_adjacency` | 杉山・radial の安定したトポロジカル走査 | 杉山は始点からの距離、radial は終点を最外層に揃える |
-| `hierarchy` | 杉山・radial のダミー型と長辺分割 | torus の循環層、整数ダミーID、境界フラグ・重みは専用実装 |
+| `hierarchy` | 杉山・radial のダミー型・長辺分割・proper hierarchy の検証 | torus の循環層、整数ダミーID、境界フラグ・重みは専用実装 |
 
 グラフ生成は既存の `generator` に集約します。
 `generator.random_oriented_watts_strogatz` は杉山・radial 用のランダム方向付け、
