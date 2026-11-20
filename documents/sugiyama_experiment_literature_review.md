@@ -1,5 +1,30 @@
 # 階層グラフ描画における実験評価の文献調査
 
+## 今回の計画に使った一次資料
+
+2026-11-19 再調査。現行トーラス実装の各工程に対応するよう、原著の実験節と図表から、著者の問い・比較条件・得られた結果を整理した。下記の数値は各論文の条件での結果。本リポジトリの測定結果は [実験計画](experiment_plan.md) の条件で取得する。
+
+### 階層割当とダミー挿入
+
+- **Healy & Nikolov, *How to Layer a Directed Acyclic Graph*（2002）**。従来の階層割当を実験比較したうえで、ノードと辺の幅を反映した寸法制約の下で総スパンを抑える方法を提案した。提案法の予備評価には 5,900 件を超える DAG を用いた。本計画では総スパン・層最大幅・ダミー数を併記し、最小層数だけで階層割当の品質を判断しない。[著者所属機関の公開書誌・抄録](https://pure.ul.ie/en/publications/how-to-layer-a-directed-acyclic-graph/)
+- **Bachmaier et al., *Cyclic Leveling of Directed Graphs*（2008）, §5・図 3–5**。層数と層容量を先に指定したとき、循環スパンを抑える方法を比較した。各サイズでランダムグラフを 10 件生成し、密な条件（辺数 5n）を時間と規模の比較に、疎な小規模条件（2n）を厳密値との比較に用いた。MST 初期化と力学的調整を組み合わせる方法が厳密値に近いスパンを得た。再開始を増やすと品質が上がる一方で時間も増えた。層数探索の小規模全候補照合、固定階層数との比較、元辺数を制御した規模比較に反映した。論文では層容量も固定し、本実験の固定階層数条件では現行モデルの制約を使う。[原著 PDF](https://www.infosun.fim.uni-passau.de/~chris/down/CyclicLeveling.pdf)
+- **Eiglsperger, Siebenhaller & Kaufmann, *An Efficient Implementation of Sugiyama’s Algorithm*（2005）, §6・表 1–4**。ダミーの大量生成が時間・メモリを圧迫するという仮説に、長辺を意図的に多く含むグラフと、辺数を 2.5n にした弱連結ランダムグラフを用いた。従来実装、新実装、VCG、Dot を比較。ランダム 1,000 頂点の条件では、従来／新実装のダミー数は 233,486／3,001、反復時間は 2,643／72 ms で、交差数は同程度だった。元規模と正規化後規模を両方記録し、処理時間と出力品質を同時に検証する根拠とした。現行トーラスの対応表化については、同じ分割出力を保ったまま時間が変わるかを測る。[原著 PDF](https://www.kurims.kyoto-u.ac.jp/EMIS/journals/JGAA/accepted/2005/EiglspergerSiebenhallerKaufmann2005.9.3.pdf)
+
+### 交差、回転、座標
+
+- **Jünger & Mutzel, *2-Layer Straightline Crossing Minimization*（1997）, 実験節**。二層の片側固定と両側可変を区別し、厳密法を基準に重心など複数のヒューリスティックの品質と時間を比較した。両側可変でも疎な入力なら小さい方の層が 15 頂点程度まで厳密に解け、大きい入力には反復重心法が有力だった。本計画では、巻き数ゼロの小規模部分問題を独立に列挙し、通常入力では初期化・sifting・guard・反復回数の効果を比較する。[原著 PDF](https://jgaa.info/index.php/jgaa/article/download/paper1/2965/2771)
+- **Bachmaier et al., *Global k-Level Crossing Reduction*（2011）, §4・図 5–11**。正規化後のサイズやダミー比率、掃引回数を動かし、重心法・中央値法・片側 sifting・複数層を同時に扱う sifting を比較した。小規模では ILP の厳密値、外部入力では Rome・AT&T を用いた。著者らの global sifting は主比較で交差を約 5–10% 減らし、ダミー間線分どうしの交差を避けた。計算時間は比較手法中で長かった。本計画の交差数、内部線分どうしの交差、反復と時間の同時計測に反映した。現行の global guard は局所 sweep の全体最良状態を保存する処理なので、この論文の大域移動そのものとは区別する。[原著 PDF](https://jgaa.info/index.php/jgaa/article/download/paper242/2722/2529)
+- **Bachmaier, *A Radial Adaptation of the Sugiyama Framework*（2007）, §IV–V・付録図 10**。放射配置の追加自由度によって交差を減らせるかを、二層の頂点数と密度を振り、平面版・放射版の重心、中央値、sifting の 6 条件で評価した。放射化で平均約 30% の交差減少を報告し、放射 sifting は最少交差だが最も遅かった。論文の回転は循環順序を保ち、UNWIND-LEVEL は層間に共通する整数周を引く。現行トーラスではさらに切れ目を選ぶので、回転・共通巻き除去・切れ目選択の前後でそれぞれ異なる指標を測る。[原著 PDF](https://www.infosun.fim.uni-passau.de/~chris/down/RadialVisualization.pdf)
+- **Brandes & Köpf, *Fast and Simple Horizontal Coordinate Assignment*（2002）, §5・図 5–6**。固定層順のもとで 4 方向の整列・圧縮を統合し、長辺を直線化する簡潔な方法を示した。実用例と予備計測では速度・品質の可能性を示した一方、長辺を整列する制約が幅を増やす例も示した。今回の比較には、単一方向と中央値統合、射影前後、周期平滑化前後、内部線分の整列と幅の併記を取り入れた。[原著 PDF](https://d-nb.info/1104942232/34)
+- **Jünger et al., *A Flow Formulation for Horizontal Coordinate Assignment with Prescribed Width*（2019）, §4・図 10–19**。前段を揃え、BK、LP、ネットワーク単体法などと最小費用流を比較し、NORTH・DAGmar などで幅、水平辺長、時間を測った。多くは両目的が近い解を持つ一方、長い鎖を含む例や木に近い例で片方が悪化した。平均時間でも BK が最小費用流より速い条件があった。今回も座標方式ごとに辺長・折れ点・実行可能性と周期を分け、平均に埋もれる悪化例を確認する。[原著 PDF](https://jgaa.info/index.php/jgaa/article/download/paper500/2456/2263)
+
+### 完成描画と読み取り
+
+- **Di Battista et al., *Drawing Directed Acyclic Graphs: An Experimental Study*（2000）**。実データ由来と生成 DAG の二つの集合で、二つの階層型と二つのグリッド型の描画を比較した。交差、曲がり、面積、アスペクト比などで優劣が入れ替わり、一律に最良の方式は得られなかった。今回も全体比較で複数の品質軸を残し、公開データと統制生成データで傾向が再現するか見る。[著者らの技術報告](https://cs.brown.edu/research/pubs/techreports/reports/CS-96-24.html)・[最終版](https://doi.org/10.1142/S0218195900000358)
+- **Bachmaier et al., *Drawing Recurrent Hierarchies*（2012）, §2・例図 15–19**。最終層から第 1 層に戻る循環階層を、平面の放射線や円筒に展開し、閉路を一方向に追える描画を示した。示された再帰階層の例では通常の階層配置より交差と辺長が減った。この比較は図例中心で、第二の周期方向の効果は今回の同一トーラス階層割当を使った円筒条件との対応比較で調べる。[原著 PDF](https://www.kurims.kyoto-u.ac.jp/EMIS/journals/JGAA/accepted/2012/BachmaierBrandenburgBrunnerFulop2012.16.2.pdf)
+- **Lionakis, Kritikakis & Tollis, *Experiments and a User Study for Hierarchical Drawings of Graphs*（2022）, §4**。パスベースの描画と OGDF 杉山法を、20 件の生成 DAG と公開ベンチマークで比較した。前者は面積・曲がり・時間、後者は交差で有利だった。72 名の参加者について到達可能性、最短路長、後続頂点などの読解課題を設け、パスベース図に小さな優位を観察したが、差から方式全般の読みやすさの優劣は決められなかった。今回も最短有向経路の課題を採用し、計算上の交差と人の正答率を別に測る。[原著 §4](https://arxiv.org/html/2209.04522)
+- **Chen et al., *DoughNets*（2020）, Studies 1–2**。静的表示とパン操作の研究に各 24 名を割り付け、トーラス化がリンク・経路の読解に与えるコストと周辺文脈による補完を調べた。中央タイルのみでは通常の平面表示が有利で、周辺文脈やパンがあると誤りと時間が改善した。対象は一般ネットワークで、今回の有向階層には条件を揃えた検証が必要。そこで同じトーラス配置で周辺タイル有無を変え、該当経路が実際に境界をまたぐかを事前に記録する。[原著 PDF](https://ialab.it.monash.edu/~dwyer/papers/DoughNets.pdf)
+
 ## 杉山フレームワークの各工程と全体評価
 
 - 調査日: 2026-09-29
@@ -697,3 +722,36 @@ BC 法による交差削減を、8 種類の階層条件それぞれで 100 個�
 30. Onoue, Y. et al. (2017). [Layered Graph Drawing for Visualizing Evaluation Structures](https://doi.org/10.1109/MCG.2016.40).
 31. Zarate, D. et al. (2018). [Optimal Sankey Diagrams Via Integer Programming](https://doi.org/10.1109/PacificVis.2018.00025).
 32. 尾上洋介 (2018). [階層グラフの可視化](https://jglobal.jst.go.jp/detail?JGLOBAL_ID=201802230578310609). 『オペレーションズ・リサーチ』63(1), 20--26.
+
+## 15. 外部ツールによる有向階層描画の比較候補
+
+### 完成図の比較に使う候補
+
+完成図の品質を評価する主実験では、提案トーラス法と外部ツールに同じ頂点・有向辺を渡す。平面では層方向の流れ、放射型では内側から外側への流れ、循環階層では最後の層から最初の層へ戻る流れを確認する。各方式が実際に出力した辺経路を回収して測る。
+
+| 方式 | 層割当と描画の特徴 | 接続・検証状況 |
+| --- | --- | --- |
+| Graphviz `dot` | 有向グラフを平行な層に配置する。ネットワークシンプレックスで辺の層間スパンの重み付き合計を抑える。 | 比較ランナーで実行済み。左から右、折れ線配線を指定し、JSONから経路を取得する。 [公式仕様](https://graphviz.org/docs/layouts/dot/) · [手法論文](https://graphviz.org/documentation/TSE93.pdf) |
+| ELK Layered | 有向階層描画。既定はネットワークシンプレックスで、始点側・終点側の最長パスや Coffman–Graham も選べる。 | `elkjs` の接続を用意済み。辺の始点・折れ点・終点を取得する。接続はテスト用データで確認済みだが、npmレジストリの名前解決に失敗したため実パッケージでの検証は未完了。 [階層割当](https://eclipse.dev/elk/reference/options/org-eclipse-elk-layered-layering-strategy.html) · [辺経路のデータ構造](https://eclipse.dev/elk/documentation/tooldevelopers/graphdatastructure.html) |
+| OGDF Sugiyama | 有向グラフの平面階層描画。階層割当などの工程を変更できる。 | C++の呼び出し例と配置後のGML出力を確認済み。既存研究でも完成図の比較に使われている。今回のランナーには未接続。 [実行例](https://ogdf.github.io/doc/ogdf/ex-layout.html) · [比較研究](https://arxiv.org/abs/2209.04522) |
+| Gravisto の radial Sugiyama | Bachmaier（2007）に関連する著者側のJava実装。頂点順と辺オフセットをsiftingで探索して螺旋配線する。 | 公開ソースで描画パイプラインを確認済み。DAGに層番号を与えて呼び出す入口と、元の辺を追跡して螺旋経路を取得する処理が必要。ビルド・一括実行は未検証。 [原著](https://doi.org/10.1109/TVCG.2007.1000) · [描画パイプライン](https://github.com/Gravisto/Gravisto/blob/ed688bbab011ae26ff25f9cf2d62d905070de1e3/Graffiti_Plugins/org/graffiti/plugins/algorithms/core/Sugiyama.java#L56-L181) · [螺旋形状](https://github.com/Gravisto/Gravisto/blob/ed688bbab011ae26ff25f9cf2d62d905070de1e3/Graffiti_Plugins/org/graffiti/plugins/algorithms/core/SpiralShape.java) |
+| R `ggraph` と `igraph` | `sugiyama` の平面座標を `circular = TRUE` で同心円に変換する。平面版と放射版を同じ階層・層内順序で比較できる。 | `use.dummy = TRUE` で中間点を含む配置を得られる。元辺への対応と、利用する辺描画の設定を固定する。R は利用可能で、必要な `igraph`、`ggraph`、`tidygraph` は未導入。 [ggraph](https://ggraph.data-imaginist.com/reference/layout_tbl_graph_igraph.html) · [igraph](https://r.igraph.org/reference/layout_with_sugiyama.html) |
+| yFiles `RadialLayout` | `HIERARCHICAL` は層番号差の絶対値の合計を抑える。`layerIds` を使えば指定の層番号に固定できる。 | 商用SDKの環境が必要。折れ線配線ならポートと折れ点を回収できる。自動階層割当で試す場合は、外向き・内向き・同一リングの辺数を確認する。今回のランナーには未接続。 [層割当](https://docs.yworks.com/yfiles-html/api/RadialLayeringStrategy/) · [辺経路の取得](https://docs.yworks.com/yfiles-html/dguide/view_item-layout/) |
+| Gravisto の循環階層描画 | Bachmaierら（2012）が報告した、最終層から先頭層へ戻れる方式。平面上の放射線に層を割り当てる版と、円筒への描画がある。 | 著者らはGravistoへの実装を報告している。公開版での呼び出しと経路回収は未検証。第2の周期方向の効果を検討する外部対照の候補。 [Drawing Recurrent Hierarchies](https://jgaa.info/index.php/jgaa/article/view/paper254) |
+
+Gravistoの公開プラグインは、コア次数・近接中心性・媒介中心性から層番号を決める入口を持つ。有向階層の対照では、まずDAGに対し2007年論文の終点側の最長パスで層番号を決め、層番号を受け取る `Sugiyama` に渡す。公開コードは長辺を無向の区間に分割するため、入力時の辺IDと向きを別途保持して、描画後に区間を元の向きで連結できることを確認する。比較条件には利用した版と外部から層を与えたことを記録する。公開版は2018年のスナップショットで、2007年の実験版との同一性は未確認。 [プラグインの入口](https://github.com/Gravisto/Gravisto/blob/ed688bbab011ae26ff25f9cf2d62d905070de1e3/Graffiti_Plugins/org/graffiti/plugins/algorithms/core/SocialNetworksPlugin.java) · [交差削減コード](https://github.com/Gravisto/Gravisto/blob/ed688bbab011ae26ff25f9cf2d62d905070de1e3/Graffiti_Plugins/org/graffiti/plugins/algorithms/core/CrossingReduction.java) · [公開版の来歴](https://whatsoftwarecando.org/en/new-home-for-gravisto/)
+
+### 補助比較の候補
+
+- `twopi` は中心頂点からの距離で同心円に配置する。`circo` は円周配置、`sfdp` は力学モデルによる配置。いずれも自動実行できる。有向階層の表現が評価の中心なら、主比較には `dot` と ELK Layered を使い、これらは一般的なネットワーク表示との補助比較に使う。 [Graphvizの方式一覧](https://graphviz.org/docs/layouts/) · [twopiの仕様](https://graphviz.org/docs/layouts/twopi/)
+- visone は数値属性でリングを決め、交差を抑える。同じ層番号を頂点属性として渡した放射型の比較に使える。ELK Radial は根付き木を対象とするため、木に限定した比較に使える。 [visoneの仕様](https://visone.ethz.ch/wiki/index.php/Visualization_tab) · [ELK Radialの仕様](https://eclipse.dev/elk/reference/algorithms/org-eclipse-elk-radial.html)
+- AntV G6 の `AntvDagre(radial=true)` は公開仕様に掲載されているが、確認した `@antv/layout` のコミットでは放射変換の処理がコメントアウトされていた。使う場合は実行可能なバージョンと、放射変換後の辺の制御点を先に確認する。 [公開仕様](https://g6.antv.antgroup.com/en/manual/layout/AntvDagreLayout/) · [確認したソース](https://github.com/antvis/layout/blob/62bb4792b3ab948e096f9e17cfcb0f5c51ad9545/src/algorithm/antv-dagre/index.ts#L176-L390)
+
+### 実験の順序と集計
+
+1. DAG で提案トーラス法、`dot`、ELK Layered、Gravisto の放射型を比較する。外部ツールで配置後も元の頂点・有向辺と一対一に対応することを先に確認する。
+2. `ggraph` の平面版・放射版を同じ入力と同じ階層設定で比較し、平面配置を円形化する効果を調べる。階層割当の効果を調べる場合は、ELKで最長パスとネットワークシンプレックスだけを切り替える。
+3. 循環グラフでは提案トーラス法を外部の循環階層描画と比較する。既存の `cylindrical_reference` は、トーラス側で層内方向の巻き数を固定する内部対照として扱う。
+4. 完成図の主指標は辺の中心線の幾何交差と交差した辺対数。接触と重なりは分けて測る。層方向に逆行する辺、境界を通る辺、所要時間と未完走件数も記録する。辺の追跡しやすさを評価する場合は、同じ入力に対する有向経路の正答率と所要時間を測る。
+
+作業ツリーの比較ランナーでは `framework --external-only --dot dot` で平面階層の対照を実行できる。`--graphviz` は `dot`、`twopi`、`circo`、`sfdp` をまとめて有効化する。Graphviz 16.1.1 で提案法と4方式を4入力で試走し、計20実行が完走した。ELKはインストール済みパッケージのパスを `--elkjs` に指定する。出力の `settings.json` に設定と版を、`paired.csv` に同じ入力での対応差を記録する。 [比較ランナー](../experiments/run_torus_study.py)
