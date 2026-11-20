@@ -135,15 +135,19 @@ def assign_coordinates(
     method: str = constants.DEFAULT_COORDINATE_METHOD,
     bend_weight: float = constants.DEFAULT_BEND_WEIGHT,
 ) -> CoordinateResult:
-    """Assign coordinates with legacy BK, fixed-winding QP, or L1 LP.
+    """Assign coordinates with BK, experimental 3x3 BK, QP, or L1 LP.
 
     ``smooth_iterations`` applies to BK only. Optimizers keep the existing
     period and embedding, and use graph.weights. ``bend_weight`` penalizes
     changes in slope at degree-two dummy nodes (proper layered edges only).
     """
-    if method not in ("brandes_koepf", "torus_qp", "torus_lp"):
+    if method not in ("brandes_koepf", "brandes_koepf_3x3", "torus_qp", "torus_lp"):
         raise ValueError(f"unknown coordinate method: {method!r}")
     validate_parameters(min_gap, smooth_iterations)
+    if method == "brandes_koepf_3x3":
+        from .replicated import assign_replicated_coordinates
+
+        return assign_replicated_coordinates(graph, crossing, min_gap=min_gap)
     period = drawing_period(graph.layers, min_gap)
     if method == "brandes_koepf":
         positions = compute_positions(

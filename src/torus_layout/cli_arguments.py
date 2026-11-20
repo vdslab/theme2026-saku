@@ -71,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--coordinate-method",
-        choices=["torus_qp", "torus_lp", "brandes_koepf"],
+        choices=["torus_qp", "torus_lp", "brandes_koepf", "brandes_koepf_3x3"],
         default=constants.DEFAULT_COORDINATE_METHOD,
     )
     parser.add_argument("--bend-weight", type=_nonnegative_float, default=constants.DEFAULT_BEND_WEIGHT)

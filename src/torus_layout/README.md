@@ -66,7 +66,22 @@ BK系＋周期平滑化による座標割当 → 評価表示・描画保存、�
 ```
 
 生成器は `cyclic` / `watts_strogatz` / `random` / `dag` / `mixed`、
-座標方式は `torus_qp` / `torus_lp` / `brandes_koepf` から選べます。
+座標方式は `torus_qp` / `torus_lp` / `brandes_koepf` /
+`brandes_koepf_3x3` から選べます。
+`brandes_koepf_3x3` は周囲8方向にコピーを置き、巻き数に応じてコピー間を接続し、
+4方向BKの中央値統合後に中央のタイルだけを取り出す実験方式です。
+周期補正・平滑化は使わず、描画周期を座標の広がりに合わせます。
+コピーの座標は独立で、周期的に同じ配置となる制約は課していません。
+3×3の外側へ出るセグメントは除外します（巻き数の絶対値が2以上だと、
+中央タイルから出る辺も一部対象外になります）。既定方式は変更していません。
+実行例：
+
+```sh
+./theme2026-saku/bin/python src/torus_layout/main.py \
+  --coordinate-method brandes_koepf_3x3 --seed 1569070748 \
+  --no-show --output-dir output/torus_layout_3x3
+```
+
 `--no-optimize-seams` で境界最適化を無効化できます。
 `--no-unwind` でUNWIND-LEVELを無効化できます。
 比較モードでは、通過線分数が増加せず、辺同士の交差数が変わらないことも検証し、
