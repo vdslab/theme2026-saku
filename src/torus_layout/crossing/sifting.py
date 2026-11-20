@@ -2,8 +2,9 @@
 
 from ..models import Node, Edge, Layers, Winding
 from .lib.types import OrientedEdge
-from .lib.embedding import copy_order, forward_layer_pairs, oriented_pair_embedding
+from .lib.embedding import copy_order, edges_by_directed_strip, forward_layer_pairs, oriented_pair_embedding
 from .lib.crossings import (
+    CrossingWeights,
     count_all_crossings,
     crossings_between_edge_sets,
     crossings_for_edge,
@@ -11,6 +12,22 @@ from .lib.crossings import (
     pair_crossings,
     sifting_edge_weights,
 )
+
+
+def run_radial_sifting(
+    order: Layers, psi: Winding, layers: list[int], edges: list[Edge], rounds: int,
+    *, dummy_nodes: set[Node] | None = None,
+) -> None:
+    """Apply one-sided radial sifting to each directed strip in cyclic order."""
+    strips = edges_by_directed_strip(order, layers, edges)
+    # Use the directed strips separately, even if there are only two layers.
+    for (fixed, free), segments in strips.items():
+        if segments and len(order[free]) > 1:
+            for _ in range(rounds):
+                sift_two_layer_pair(
+                    fixed, free, order, psi, segments, dummy_nodes=dummy_nodes,
+                    type2_only=True,
+                )
 
 
 def run_sifting_with_global_guard(
@@ -58,6 +75,8 @@ def sift_two_layer_pair(
     edges: list[Edge],
     dummy_nodes: set[Node] | None = None,
     optimize_winding: bool = True,
+    *,
+    type2_only: bool = False,
 ) -> None:
     """fixed_layerを固定し、free_layerだけを交差数でsiftingする。"""
     pair_edges, oriented_psi, original_edges = oriented_pair_embedding(
@@ -65,7 +84,7 @@ def sift_two_layer_pair(
     )
     if not pair_edges:
         return
-    edge_weights = sifting_edge_weights(pair_edges, dummy_nodes, len(pair_edges))
+    edge_weights = sifting_edge_weights(pair_edges, dummy_nodes, len(pair_edges), type2_only=type2_only)
     current_crossings = pair_crossings(
         order,
         oriented_psi,
@@ -114,7 +133,7 @@ def sift_vertex_with_fixed_winding(
     pair_edges: list[OrientedEdge],
     incident_edges: list[OrientedEdge],
     current_crossings: int,
-    edge_weights: dict[OrientedEdge, int],
+    edge_weights: CrossingWeights[OrientedEdge],
 ) -> int:
     """psiを固定し、自由層内の頂点位置だけを全候補から選ぶ。"""
     free_nodes = order[free_layer]
@@ -156,7 +175,7 @@ def sift_vertex_one_sided(
     pair_edges: list[OrientedEdge],
     incident_edges: list[OrientedEdge],
     current_crossings: int,
-    edge_weights: dict[OrientedEdge, int],
+    edge_weights: CrossingWeights[OrientedEdge],
 ) -> int:
     """論文のparting探索を使い、2層間の交差数だけで1頂点をsiftingする。"""
     free_nodes = order[free_layer]
@@ -257,7 +276,7 @@ def advance_parting(
     pair_edges: list[OrientedEdge],
     fixed_layer: int,
     free_layer: int,
-    edge_weights: dict[OrientedEdge, int],
+    edge_weights: CrossingWeights[OrientedEdge],
 ) -> tuple[int, int, int]:
     """2層間の交差数を増やさない間、論文のpartingを進める。"""
     degree = len(incident_edges)

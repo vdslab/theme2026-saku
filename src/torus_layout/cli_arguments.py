@@ -65,6 +65,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--rounds", type=_nonnegative_int, default=constants.DEFAULT_ROUNDS)
     parser.add_argument(
+        "--sifting-method", choices=["radial", "shortest", "parting"],
+        default=constants.DEFAULT_SIFTING_METHOD,
+        help="sifting方式（radial: 原著の片側探索、shortest: 最短巻き、parting: 全体評価付きの旧方式）",
+    )
+    parser.add_argument(
         "--coordinate-method",
         choices=["torus_qp", "torus_lp", "brandes_koepf"],
         default=constants.DEFAULT_COORDINATE_METHOD,

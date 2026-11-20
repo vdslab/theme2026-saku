@@ -5,6 +5,8 @@ from ...models import Node, Layers
 from .types import OrientedEdge, EdgeLike
 from .embedding import edge_endpoints
 
+type CrossingWeights[E: EdgeLike] = dict[E, int] | Callable[[E, E], int]
+
 
 def pair_positions(
     order: Layers, fixed_layer: int, free_layer: int
@@ -23,7 +25,7 @@ def crossings_for_edge[E: EdgeLike](
     psi: dict[E, int],
     fixed_layer: int,
     free_layer: int,
-    edge_weights: dict[E, int] | None = None,
+    edge_weights: CrossingWeights[E] | None = None,
 ) -> int:
     """指定辺と他の全辺の交差数を返す。"""
     pi_fixed, pi_free = pair_positions(order, fixed_layer, free_layer)
@@ -43,7 +45,7 @@ def crossings_between_edge_sets[E: EdgeLike](
     psi: dict[E, int],
     fixed_layer: int,
     free_layer: int,
-    edge_weights: dict[E, int] | None = None,
+    edge_weights: CrossingWeights[E] | None = None,
 ) -> int:
     """2つの辺集合の間で生じる交差数を返す。"""
     pi_fixed, pi_free = pair_positions(order, fixed_layer, free_layer)
@@ -63,7 +65,7 @@ def crossings_involving_edges[E: EdgeLike](
     psi: dict[E, int],
     fixed_layer: int,
     free_layer: int,
-    edge_weights: dict[E, int] | None = None,
+    edge_weights: CrossingWeights[E] | None = None,
 ) -> int:
     """incident_edgesのいずれかを含む辺対の交差数を1回ずつ数える。"""
     pi_fixed, pi_free = pair_positions(order, fixed_layer, free_layer)
@@ -85,11 +87,15 @@ def crossings_involving_edges[E: EdgeLike](
 
 
 def sifting_edge_weights(
-    pair_edges: list[OrientedEdge], dummy_nodes: set[Node] | None, edge_count: int
-) -> dict[OrientedEdge, int]:
-    """inner segmentの交差重みを論文どおり|E|にする。"""
+    pair_edges: list[OrientedEdge], dummy_nodes: set[Node] | None, edge_count: int,
+    *, type2_only: bool = False,
+) -> CrossingWeights[OrientedEdge]:
+    """Weight inner–inner crossings by |E|, or use the legacy per-edge weights."""
     dummy_nodes = set() if dummy_nodes is None else set(dummy_nodes)
     inner_weight = max(1, edge_count)
+    if type2_only:
+        inner = {edge for edge in pair_edges if edge[0] in dummy_nodes and edge[1] in dummy_nodes}
+        return lambda first, second: inner_weight if first in inner and second in inner else 1
     return {
         edge: inner_weight if edge[0] in dummy_nodes and edge[1] in dummy_nodes else 1
         for edge in pair_edges
@@ -102,12 +108,14 @@ def weighted_edge_crossings[E: EdgeLike](
     pi_fixed: dict[Node, int],
     pi_free: dict[Node, int],
     psi: dict[E, int],
-    edge_weights: dict[E, int] | None = None,
+    edge_weights: CrossingWeights[E] | None = None,
 ) -> int:
-    """inner segmentが関わる交差だけ重み付きで返す。"""
+    """Apply the selected weight to the crossings of this edge pair."""
     crossings = crossings_between_edges(edge1, edge2, pi_fixed, pi_free, psi)
-    if edge_weights is None:
+    if not crossings or edge_weights is None:
         return crossings
+    if callable(edge_weights):
+        return crossings * edge_weights(edge1, edge2)
     return crossings * max(edge_weights.get(edge1, 1), edge_weights.get(edge2, 1))
 
 
@@ -117,7 +125,7 @@ def pair_crossings[E: EdgeLike](
     fixed_layer: int,
     free_layer: int,
     pair_edges: list[E],
-    edge_weights: dict[E, int] | None = None,
+    edge_weights: CrossingWeights[E] | None = None,
 ) -> int:
     """処理中の2層ペアの交差数だけを返す。"""
     return count_layer_pair_crossings(
@@ -153,7 +161,7 @@ def count_layer_pair_crossings[E: EdgeLike](
     fixed_key: int,
     free_key: int,
     edges: list[E],
-    edge_weights: dict[E, int] | None = None,
+    edge_weights: CrossingWeights[E] | None = None,
 ) -> int:
     """
     1つの隣接レイヤーペア間の交差数を数える。

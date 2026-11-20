@@ -13,6 +13,7 @@ type Weights = dict[Edge, float]
 type Winding = dict[Edge, int]
 type Positions = dict[Node, tuple[float, float]]
 type BalanceMethod = Literal["diff", "diff_square", "qp", "barycenter"]
+type SiftingMethod = Literal["radial", "shortest", "parting"]
 
 
 @dataclass(frozen=True)
@@ -87,3 +88,4 @@ class PipelineConfig:
     coordinate_bend_weight: float = constants.DEFAULT_BEND_WEIGHT
     optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS
     unwind_levels: bool = constants.DEFAULT_UNWIND_LEVELS
+    sifting_method: SiftingMethod = constants.DEFAULT_SIFTING_METHOD

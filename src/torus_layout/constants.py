@@ -16,6 +16,7 @@ DEFAULT_OUTPUT_DIR: Final = "output/torus_layout"
 # パイプライン・階層割当・交差削減・座標割当。
 DEFAULT_BALANCE_METHOD: Final = "diff_square"
 DEFAULT_ROUNDS: Final = 5
+DEFAULT_SIFTING_METHOD: Final = "radial"
 DEFAULT_COORDINATE_METHOD: Final = "brandes_koepf"
 DEFAULT_BEND_WEIGHT: Final = 0.0
 DEFAULT_OPTIMIZE_SEAMS: Final = True

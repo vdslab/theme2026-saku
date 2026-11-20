@@ -65,6 +65,19 @@ def forward_layer_pairs(layers: list[int]) -> list[tuple[int, int]]:
     ]
 
 
+def edges_by_directed_strip(
+    order: Layers, layers: list[int], edges: list[Edge]
+) -> dict[tuple[int, int], list[Edge]]:
+    node_layers = map_node_layers(order)
+    strips: dict[tuple[int, int], list[Edge]] = {pair: [] for pair in forward_layer_pairs(layers)}
+    for u, v in edges:
+        if u in node_layers and v in node_layers:
+            segments = strips.get((node_layers[u], node_layers[v]))
+            if segments is not None:
+                segments.append((u, v))
+    return strips
+
+
 def oriented_pair_embedding(
     order: Layers, psi: Winding, fixed_layer: int, free_layer: int, edges: list[Edge]
 ) -> tuple[

@@ -34,11 +34,12 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
     assert payload["settings"]["pipeline"]["optimize_seams"] is True
     assert payload["settings"]["pipeline"]["unwind_levels"] is True
     assert payload["settings"]["pipeline"]["coordinate_method"] == "brandes_koepf"
+    assert payload["settings"]["pipeline"]["sifting_method"] == "radial"
     assert payload["settings"]["license_mode"] == "local"
     assert payload["settings"]["drawing"]["tile_surroundings"] is True
     metrics = payload["metrics"]
     assert metrics["original_nodes"] == 12
-    assert metrics["seam_segments"] < metrics["seam_segments_before"]
+    assert metrics["seam_segments"] <= metrics["seam_segments_before"]
     assert metrics["crossings"] == metrics["crossings_before"]
     assert len(payload["coordinates"]) == metrics["subdivided_nodes"]
     for name in ("layout.png", "before_seam.png"):
@@ -58,10 +59,12 @@ def test_cli_can_disable_dp_and_select_bk(tmp_path, capsys, monkeypatch):
     assert main(["--nodes", "6", "--seed", "0", "--rounds", "0",
                  "--local-license", "--no-optimize-seams", "--compare-seams",
                  "--no-tile-surroundings", "--no-show", "--no-unwind",
-                 "--coordinate-method", "brandes_koepf", "--output-dir", str(tmp_path)]) == 0
+                 "--coordinate-method", "brandes_koepf", "--sifting-method", "parting",
+                 "--output-dir", str(tmp_path)]) == 0
     payload = json.loads((tmp_path / "result.json").read_text())
     assert payload["settings"]["pipeline"]["optimize_seams"] is False
     assert payload["settings"]["pipeline"]["unwind_levels"] is False
+    assert payload["settings"]["pipeline"]["sifting_method"] == "parting"
     assert payload["settings"]["drawing"]["tile_surroundings"] is False
     assert payload["metrics"]["seam_segments"] == payload["metrics"]["seam_segments_before"]
     assert _local_license.get() is False

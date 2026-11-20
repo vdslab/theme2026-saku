@@ -48,6 +48,7 @@ def _run(args: argparse.Namespace) -> None:
         coordinate_bend_weight=args.bend_weight,
         optimize_seams=not args.no_optimize_seams,
         unwind_levels=args.unwind,
+        sifting_method=args.sifting_method,
     )
     print(
         f"グラフ: {args.graph}, ノード数: {len(nodes)}, 辺数: {len(edges)}, seed: {used_seed}"

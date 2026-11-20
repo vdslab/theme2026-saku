@@ -30,7 +30,7 @@ def test_crossing_matches_legacy(seed, rounds):
     expected = radial_sifting_global_guard_heuristic(
         list(nodes), list(edges), assignment.layers, flags, rounds
     )
-    actual = reduce_crossings(divided, rounds, optimize_seams=False, unwind=False)
+    actual = reduce_crossings(divided, rounds, optimize_seams=False, unwind=False, sifting_method="parting")
     assert actual.order == expected[0]
     assert actual.winding_numbers == expected[4]
     assert divided.layers == expected[1]
@@ -55,5 +55,102 @@ def test_sparse_or_single_layers_match_legacy(layers):
     expected = radial_sifting_global_guard_heuristic(
         list(nodes), list(edges), layers, assignment.torus_flags, 1
     )
-    actual = reduce_crossings(divided, 1, optimize_seams=False, unwind=False)
+    actual = reduce_crossings(divided, 1, optimize_seams=False, unwind=False, sifting_method="parting")
     assert (actual.order, actual.winding_numbers) == (expected[0], expected[4])
+
+
+def test_shortest_sifting_recomputes_windings_after_moving_a_vertex():
+    from radial_layout.crossing_reduction import assign_winding_numbers
+    from torus_layout.crossing.shortest import sift_with_shortest_windings
+    from torus_layout.crossing.lib.crossings import count_all_crossings
+
+    order = {0: [0, 1, 2], 1: [4, 3, 5]}
+    edges = [(0, 3), (1, 4), (2, 5)]
+    initial = assign_winding_numbers(order, edges)
+    assert count_all_crossings(order, initial, [0, 1], edges) == 1
+
+    winding = sift_with_shortest_windings(order, [0, 1], edges, 1)
+
+    assert count_all_crossings(order, winding, [0, 1], edges) == 0
+    assert winding == assign_winding_numbers(order, edges)
+
+
+def test_shortest_sifting_scores_the_two_directed_strips_separately():
+    from torus_layout.crossing.shortest import sift_with_shortest_windings
+    from torus_layout.crossing.lib.crossings import count_all_crossings
+
+    order = {0: [0, 1], 1: [2, 3]}
+    edges = [(0, 3), (2, 1)]
+
+    winding = sift_with_shortest_windings(order, [0, 1], edges, 1)
+
+    assert order == {0: [0, 1], 1: [2, 3]}
+    assert winding == dict.fromkeys(edges, 0)  # Radial also uses zero for a half-turn tie.
+    assert count_all_crossings(order, winding, [0, 1], edges) == 0
+
+
+def test_radial_sifting_uses_each_directed_strip_without_a_global_guard(monkeypatch):
+    from torus_layout.crossing import sifting
+
+    order = {0: [0, 1], 1: [2, 3]}
+    edges = [(0, 3), (2, 1)]
+    winding = dict.fromkeys(edges, 0)
+    original = sifting.sift_two_layer_pair
+    strips = []
+
+    def record_strip(fixed, free, order, winding, segments, **kwargs):
+        strips.append((fixed, free, segments))
+        return original(fixed, free, order, winding, segments, **kwargs)
+
+    def unexpected_global_count(*args):
+        pytest.fail("radial sifting should only count the active strip")
+
+    monkeypatch.setattr(sifting, "sift_two_layer_pair", record_strip)
+    monkeypatch.setattr(sifting, "count_all_crossings", unexpected_global_count)
+    sifting.run_radial_sifting(order, winding, [0, 1], edges, 2)
+
+    assert strips == [(0, 1, [(0, 3)])] * 2 + [(1, 0, [(2, 1)])] * 2
+
+
+def test_radial_sifting_retains_the_current_order_and_winding_on_a_tie():
+    from torus_layout.crossing.sifting import run_radial_sifting
+
+    order = {0: [0], 1: [1, 2]}
+    winding = {(0, 2): 0}
+
+    run_radial_sifting(order, winding, [0, 1], [(0, 2)], 1)
+
+    assert order[1] == [1, 2]
+    assert winding[0, 2] == 0
+
+
+def test_radial_sifting_prefers_fewer_type2_conflicts_over_fewer_crossings():
+    from torus_layout.crossing.lib.crossings import count_layer_pair_crossings
+    from torus_layout.crossing.lib.embedding import compute_winding_numbers
+    from torus_layout.crossing.sifting import run_radial_sifting
+
+    layers = [0, 1]
+    inner = [(0, 5), (1, 4)]
+    edges = [*inner, (2, 5), (2, 7), (3, 4)]
+    for dummy_nodes, expected in ((set(), (1, 1)), ({0, 1, 4, 5}, (2, 0))):
+        order = {0: [0, 1, 2, 3], 1: [4, 5, 6, 7]}
+        winding = compute_winding_numbers(edges, order, order, layers)
+        run_radial_sifting(order, winding, layers, edges, 1, dummy_nodes=dummy_nodes)
+
+        assert (
+            count_layer_pair_crossings(order, winding, 0, 1, edges),
+            count_layer_pair_crossings(order, winding, 0, 1, inner),
+        ) == expected
+
+
+def test_type2_weight_only_applies_when_both_segments_are_internal():
+    from torus_layout.crossing.lib.crossings import sifting_edge_weights, weighted_edge_crossings
+
+    inner1, inner2, outer = (0, 5, 0), (1, 4, 1), (2, 3, 2)
+    edges = [inner1, inner2, outer]
+    weights = sifting_edge_weights(edges, {0, 1, 4, 5}, len(edges), type2_only=True)
+    source = {0: 0, 1: 1, 2: 2}
+    target = {3: 0, 4: 1, 5: 2}
+
+    assert weighted_edge_crossings(inner1, inner2, source, target, {}, weights) == 3
+    assert weighted_edge_crossings(inner1, outer, source, target, {}, weights) == 1

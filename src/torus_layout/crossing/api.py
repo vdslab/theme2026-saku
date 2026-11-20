@@ -2,9 +2,10 @@
 
 from .. import constants
 
-from ..models import SubdividedGraph, CrossingResult
+from ..models import SubdividedGraph, CrossingResult, SiftingMethod
 from .initialization import initial_orders
-from .sifting import run_sifting_with_global_guard
+from .sifting import run_radial_sifting, run_sifting_with_global_guard
+from .shortest import sift_with_shortest_windings
 from .lib.embedding import (
     copy_order,
     compute_winding_numbers,
@@ -21,19 +22,28 @@ def reduce_crossings(
     *,
     optimize_seams: bool = constants.DEFAULT_OPTIMIZE_SEAMS,
     unwind: bool = constants.DEFAULT_UNWIND_LEVELS,
+    sifting_method: SiftingMethod = constants.DEFAULT_SIFTING_METHOD,
 ) -> CrossingResult:
-    """Run guarded sifting/rotation, UNWIND-LEVEL, then seam selection.
+    """Run radial-style sifting, guarded rotation, UNWIND-LEVEL, then seam selection.
 
-    Disable both unwind and optimize_seams to retain the legacy path. The seam
-    optimizer requires a proper graph with cyclic adjacent-layer segments.
+    Use parting with both boundary options disabled to reproduce the legacy path.
+    The seam optimizer requires a proper graph with cyclic adjacent-layer segments.
     """
     layers = sorted(graph.layers)
     edges = list(graph.graph.edges)
     order = initial_orders(graph.layers, layers, edges)[0]
-    winding = compute_winding_numbers(edges, order, graph.layers, layers)
-    run_sifting_with_global_guard(
-        order, winding, layers, edges, rounds, dummy_nodes=graph.dummy_nodes
-    )
+    if sifting_method == "shortest":
+        winding = sift_with_shortest_windings(order, layers, edges, rounds)
+    elif sifting_method in ("radial", "parting"):
+        winding = compute_winding_numbers(edges, order, graph.layers, layers)
+        if sifting_method == "radial":
+            run_radial_sifting(order, winding, layers, edges, rounds, dummy_nodes=graph.dummy_nodes)
+        else:
+            run_sifting_with_global_guard(
+                order, winding, layers, edges, rounds, dummy_nodes=graph.dummy_nodes
+            )
+    else:
+        raise ValueError(f"unknown sifting method: {sifting_method!r}")
     guarded_order = copy_order(order)
     guarded_winding = dict(winding)
     guarded_count = count_all_crossings(order, winding, layers, edges)

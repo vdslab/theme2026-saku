@@ -25,7 +25,13 @@ PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 グラフ生成 → 階層割当 → ダミー挿入 → sifting・回転 → UNWIND-LEVEL → 境界最適化DP →
 BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
 既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
-階層バランス`diff_square`、sifting 5回、UNWIND・境界最適化有効、座標方式`brandes_koepf`です。
+階層バランス`diff_square`、siftingは`radial`で層間ごとに5回、UNWIND・境界最適化有効、座標方式`brandes_koepf`です。
+
+`radial` は原著のAlgorithm 1に沿い、片側の層を固定して、もう片側の頂点位置と辺の巻き数を差分で評価します。移動前の位置と巻き数を最初の最良候補とし、重み付き交差数が厳密に減った場合に更新します。最終層から第1層への接続も固有の層間として処理し、2層のときも両方向の帯を分けます。局所処理後は隣の層間や全体の交差が増えることがあります。
+
+`--sifting-method parting` は全体最良の保存とダミー間線分の重み付けを行う従来方式、`--sifting-method shortest` は候補ごとに最短の巻き数を選び、前後両方の層間を評価する方式です。
+
+`radial` では [原著 §V-A](https://www.infosun.fim.uni-passau.de/~chris/down/RadialVisualization.pdf#page=9) に従い、両方の線分がダミー頂点間の線分である交差（タイプ2）を、対象層間の辺数 `|E|` で重み付けします。タイプ0・1の交差は重み1です。採否に使うのは、この重み付き交差数です。
 `--seed` で乱数seedを固定すると同じ入力を再生成できます。
 
 出力先の既定値は `output/torus_layout/` です。
