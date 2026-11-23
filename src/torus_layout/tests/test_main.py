@@ -41,6 +41,12 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
     assert metrics["original_nodes"] == 12
     assert metrics["seam_segments"] <= metrics["seam_segments_before"]
     assert metrics["crossings"] == metrics["crossings_before"]
+    stages = ("layer_search", "balance", "subdivision", "crossing", "coordinate")
+    phase_total = sum(metrics[f"{stage}_seconds"] for stage in stages)
+    assert 0 <= phase_total <= metrics["computation_wall_seconds"]
+    assert metrics["balance_solver_seconds"] <= metrics["balance_seconds"]
+    assert metrics["layer_search_solver_seconds"] <= metrics["layer_search_seconds"]
+    assert metrics["max_proper_layer_size"] == max(len(nodes) for _, nodes in payload["order"])
     assert len(payload["coordinates"]) == metrics["subdivided_nodes"]
     for name in ("layout.png", "before_seam.png"):
         with Image.open(tmp_path / name) as image:

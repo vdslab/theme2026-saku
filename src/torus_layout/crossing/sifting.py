@@ -1,11 +1,12 @@
 """局所siftingと全体の最良状態の保持。"""
 
+from collections import defaultdict
+
 from ..models import Node, Edge, Layers, Winding
 from .lib.types import OrientedEdge
-from .lib.embedding import copy_order, edges_by_directed_strip, forward_layer_pairs, oriented_pair_embedding
+from .lib.embedding import copy_order, edges_by_directed_strip, map_node_layers, oriented_pair_embedding
 from .lib.crossings import (
     CrossingWeights,
-    count_all_crossings,
     crossings_between_edge_sets,
     crossings_for_edge,
     crossings_involving_edges,
@@ -42,21 +43,38 @@ def run_sifting_with_global_guard(
     """Run the same local passes as ``_run_sifting`` and retain global best."""
     best_order = copy_order(order)
     best_psi = dict(psi)
-    best_crossings = count_all_crossings(order, psi, layers, edges)
-    layer_pairs = forward_layer_pairs(layers)
+    strips = edges_by_directed_strip(order, layers, edges)
+    layer_pairs = list(strips)
+    local_edges: dict[frozenset[int], list[Edge]] = defaultdict(list)
+    node_layers = map_node_layers(order)
+    for u, v in edges:
+        if u in node_layers and v in node_layers:
+            local_edges[frozenset((node_layers[u], node_layers[v]))].append((u, v))
+    scores = {pair: pair_crossings(order, psi, *pair, segments)
+              for pair, segments in strips.items()}
+    affected = defaultdict(list)
+    for (fixed, free), segments in strips.items():
+        if segments:
+            affected[fixed].append((fixed, free))
+            affected[free].append((fixed, free))
+    crossings = best_crossings = sum(scores.values())
     two_pass_pairs = layer_pairs + layer_pairs[:-1]
     for fixed_layer, free_layer in two_pass_pairs:
+        segments = local_edges[frozenset((fixed_layer, free_layer))]
         for _ in range(rounds):
             sift_two_layer_pair(
                 fixed_layer,
                 free_layer,
                 order,
                 psi,
-                edges,
+                segments,
                 dummy_nodes=dummy_nodes,
                 optimize_winding=optimize_winding,
             )
-            crossings = count_all_crossings(order, psi, layers, edges)
+            for pair in affected[free_layer]:
+                score = pair_crossings(order, psi, *pair, strips[pair])
+                crossings += score - scores[pair]
+                scores[pair] = score
             if crossings < best_crossings:
                 best_crossings = crossings
                 best_order = copy_order(order)
@@ -93,8 +111,11 @@ def sift_two_layer_pair(
         pair_edges,
         edge_weights=edge_weights,
     )
+    by_target = defaultdict(list)
+    for edge in pair_edges:
+        by_target[edge[1]].append(edge)
     for node in list(order[free_layer]):
-        incident_edges = [edge for edge in pair_edges if edge[1] == node]
+        incident_edges = by_target.get(node)
         if incident_edges:
             if optimize_winding:
                 current_crossings = sift_vertex_one_sided(

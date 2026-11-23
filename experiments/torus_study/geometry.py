@@ -2,12 +2,14 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, product
 import math
 
-from torus_layout.drawing.geometry import periodic_edge_segments
+from torus_layout.domain import vertical_bounds
+from torus_layout.drawing.geometry import periodic_edge_segments, validate_positions
 
-EPS = 1e-8
+# Keep event tolerance below the coordinate optimizer's distance from the cut.
+EPS = 1e-10
 
 
 @dataclass(frozen=True)
@@ -29,8 +31,10 @@ def planar_route(edge, points, corners=None):
 
 def torus_routes(chains, graph, crossing, coordinates):
     width, height = len(graph.layers), coordinates.period
-    ymin = -height / max(map(len, graph.layers.values())) / 2
+    ymin, ymax = vertical_bounds(height, max(map(len, graph.layers.values())))
     bounds = (-0.5, ymin, width, height)
+    validate_positions(coordinates.positions, graph.layers, graph.graph.edges,
+                       -0.5, width - 0.5, ymin, ymax)
     routes = []
     for edge, chain in chains.items():
         points = [coordinates.positions[chain[0]]]
@@ -43,7 +47,7 @@ def torus_routes(chains, graph, crossing, coordinates):
             start, end = coordinates.positions[u], coordinates.positions[v]
             pieces.extend(periodic_edge_segments(
                 start, end, x_min=-0.5, x_max=width - 0.5, y_min=ymin,
-                y_max=ymin + height, horizontal_winding=horizontal,
+                y_max=ymax, horizontal_winding=horizontal,
                 vertical_winding=vertical,
             ))
             dx, dy = displacement(start, end)
@@ -73,14 +77,14 @@ def turns(points):
     return count
 
 
-def key_for(point, bounds):
-    if bounds is not None:
-        xmin, ymin, width, height = bounds
-        point = tuple(
-            low if abs(value - high) <= EPS else value
-            for value, low, high in zip(point, (xmin, ymin), (xmin + width, ymin + height))
-        )
-    return tuple(round(value, 7) for value in point)
+def canonical_point(point, bounds):
+    if bounds is None:
+        return tuple(point)
+    xmin, ymin, width, height = bounds
+    return tuple(
+        low if min(abs(value - low), abs(value - high)) <= EPS else value
+        for value, low, high in zip(point, (xmin, ymin), (xmin + width, ymin + height))
+    )
 
 
 def hit(a, b, c, d):
@@ -95,7 +99,8 @@ def hit(a, b, c, d):
         span -= max(min(a[axis], b[axis]), min(c[axis], d[axis]))
         return None, span > EPS
     t, u = cross(offset, s) / denominator, cross(offset, r) / denominator
-    if -EPS <= t <= 1 + EPS and -EPS <= u <= 1 + EPS:
+    eps_t, eps_u = EPS / math.hypot(*r), EPS / math.hypot(*s)
+    if -eps_t <= t <= 1 + eps_t and -eps_u <= u <= 1 + eps_u:
         return (a[0] + min(1, max(0, t)) * r[0], a[1] + min(1, max(0, t)) * r[1]), False
     return None, False
 
@@ -130,12 +135,24 @@ def crossing_metrics(routes, bounds):
     events = defaultdict(lambda: defaultdict(set))
     overlaps = set()
     segments = []
+    buckets = defaultdict(list)
+
+    def point_key(point):
+        point = canonical_point(point, bounds)
+        ix, iy = (math.floor(value / EPS) for value in point)
+        for dx, dy in product((-1, 0, 1), repeat=2):
+            for candidate in buckets.get((ix + dx, iy + dy), ()):
+                if math.dist(point, candidate) <= EPS:
+                    return candidate
+        buckets[ix, iy].append(point)
+        return point
+
     for route in routes:
         for a, b in route.pieces:
             if math.dist(a, b) <= EPS:
                 continue
-            endpoints[key_for(a, bounds)][route.edge].update(rays(a, b))
-            endpoints[key_for(b, bounds)][route.edge].update(rays(b, a))
+            endpoints[point_key(a)][route.edge].update(rays(a, b))
+            endpoints[point_key(b)][route.edge].update(rays(b, a))
             segments.append((min(a[0], b[0]), max(a[0], b[0]),
                              min(a[1], b[1]), max(a[1], b[1]), route.edge, a, b))
     for point, edges in endpoints.items():
@@ -152,8 +169,8 @@ def crossing_metrics(routes, bounds):
             if overlap:
                 overlaps.add(tuple(sorted((edge, other_edge))))
             if point is not None:
-                contributions = events[key_for(point, bounds)]
-                key = key_for(point, bounds)
+                key = point_key(point)
+                contributions = events[key]
                 contributions[edge].update(endpoints.get(key, {}).get(edge, ()))
                 contributions[edge].update(rays(point, a, b))
                 contributions[other_edge].update(endpoints.get(key, {}).get(other_edge, ()))
@@ -161,7 +178,7 @@ def crossing_metrics(routes, bounds):
         active.append(segment)
     pairs, crossings, touches = set(), 0, 0
     route_endpoints = {
-        route.edge: {key_for(route.pieces[0][0], bounds), key_for(route.pieces[-1][-1], bounds)}
+        route.edge: {point_key(route.pieces[0][0]), point_key(route.pieces[-1][-1])}
         for route in routes if route.pieces
     }
     for point, contributions in events.items():

@@ -136,16 +136,23 @@ def page(root):
 <p>出典と取得形式は、各入力のマニフェストに記録した。<a href="https://github.com/networkx/networkx/blob/main/examples/drawing/sampson_data.zip">Sampson</a> · <a href="https://github.com/igraph/igraphdata/tree/main/data">UKfacultyとmacaque</a></p>''')
 
     b=data["budget"]
+    completed = {(r["case"], r["variant"]) for r in b
+                 if r["status"] == "ok" and r.get("geometric_crossings") is not None
+                 and r["wall_seconds"] <= 24}
     coverage=[]
     for v in ("torus","dot","sugiyama","radial"):
         rows=[r for r in b if r["variant"]==v]
         censored=[r for r in rows if r["previous_censored"]]
         values=[sum(r["status"]=="ok" and r["wall_seconds"]<=t for r in rows) for t in (6,14,24)]
-        coverage.append((label(v),len(rows),*values,sum(r["status"]=="ok" for r in censored),len(censored)))
+        paired = sum((r["case"], v) in completed and (r["case"], "torus") in completed
+                     for r in rows)
+        coverage.append((label(v),len(rows),*values,paired,
+                         sum(r["status"]=="ok" for r in censored),len(censored)))
     budget_block=section("budget","3. 比較方式の時計予算と選択偏り",'''
 <p>前回から族ごとに時間切れを最大2例、その他を1例選んで12入力を再試行した。独立の再試行で計測した方式単位の壁時計時間を用い、仮に6・14・24秒で打ち切る場合の完了数を数えた。6秒と14秒で個別にアルゴリズムを中断して再スタートした結果ではない。</p>
-'''+table("一定時間内の完了数",("方式","試行","6秒","14秒","24秒","以前に時間切れがあった入力で完了","同対象数"),coverage)+'''
-<p>平面杉山法は今回14秒で12/12件、放射型は24秒でも6/12件だった。前回の平面法の一部の欠測が実行制限・負荷に敏感だったことが分かる。放射型の品質比較には依然として欠測偏りがある。新旧の実行時間は単純に同一条件とみなせない。</p>''')
+'''+table("一定時間内の完了数",("方式","試行","6秒","14秒","24秒",
+                                "24秒以内にトーラスと両方の交差数を取得",
+                                "以前に時間切れがあった入力で完了","同対象数"),coverage))
 
     r=data["ranks"]
     rank_status=[]

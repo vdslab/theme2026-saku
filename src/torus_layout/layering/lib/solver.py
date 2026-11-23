@@ -11,6 +11,22 @@ from dotenv import load_dotenv
 _local_license: ContextVar[bool] = ContextVar("torus_layout_local_license", default=False)
 
 
+def optimize(model: gp.Model) -> None:
+    try:
+        model.optimize()
+    except gp.GurobiError as error:
+        if error.errno != gp.GRB.Error.SIZE_LIMIT_EXCEEDED:
+            raise
+        alternative = (" 層調整では線形分配 (--balance-method diff) も選択できます。"
+                       if model.ModelName.startswith("Torus_Balance_") else "")
+        raise gp.GurobiError(
+            error.errno,
+            f"Gurobiのライセンス上限を超えました "
+            f"(model={model.ModelName}, variables={model.NumVars}, constraints={model.NumConstrs})."
+            f"{alternative}",
+        ) from error
+
+
 @contextmanager
 def use_local_license(enabled: bool = True) -> Iterator[None]:
     """Explicit, scoped local-license selection; never a silent WLS fallback."""

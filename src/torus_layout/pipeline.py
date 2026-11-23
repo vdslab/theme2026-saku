@@ -13,14 +13,18 @@ def run_pipeline(
 ) -> PipelineResult | None:
     """既存の工程を実行し、階層割当の失敗時は元と同じくNoneを返す。"""
     config = PipelineConfig() if config is None else config
+    started = perf_counter()
     assigned = assign_layers(graph, config.balance_method)
     if assigned is None:
         return None
     search, assignment = assigned
+    balance_time = perf_counter() - started - search.runtime
 
-    # The old crossing timer includes dummy insertion.
     started = perf_counter()
     subdivided = insert_dummy_nodes(graph, assignment)
+    subdivision_time = perf_counter() - started
+
+    started = perf_counter()
     crossing = reduce_crossings(
         subdivided, rounds=config.rounds, optimize_seams=config.optimize_seams,
         unwind=config.unwind_levels, sifting_method=config.sifting_method,
@@ -42,4 +46,6 @@ def run_pipeline(
         coordinates,
         crossing_time,
         coordinate_time,
+        balance_time=balance_time,
+        subdivision_time=subdivision_time,
     )

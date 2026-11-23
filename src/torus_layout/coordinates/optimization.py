@@ -10,7 +10,8 @@ from collections import defaultdict
 import math
 import gurobipy as gp
 from ..models import Node, Edge, Layers, Positions, Weights
-from ..layering.lib.solver import create_gurobi_env
+from ..domain import vertical_bounds
+from ..layering.lib.solver import create_gurobi_env, optimize
 
 
 def optimize_positions(
@@ -53,9 +54,8 @@ def optimize_positions(
         model.Params.OptimalityTol = constants.COORDINATE_OPTIMALITY_TOL
         model.Params.BarConvTol = constants.COORDINATE_BARRIER_TOL
         margin = max(constants.COORDINATE_DOMAIN_MARGIN, min_gap * constants.COORDINATE_DOMAIN_MARGIN)
-        y = {node: model.addVar(lb=-min_gap / 2 + margin,
-                               ub=period - min_gap / 2 - margin)
-             for node in initial}
+        lower, upper = vertical_bounds(period, max(map(len, order.values()), default=1))
+        y = {node: model.addVar(lb=lower + margin, ub=upper - margin) for node in initial}
         for nodes in order.values():
             for u, v in zip(nodes, nodes[1:]):
                 model.addConstr(y[v] - y[u] >= min_gap)
@@ -82,7 +82,7 @@ def optimize_positions(
                 absolute.append(weight * value)
             objective = gp.quicksum(absolute)
         model.setObjective(objective, gp.GRB.MINIMIZE)
-        model.optimize()
+        optimize(model)
         if model.Status != gp.GRB.OPTIMAL:
             raise RuntimeError(f"coordinate optimization failed: status={model.Status}")
         return {node: (initial[node][0], float(y[node].X)) for node in initial}

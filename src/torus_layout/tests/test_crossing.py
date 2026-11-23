@@ -89,6 +89,19 @@ def test_shortest_sifting_scores_the_two_directed_strips_separately():
     assert count_all_crossings(order, winding, [0, 1], edges) == 0
 
 
+def test_parting_keeps_its_two_layer_result_with_cached_counts():
+    from torus_layout.crossing import sifting
+
+    order = {0: [0, 1, 2], 1: [3, 4, 5]}
+    edges = [(0, 5), (1, 3), (2, 4), (3, 2), (4, 1)]
+    winding = dict.fromkeys(edges, 0)
+
+    sifting.run_sifting_with_global_guard(order, winding, [0, 1], edges, 5)
+
+    assert order == {0: [0, 1, 2], 1: [4, 3, 5]}
+    assert winding == dict(zip(edges, (0, 0, 1, -1, -1)))
+
+
 def test_radial_sifting_uses_each_directed_strip_without_a_global_guard(monkeypatch):
     from torus_layout.crossing import sifting
 
@@ -102,11 +115,14 @@ def test_radial_sifting_uses_each_directed_strip_without_a_global_guard(monkeypa
         strips.append((fixed, free, segments))
         return original(fixed, free, order, winding, segments, **kwargs)
 
-    def unexpected_global_count(*args):
-        pytest.fail("radial sifting should only count the active strip")
+    original_count = sifting.pair_crossings
+
+    def count_strip(order, winding, fixed, free, segments, **kwargs):
+        assert len(segments) == 1
+        return original_count(order, winding, fixed, free, segments, **kwargs)
 
     monkeypatch.setattr(sifting, "sift_two_layer_pair", record_strip)
-    monkeypatch.setattr(sifting, "count_all_crossings", unexpected_global_count)
+    monkeypatch.setattr(sifting, "pair_crossings", count_strip)
     sifting.run_radial_sifting(order, winding, [0, 1], edges, 2)
 
     assert strips == [(0, 1, [(0, 3)])] * 2 + [(1, 0, [(2, 1)])] * 2

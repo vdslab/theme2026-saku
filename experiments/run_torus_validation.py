@@ -71,6 +71,8 @@ class Measurements:
             code = getattr(exc, "errno", None)
             if isinstance(code, int):
                 result["solver_errno"] = code
+                if code == gp.GRB.Error.SIZE_LIMIT_EXCEEDED:
+                    result["status"] = "license_size_limit"
         limited = any(s["status"] in (9, 13, 16) for s in trace)
         self.rows.append({**self.common, "variant": variant, "status": "ok", **result,
                           "wall_seconds": perf_counter()-start, "solver": trace,

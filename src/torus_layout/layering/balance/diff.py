@@ -2,8 +2,8 @@
 
 import gurobipy as gp
 from gurobipy import GRB
-from ...models import Node, Edge, Flags, Weights
-from ..lib.solver import create_gurobi_env
+from ...models import Node, Edge, Weights, LayerAssignmentResult
+from ..lib.solver import create_gurobi_env, optimize
 from ..lib.model import add_layer_variables_and_constraints
 from ..lib.results import read_assignment
 
@@ -15,11 +15,10 @@ def optimize_diff(
     layer_count: int,
     w: Weights,
     lam: dict[Edge, int],
-) -> tuple[dict[Node, int], Flags, float]:
+) -> LayerAssignmentResult:
     if layer_count < 1:
         raise ValueError("layer_count must be positive")
-    env = create_gurobi_env()
-    with gp.Model(name="Torus_Balance_Diff", env=env) as model:
+    with create_gurobi_env() as env, gp.Model(name="Torus_Balance_Diff", env=env) as model:
         y, t = add_layer_variables_and_constraints(
             model, V, A, layer_count, lam, torus_count, continuous=False
         )
@@ -27,6 +26,6 @@ def optimize_diff(
             w[u, v] * (y[v] - y[u] + layer_count * t[u, v]) for u, v in A
         )
         model.setObjective(objective, GRB.MINIMIZE)
-        model.optimize()
+        optimize(model)
         ranks, flags = read_assignment(model, V, A, y, t)
-        return ranks, flags, model.Runtime
+        return LayerAssignmentResult(ranks, flags, model.Runtime, model.Status, model.Runtime)

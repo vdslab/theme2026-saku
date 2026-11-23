@@ -29,9 +29,10 @@ from torus_layout.crossing.unwind import unwind_levels
 from torus_layout.drawing import DrawingOptions, create_figure
 from torus_layout.drawing import artists
 from torus_layout.drawing.output import output_figure
+from torus_layout.domain import vertical_bounds
 from torus_layout.layering import balance_layers, find_minimum_configuration
 from torus_layout.layering import search as search_module
-from torus_layout.layering.minimize_wraps import minimize_torus_edges
+from torus_layout.layering.minimize_wraps import minimize_torus_edges, solve_fixed_layers
 from torus_layout.layering.lib.solver import use_local_license
 from torus_layout.models import CoordinateResult, CrossingResult, LayerAssignmentResult
 from torus_layout.pipeline import run_pipeline
@@ -76,13 +77,13 @@ def record_solver(args, trace):
     def counted_candidate(nodes, edges, layer_count, *positional, **keywords):
         before = len(trace)
         try:
-            return minimize_torus_edges(nodes, edges, layer_count, *positional, **keywords)
+            return solve_fixed_layers(nodes, edges, layer_count, *positional, **keywords)
         finally:
             if len(trace) > before:
                 trace[-1]["candidate_layers"] = layer_count
 
     with use_local_license(args.local_license), patch.object(gp, "Model", measured_model), patch.object(
-        search_module, "minimize_torus_edges", counted_candidate
+        search_module, "solve_fixed_layers", counted_candidate
     ):
         yield
 
@@ -456,7 +457,7 @@ def uniform_coordinates(sub, crossing, iterations):
 
 def coordinate_metrics(sub, crossing, coordinates):
     positions, period = coordinates.positions, coordinates.period
-    radius = period / max(map(len, crossing.order.values())) / 2
+    lower, upper = vertical_bounds(period, max(map(len, crossing.order.values())))
     ys = [pos[1] for pos in positions.values()]
     gaps = []
     for order in crossing.order.values():
@@ -470,7 +471,7 @@ def coordinate_metrics(sub, crossing, coordinates):
         "period": period, "min_cyclic_gap": min(gaps, default=period),
         "order_violations": sum(gap <= 0 for gap in gaps),
         "gap_violations": sum(gap < 1 - 1e-7 for gap in gaps),
-        "domain_violations": sum(y < -radius - 1e-7 or y > period - radius + 1e-7 for y in ys),
+        "domain_violations": sum(not lower + 1e-9 < y < upper - 1e-9 for y in ys),
         "inner_segments": len(inner), "aligned_inner_segments": sum(
             abs(positions[v][1] - positions[u][1] + crossing.winding_numbers.get((u, v), 0)
                 * period) <= 1e-7 for u, v in inner
@@ -484,10 +485,12 @@ def coordinate_study(graph, run):
         return
     _, _, sub, paths = state
     crossing = reduce_crossings(sub)
+    embedding_crossings = count_crossings(sub, crossing)
 
     def evaluate(fn, *, geometric=True):
         coords, elapsed = attempt_time(fn)
-        metrics = {"algorithm_seconds": elapsed, **coordinate_metrics(sub, crossing, coords)}
+        metrics = {"algorithm_seconds": elapsed, "embedding_crossings": embedding_crossings,
+                   **coordinate_metrics(sub, crossing, coords)}
         if metrics["domain_violations"] or metrics["order_violations"]:
             metrics["status"] = "invalid_coordinates"
         if geometric and metrics.get("status", "ok") == "ok":
@@ -687,12 +690,12 @@ def drawing_study(case, run, image_dir):
         for name, *parameters in regimes:
             run("drawing_geometry", name, name, lambda: evaluate(*parameters))
 
-        def wrapped_route(edge, start, end):
+        def wrapped_route(edge, start, end, *, horizontal=1, vertical=0):
             from torus_layout.drawing.geometry import periodic_edge_segments
 
             pieces = periodic_edge_segments(
                 start, end, x_min=0, x_max=4, y_min=0, y_max=4,
-                horizontal_winding=1, vertical_winding=0,
+                horizontal_winding=horizontal, vertical_winding=vertical,
             )
             return Route(edge, [start, end], pieces, [])
 
@@ -709,11 +712,17 @@ def drawing_study(case, run, image_dir):
         overlap = planar_route((2, 3), [(1, 1), (3, 3)])
         seam_routes = [wrapped_route((0, 1), (3, 0.5), (1, 1.5)),
                        wrapped_route((2, 3), (3, 1.5), (1, 0.5))]
+        near_cut = (1, 4 - 1e-8)
+        shared_near_cut = [
+            wrapped_route((0, target), near_cut, (2, target), horizontal=0, vertical=1)
+            for target in (1, 2)
+        ]
         for name, routes, bounds, crossings, overlaps in (
             ("dummy_intersection", [first, second], None, 1, 0),
             ("shared_endpoint", [first, common_endpoint], None, 0, 0),
             ("coincident", [first, overlap], None, 0, 1),
             ("seam_crossing_once", seam_routes, (0, 0, 4, 4), 1, 0),
+            ("shared_endpoint_near_cut", shared_near_cut, (0, 0, 4, 4), 0, 0),
         ):
             run("crossing_counter", name, name,
                 lambda: validate_metric(routes, bounds, crossings, overlaps))

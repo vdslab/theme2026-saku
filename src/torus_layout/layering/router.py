@@ -5,7 +5,6 @@ from .. import constants
 from collections.abc import Callable
 from ..models import (
     Node,
-    Flags,
     Graph,
     Edge,
     Weights,
@@ -21,7 +20,7 @@ from .search import find_minimum_configuration
 
 type BalanceFunction = Callable[
     [list[Node], list[Edge], int, int, Weights, dict[Edge, int]],
-    tuple[dict[Node, int], Flags, float],
+    LayerAssignmentResult,
 ]
 
 _METHODS: dict[str, BalanceFunction] = {
@@ -46,10 +45,8 @@ def balance_layers(
     spans: dict[Edge, int] = {edge: 1 for edge in edges} if lam is None else lam
     if method not in _METHODS:
         raise ValueError(f"Unknown func_type: {method}")
-    return LayerAssignmentResult(
-        *_METHODS[method](
-            list(graph.nodes), edges, torus_count, layer_count, weights, spans
-        )
+    return _METHODS[method](
+        list(graph.nodes), edges, torus_count, layer_count, weights, spans
     )
 
 
@@ -74,7 +71,7 @@ def assign_layers(
     if search.layer_count is None or search.torus_count is None:
         return None
     assignment = balance_layers(
-        graph, search.torus_count, search.layer_count, method, w=w, lam=lam
+        graph, search.torus_count, search.layer_count, method, w=w, lam=lam,
     )
     if not assignment.node_to_layer:
         return None

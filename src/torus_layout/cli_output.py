@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .models import Graph, PipelineConfig, PipelineResult
+from .reporting import boundary_metrics
 from .seam_comparison import SeamComparison
 
 
@@ -59,13 +60,20 @@ def save_outputs(
         "original_edges": len(graph.edges),
         "subdivided_nodes": len(result.subdivided.graph.nodes),
         "segments": len(result.subdivided.graph.edges),
+        "max_proper_layer_size": max(map(len, result.subdivided.layers.values()), default=0),
+        **boundary_metrics(result.subdivided, result.crossing.winding_numbers),
         "layers": len(result.crossing.order),
         "seam_segments": comparison.after_seams,
         "crossings": comparison.after_crossings,
         "seam_segments_before": comparison.before_seams,
         "crossings_before": comparison.before_crossings,
         "layer_search_seconds": result.search.runtime,
-        "balance_seconds": result.assignment.runtime,
+        "layer_search_solver_seconds": result.search.solver_time,
+        "layer_search_solver_status": result.search.solver_status,
+        "balance_seconds": result.balance_time,
+        "balance_solver_seconds": result.assignment.solver_time,
+        "balance_solver_status": result.assignment.solver_status,
+        "subdivision_seconds": result.subdivision_time,
         "crossing_seconds": result.crossing_time,
         "coordinate_seconds": result.coordinate_time,
         "computation_wall_seconds": computation_seconds,

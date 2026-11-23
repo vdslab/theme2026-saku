@@ -36,18 +36,23 @@ def reduce_crossings(
     boundaries = defaultdict(list)
     for edge in edge_list:
         boundaries[node_layers[edge[0]]].append(edge)
-    inner_edges = tuple(edge for edge in edge_list if _is_inner(edge))
+    inner_boundaries = {layer: [edge for edge in boundary if _is_inner(edge)]
+                        for layer, boundary in boundaries.items()}
     winding = dict.fromkeys(edge_list, 0)
     best = _copy_order(order)
     best_winding = winding.copy()
 
-    def score():
+    def score_boundary(layer):
+        positions = {node: index for level in (layer, layer + 1)
+                     for index, node in enumerate(order[level])}
         return (
-            count_crossings(order, inner_edges, winding),
-            count_crossings(order, edge_list, winding),
+            _count_boundary(inner_boundaries[layer], positions, winding),
+            _count_boundary(boundaries[layer], positions, winding),
         )
 
-    best_score = score()
+    scores = {layer: score_boundary(layer) for layer in boundaries}
+    best_score = (sum(inner for inner, _ in scores.values()),
+                  sum(total for _, total in scores.values()))
     seen = set()
     for _ in range(rounds):
         state = tuple(tuple(nodes) for nodes in order.values()), tuple(winding.values())
@@ -55,8 +60,12 @@ def reduce_crossings(
             break
         seen.add(state)
         for downward in (True, False):
+            dirty = set()
             levels = sorted(boundaries, reverse=not downward)
             for layer in levels:
+                free_layer = layer + 1 if downward else layer
+                previous_order = tuple(order[free_layer])
+                previous_winding = [winding[edge] for edge in boundaries[layer]]
                 if downward:
                     _sift_boundary(order[layer], order[layer + 1], boundaries[layer], winding)
                 else:
@@ -64,7 +73,14 @@ def reduce_crossings(
                     reversed_winding = {(v, u): -winding[u, v] for u, v in boundaries[layer]}
                     _sift_boundary(order[layer + 1], order[layer], reversed_edges, reversed_winding)
                     winding.update({(v, u): -offset for (u, v), offset in reversed_winding.items()})
-            current = score()
+                if tuple(order[free_layer]) != previous_order:
+                    dirty.update((free_layer - 1, free_layer))
+                if any(winding[edge] != old for edge, old in zip(boundaries[layer], previous_winding)):
+                    dirty.add(layer)
+            for layer in dirty & boundaries.keys():
+                scores[layer] = score_boundary(layer)
+            current = (sum(inner for inner, _ in scores.values()),
+                       sum(total for _, total in scores.values()))
             if current < best_score:
                 best, best_winding, best_score = _copy_order(order), winding.copy(), current
 
@@ -203,12 +219,12 @@ def count_crossings(
     for edge in edge_list:
         by_boundary[node_layers[edge[0]]].append(edge)
 
-    total = 0
-    for boundary_edges in by_boundary.values():
-        for index, first in enumerate(boundary_edges):
-            for second in boundary_edges[index + 1 :]:
-                total += _pair_crossings(first, second, positions, winding)
-    return total
+    return sum(_count_boundary(edges, positions, winding) for edges in by_boundary.values())
+
+
+def _count_boundary(edges, positions, winding):
+    return sum(_pair_crossings(first, second, positions, winding)
+               for index, first in enumerate(edges) for second in edges[index + 1:])
 
 
 def _pair_crossings(

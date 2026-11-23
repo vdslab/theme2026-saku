@@ -61,14 +61,14 @@ def _run(args: argparse.Namespace) -> None:
         "Gurobi: " + ("local（明示指定）" if args.local_license else ".env WLS設定"),
         flush=True,
     )
-    started = perf_counter()
     with use_local_license(args.local_license):
+        started = perf_counter()
         result = run_pipeline(graph, config)
+        computation_seconds = perf_counter() - started
         if result is None:
             raise RuntimeError("階層割当に失敗しました")
         report_pipeline(result)
         comparison = compare_seams(result, config, enabled=args.compare_seams)
-    computation_seconds = perf_counter() - started
     save_outputs(
         args, graph, config, result, comparison, parameters, used_seed,
         computation_seconds,

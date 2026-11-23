@@ -2,9 +2,9 @@
 
 from ... import constants
 
-import time
+from time import perf_counter
 from collections import defaultdict
-from ...models import Node, Edge, Flags, Weights
+from ...models import Node, Edge, Weights, LayerAssignmentResult
 from .diff import optimize_diff
 
 
@@ -15,13 +15,14 @@ def optimize_barycenter(
     layer_count: int,
     w: Weights,
     lam: dict[Edge, int],
-) -> tuple[dict[Node, int], Flags, float]:
+) -> LayerAssignmentResult:
     """diffの初期解から、元と同じ反復・補正で重心を整える。"""
     max_layer_bound = layer_count - 1
-    y_val, t_val, init_time = optimize_diff(V, A, torus_count, layer_count, w, lam)
-    if not y_val:
-        return (y_val, t_val, init_time)
-    start_time = time.time()
+    initial = optimize_diff(V, A, torus_count, layer_count, w, lam)
+    if not initial.node_to_layer:
+        return initial
+    y_val, t_val = initial.node_to_layer, initial.torus_flags
+    start_time = perf_counter()
     for u, v in A:
         if not t_val[u, v] and y_val[u] == y_val[v]:
             if y_val[v] < max_layer_bound:
@@ -104,6 +105,7 @@ def optimize_barycenter(
         iteration += 1
         if total_change < threshold:
             break
-    heuristic_time = time.time() - start_time
-    total_time = init_time + heuristic_time
-    return (y_val, t_val, total_time)
+    return LayerAssignmentResult(
+        y_val, t_val, initial.runtime + perf_counter() - start_time,
+        initial.solver_status, initial.solver_time,
+    )

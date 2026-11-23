@@ -26,6 +26,7 @@ LABELS = {"dag": "DAG", "random": "Random", "scc_chain": "SCC chain", "watts_str
           "torus": "トーラス", "sugiyama": "平面杉山", "radial": "放射型", "dot": "Graphviz dot",
           "cylindrical_reference": "円筒対照", "torus_without_unwind_or_dp": "UNWIND・DP なし",
           "case_timeout": "worker 時間切れ", "error": "実行エラー", "no_solution": "解なし",
+          "license_size_limit": "ライセンスの規模上限",
           "invalid_assignment": "制約違反", "invalid_coordinates": "座標違反",
           "unproven": "最適性未確定", "ok": "完了"}
 STYLE = """

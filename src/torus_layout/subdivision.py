@@ -18,6 +18,8 @@ def _insert_dummy_node(
     L: Layers,
     t_val: Flags | None = None,
     w: Weights | None = None,
+    *,
+    segment_counts: list[int] | None = None,
 ) -> tuple[list[Node], list[Edge], Layers, Flags, Weights]:
     """
     平坦トーラス上の階層グラフに対して、長距離エッジを分割するダミーノードを挿入する共通処理。
@@ -59,6 +61,8 @@ def _insert_dummy_node(
         u_layer = node_to_layer.get(u)
         v_layer = node_to_layer.get(v)
         if u_layer is None or v_layer is None:
+            if segment_counts is not None:
+                segment_counts.append(1)
             new_A.append((u, v))
             new_w[u, v] = w_uv
             new_t[u, v] = t_uv
@@ -67,6 +71,8 @@ def _insert_dummy_node(
         i_v = layer_index[v_layer]
         M = len(layers)
         forward_steps = (i_v - i_u) % M
+        if segment_counts is not None:
+            segment_counts.append(max(1, forward_steps))
         if forward_steps == 0 or forward_steps == 1:
             new_A.append((u, v))
             new_w[u, v] = w_uv
@@ -103,9 +109,12 @@ def insert_dummy_nodes(
 ) -> SubdividedGraph:
     """明示した空レイヤーも保持する。省略時は階層割当から導出する。"""
     layer_map = assignment.layers if layers is None else layers
+    segment_counts: list[int] = []
     nodes, edges, divided_layers, flags, weights = _insert_dummy_node(
-        list(graph.nodes), list(graph.edges), layer_map, assignment.torus_flags, w
+        list(graph.nodes), list(graph.edges), layer_map, assignment.torus_flags, w,
+        segment_counts=segment_counts,
     )
     return SubdividedGraph(
-        Graph(tuple(nodes), tuple(edges)), divided_layers, flags, weights, graph.nodes
+        Graph(tuple(nodes), tuple(edges)), divided_layers, flags, weights, graph.nodes,
+        tuple(segment_counts),
     )

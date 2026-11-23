@@ -2,7 +2,7 @@
 
 from . import constants
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 type Node = int | str
@@ -27,6 +27,8 @@ class LayerSearchResult:
     layer_count: int | None
     torus_count: int | None
     runtime: float
+    solver_time: float = 0.0
+    solver_status: int | None = None
 
 
 @dataclass(frozen=True)
@@ -34,6 +36,8 @@ class LayerAssignmentResult:
     node_to_layer: dict[Node, int]
     torus_flags: Flags
     runtime: float
+    solver_status: int | None = field(default=None, compare=False)
+    solver_time: float | None = field(default=None, compare=False)
 
     @property
     def layers(self) -> Layers:
@@ -50,6 +54,7 @@ class SubdividedGraph:
     torus_flags: Flags
     weights: Weights
     original_nodes: tuple[Node, ...]
+    segment_counts: tuple[int, ...] = field(default=(), compare=False, repr=False)
 
     @property
     def dummy_nodes(self) -> set[Node]:
@@ -78,6 +83,8 @@ class PipelineResult:
     coordinates: CoordinateResult
     crossing_time: float
     coordinate_time: float
+    balance_time: float = 0.0
+    subdivision_time: float = 0.0
 
 
 @dataclass(frozen=True)

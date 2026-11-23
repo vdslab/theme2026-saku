@@ -1,5 +1,7 @@
 import pytest
 from torus_layout import Graph
+from torus_layout.models import LayerAssignmentResult
+from gurobipy import GRB
 from torus_layout.layering import (
     balance_diff,
     balance_layers,
@@ -125,7 +127,45 @@ def test_binary_search_keeps_query_sequence(threshold, monkeypatch):
     expected = old_search.find_minimum_torus_configuration(list(range(6)), [])
     old_queries = list(queries)
     queries.clear()
-    monkeypatch.setattr(search, "minimize_torus_edges", solve)
+
+    def solve_candidate(nodes, edges, layers, lam):
+        *_, count = solve(nodes, edges, layers)
+        return minimize_wraps.FixedLayerSolve(
+            LayerAssignmentResult({}, {}, 0), count, GRB.OPTIMAL
+        )
+
+    monkeypatch.setattr(search, "solve_fixed_layers", solve_candidate)
     actual = search.find_minimum_configuration(Graph(tuple(range(6)), ()))
     assert (actual.layer_count, actual.torus_count) == expected[:2]
     assert queries == old_queries
+
+
+def test_search_continues_after_time_limit_with_no_candidate(monkeypatch):
+    from torus_layout.layering import search
+
+    results = iter((1, None, 1))
+
+    def solve(nodes, edges, layers, lam):
+        return minimize_wraps.FixedLayerSolve(
+            LayerAssignmentResult({}, {}, 0), next(results), GRB.TIME_LIMIT
+        )
+
+    monkeypatch.setattr(search, "solve_fixed_layers", solve)
+    result = search.find_minimum_configuration(Graph(tuple(range(4)), ()))
+    assert (result.layer_count, result.torus_count) == (3, 1)
+
+
+def test_time_limit_with_no_solution_never_reads_variables(local_solver, monkeypatch):
+    from contextlib import contextmanager
+
+    @contextmanager
+    def immediate_limit():
+        with local_solver() as env:
+            env.setParam("TimeLimit", 0)
+            yield env
+
+    monkeypatch.setattr(minimize_wraps, "create_gurobi_env", immediate_limit)
+    result = minimize_wraps.solve_fixed_layers([0, 1], [(0, 1)], 2)
+    assert result.status == GRB.TIME_LIMIT
+    assert result.torus_count is None
+    assert result.assignment.node_to_layer == {}

@@ -7,6 +7,7 @@ from os import PathLike
 from pathlib import Path
 import math
 from ..models import Node, Edge, Layers, Positions, Winding
+from ..domain import vertical_bounds
 from ..validation import is_number
 from .models import DrawingData
 from .geometry import (
@@ -84,7 +85,7 @@ def prepare_drawing(
         raise ValueError("vertical_period must be a finite positive number")
     coordinate_gap = period / max(max_layer_size, 1)
     x_min, x_max = (-0.5, num_layers - 0.5)
-    y_min, y_max = (-coordinate_gap / 2.0, period - coordinate_gap / 2.0)
+    y_min, y_max = vertical_bounds(period, max_layer_size)
     if pos is None:
         pos = assign_positions(
             A=A,

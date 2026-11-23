@@ -2,6 +2,7 @@ import copy
 import pytest
 from torus_layout import Graph
 from torus_layout.models import LayerAssignmentResult
+from torus_layout.reporting import boundary_metrics
 from torus_layout.subdivision import insert_dummy_nodes
 from old_torus_layout.lib.insert_dummy_node import insert_dummy_node as legacy
 
@@ -35,6 +36,19 @@ def test_subdivision_matches_legacy(nodes, edges, layers, flags):
     ) == expected
     assert actual.original_nodes == nodes
     assert (nodes, edges, layers, flags) == original
+
+
+def test_boundary_metrics_count_original_edge_occurrences_and_multiple_windings():
+    graph = Graph((0, 1, 2, 3), ((0, 2), (0, 2), (3, 0)))
+    assignment = LayerAssignmentResult({node: node for node in graph.nodes}, {(3, 0): True}, 0)
+    subdivided = insert_dummy_nodes(graph, assignment)
+    first, second, third = subdivided.graph.edges[:3]
+
+    assert subdivided.segment_counts == (2, 2, 1)
+    assert boundary_metrics(subdivided, {first: 2, second: -1, third: 1}) == {
+        "x_seam_edges": 1, "x_seam_segments": 1, "x_seam_events": 1,
+        "y_seam_edges": 2, "y_seam_segments": 3, "y_seam_events": 4,
+    }
 
 
 def test_layer_index_avoids_repeated_membership_scans():

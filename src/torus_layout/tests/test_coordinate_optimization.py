@@ -50,6 +50,22 @@ def test_signed_winding_and_horizontal_wrap(local_solver, monkeypatch):
     assert result.positions['b'][1] > result.positions['a'][1] + .999
 
 
+@pytest.mark.parametrize("period", [2.0, 2.5, 3.2])
+def test_expanded_lp_domain_is_accepted_by_drawing(period, local_solver, monkeypatch):
+    from torus_layout.coordinates import api
+    from torus_layout.drawing.preparation import prepare_drawing
+
+    monkeypatch.setattr(optimization, "create_gurobi_env", local_solver)
+    monkeypatch.setattr(api, "drawing_period", lambda *args: period)
+    graph = SubdividedGraph(Graph((0, 1, 2), ((0, 2), (1, 2))),
+                            {0: [0, 1], 1: [2]}, {}, {}, (0, 1, 2))
+    crossing = CrossingResult(graph.layers, {(0, 2): -1})
+    result = assign_coordinates(graph, crossing, method="torus_lp")
+    prepare_drawing(list(graph.original_nodes), list(graph.graph.edges), graph.layers,
+                    crossing.order, crossing.winding_numbers, pos=result.positions,
+                    vertical_period=result.period)
+
+
 def test_dummy_bend_reduction(local_solver, monkeypatch):
     monkeypatch.setattr(optimization, 'create_gurobi_env', local_solver)
     graph = SubdividedGraph(Graph(('a', 'd', 'b'), (('a', 'd'), ('d', 'b'))),
