@@ -315,7 +315,7 @@ def seams(trial, run):
     _,_,sub,paths=base
 
     def candidates():
-        rotated=reduce_crossings(sub,unwind=False,optimize_seams=False)
+        rotated=reduce_crossings(sub,unwind=False,optimize_seams=False,algo2=True)
         dp_only=optimize_seam(sub,rotated)
         early=unwind_levels(sub,rotated)
         first=optimize_seam(sub,early)

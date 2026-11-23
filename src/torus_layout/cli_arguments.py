@@ -38,11 +38,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=constants.DEFAULT_GRAPH_TYPE,
     )
     parser.add_argument(
-        "--nodes", "--node", type=int, default=constants.DEFAULT_NODE_COUNT, help=f"元ノード数（既定: {constants.DEFAULT_NODE_COUNT}）"
+        "--nodes",
+        "--node",
+        type=int,
+        default=constants.DEFAULT_NODE_COUNT,
+        help=f"元ノード数（既定: {constants.DEFAULT_NODE_COUNT}）",
     )
-    parser.add_argument("--seed", type=int, default=constants.DEFAULT_RANDOM_SEED, help=f"再現用seed（既定: {constants.DEFAULT_RANDOM_SEED}）")
-    parser.add_argument("--cycles", type=int, default=constants.DEFAULT_CYCLE_COUNT, help="cyclic生成器の閉路数")
-    parser.add_argument("--edge-prob", type=_probability, default=constants.DEFAULT_EDGE_PROBABILITY)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=constants.DEFAULT_RANDOM_SEED,
+        help=f"再現用seed（既定: {constants.DEFAULT_RANDOM_SEED}）",
+    )
+    parser.add_argument(
+        "--cycles",
+        type=int,
+        default=constants.DEFAULT_CYCLE_COUNT,
+        help="cyclic生成器の閉路数",
+    )
+    parser.add_argument(
+        "--edge-prob", type=_probability, default=constants.DEFAULT_EDGE_PROBABILITY
+    )
     parser.add_argument(
         "--cycle-prob",
         type=_probability,
@@ -50,7 +66,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="mixed生成器の閉路ノード確率",
     )
     parser.add_argument(
-        "--neighbors", type=int, default=constants.DEFAULT_NEIGHBOR_COUNT, help="Watts–Strogatzの近傍数k"
+        "--neighbors",
+        type=int,
+        default=constants.DEFAULT_NEIGHBOR_COUNT,
+        help="Watts–Strogatzの近傍数k",
     )
     parser.add_argument(
         "--rewire-prob",
@@ -63,40 +82,60 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["diff", "diff_square", "qp", "barycenter"],
         default=constants.DEFAULT_BALANCE_METHOD,
     )
-    parser.add_argument("--rounds", type=_nonnegative_int, default=constants.DEFAULT_ROUNDS)
     parser.add_argument(
-        "--sifting-method", choices=["radial", "shortest", "parting"],
+        "--rounds", type=_nonnegative_int, default=constants.DEFAULT_ROUNDS
+    )
+    parser.add_argument(
+        "--sifting-method",
+        choices=["radial", "shortest", "parting", "global"],
         default=constants.DEFAULT_SIFTING_METHOD,
-        help="sifting方式（radial: 原著の片側探索、shortest: 最短巻き、parting: 全体評価付きの旧方式）",
+        help="sifting方式（radial: 片側探索、global: 全層の長辺ブロック、shortest: 最短巻き、parting: 旧方式）",
     )
     parser.add_argument(
         "--coordinate-method",
         choices=["torus_qp", "torus_lp", "brandes_koepf", "brandes_koepf_3x3"],
         default=constants.DEFAULT_COORDINATE_METHOD,
     )
-    parser.add_argument("--bend-weight", type=_nonnegative_float, default=constants.DEFAULT_BEND_WEIGHT)
     parser.add_argument(
-        "--no-optimize-seams", action="store_true", default=not constants.DEFAULT_OPTIMIZE_SEAMS, help="境界最適化DPを無効化"
+        "--bend-weight", type=_nonnegative_float, default=constants.DEFAULT_BEND_WEIGHT
+    )
+    parser.add_argument(
+        "--no-optimize-seams",
+        action="store_true",
+        default=not constants.DEFAULT_OPTIMIZE_SEAMS,
+        help="境界最適化DPを無効化",
+    )
+    parser.add_argument(
+        "--algo2",
+        action=argparse.BooleanOptionalAction,
+        default=constants.DEFAULT_ALGO2,
+        help="層回転（Algorithm 2）を有効化",
     )
     parser.add_argument(
         "--unwind",
         action=argparse.BooleanOptionalAction,
         default=constants.DEFAULT_UNWIND_LEVELS,
-        help="Algo2後にUNWIND-LEVELを実行（--no-unwindで無効化）",
+        help="UNWIND-LEVELを有効化",
     )
     parser.add_argument(
         "--compare-seams",
         action="store_true",
         help="同一階層割当で境界最適化前の結果も計算・描画",
     )
-    parser.add_argument("--output-dir", type=Path, default=Path(constants.DEFAULT_OUTPUT_DIR))
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path(constants.DEFAULT_OUTPUT_DIR)
+    )
     parser.add_argument(
         "--show",
         action=argparse.BooleanOptionalAction,
         default=constants.DEFAULT_CLI_SHOW,
         help="全処理の完了後に描画画面を表示（--no-showで保存のみ）",
     )
-    parser.add_argument("--draw-dummy-nodes", action="store_true", default=constants.DEFAULT_DRAW_DUMMY_NODES)
+    parser.add_argument(
+        "--draw-dummy-nodes",
+        action="store_true",
+        default=constants.DEFAULT_DRAW_DUMMY_NODES,
+    )
     parser.add_argument(
         "--tile-surroundings",
         action=argparse.BooleanOptionalAction,

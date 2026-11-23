@@ -27,7 +27,7 @@ def run_pipeline(
     started = perf_counter()
     crossing = reduce_crossings(
         subdivided, rounds=config.rounds, optimize_seams=config.optimize_seams,
-        unwind=config.unwind_levels, sifting_method=config.sifting_method,
+        unwind=config.unwind_levels, sifting_method=config.sifting_method, algo2=config.algo2,
     )
     crossing_time = perf_counter() - started
 

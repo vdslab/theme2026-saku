@@ -97,13 +97,13 @@ def test_nonadjacent_edges_rejected():
         optimize_seam(graph, CrossingResult(layers, {}))
 
 
-def test_default_crossing_integration_reduces_seams():
+def test_radial_crossing_integration_reduces_seams():
     # Search a reproducible set of proper graphs, rather than an artificial DP table.
     reductions = 0
     for seed in range(15):
         graph, _ = _case(seed)
-        baseline = reduce_crossings(graph, rounds=1, optimize_seams=False)
-        optimized = reduce_crossings(graph, rounds=1)
+        baseline = reduce_crossings(graph, rounds=1, optimize_seams=False, sifting_method="radial")
+        optimized = reduce_crossings(graph, rounds=1, sifting_method="radial")
         assert count_seam_segments(graph, optimized) <= count_seam_segments(graph, baseline)
         assert count_crossings(graph, optimized) == count_crossings(graph, baseline)
         reductions += count_seam_segments(graph, optimized) < count_seam_segments(graph, baseline)

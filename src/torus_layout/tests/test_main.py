@@ -21,20 +21,25 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
     environment.update(PYTHONPATH=str(ROOT / "src"), MPLBACKEND="Agg",
                        MPLCONFIGDIR=str(tmp_path / "mpl"), PYTHONDONTWRITEBYTECODE="1")
     entry = ["-m", "torus_layout"] if entrypoint == "module" else ["src/torus_layout/main.py"]
+    sifting = ["--sifting-method", "radial", "--unwind", "--algo2"] if entrypoint == "script" else []
+    expected_method = "radial" if entrypoint == "script" else "global"
     if entrypoint == "script":
         environment.pop("PYTHONPATH", None)
     command = [str(ROOT / "theme2026-saku/bin/python"), *entry,
                "--nodes", "12", "--seed", "0", "--rounds", "1",
-               "--local-license", "--compare-seams", "--no-show", "--output-dir", str(tmp_path)]
+               *sifting, "--local-license", "--compare-seams", "--no-show", "--output-dir", str(tmp_path)]
     completed = subprocess.run(command, cwd=ROOT, env=environment,
                                capture_output=True, text=True, timeout=60)
     assert completed.returncode == 0, completed.stdout + completed.stderr
     payload = json.loads((tmp_path / "result.json").read_text())
     assert payload["status"] == "completed"
     assert payload["settings"]["pipeline"]["optimize_seams"] is True
-    assert payload["settings"]["pipeline"]["unwind_levels"] is True
+    expected_unwind = expected_method == "radial"
+    assert payload["settings"]["pipeline"]["unwind_levels"] is expected_unwind
+    assert payload["settings"]["pipeline"]["algo2"] is expected_unwind
+    assert f"UNWIND: {expected_unwind}" in completed.stdout
     assert payload["settings"]["pipeline"]["coordinate_method"] == "brandes_koepf"
-    assert payload["settings"]["pipeline"]["sifting_method"] == "radial"
+    assert payload["settings"]["pipeline"]["sifting_method"] == expected_method
     assert payload["settings"]["license_mode"] == "local"
     assert payload["settings"]["drawing"]["tile_surroundings"] is True
     metrics = payload["metrics"]

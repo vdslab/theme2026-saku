@@ -22,14 +22,23 @@ CLIと描画APIで従来から異なる周辺タイル表示の既定値は、�
 PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 ```
 
-グラフ生成 → 階層割当 → ダミー挿入 → sifting・回転 → UNWIND-LEVEL → 境界最適化DP →
+グラフ生成 → 階層割当 → ダミー挿入 → sifting → 必要に応じて層回転 → 必要に応じてUNWIND-LEVEL → 境界最適化DP →
 BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
 既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
-階層バランス`diff_square`、siftingは`radial`で層間ごとに5回、UNWIND・境界最適化有効、座標方式`brandes_koepf`です。
+階層バランス`diff_square`、siftingは`global`で最大5回、UNWIND無効、境界最適化有効、座標方式`brandes_koepf`です。
 
 `radial` は原著のAlgorithm 1に沿い、片側の層を固定して、もう片側の頂点位置と辺の巻き数を差分で評価します。移動前の位置と巻き数を最初の最良候補とし、重み付き交差数が厳密に減った場合に更新します。最終層から第1層への接続も固有の層間として処理し、2層のときも両方向の帯を分けます。局所処理後は隣の層間や全体の交差が増えることがあります。
 
 `--sifting-method parting` は全体最良の保存とダミー間線分の重み付けを行う従来方式、`--sifting-method shortest` は候補ごとに最短の巻き数を選び、前後両方の層間を評価する方式です。
+
+`--sifting-method global` は Bachmaier ら（2011）の Global Sifting §5.4 をトーラスに適用した方式です。
+元頂点を単独のブロック、元の長辺のダミー頂点列を一つのブロックとして、全層で共有する順序の中で動かします。
+各候補で影響する帯の交差を評価し、入辺側と出辺側の外部線分には帯ごとに parting を試します。
+内部線分の巻き数を共有の切れ目で 0 に保つことで、最終層と第1層の間も含め、内部線分同士の交差を予防します。
+層回転（Algorithm 2）は既定で無効です。`--algo2`、`PipelineConfig(algo2=True)`、または `reduce_crossings(..., algo2=True)` で有効化できます。
+UNWINDとは独立した設定で、併用時は層回転を先に実行します。
+この実装は候補位置ごとに parting を列挙し、論文の差分高速化をそのまま再現したものではありません。
+座標割当は他方式との比較用に共通の BK を使います。
 
 `radial` では [原著 §V-A](https://www.infosun.fim.uni-passau.de/~chris/down/RadialVisualization.pdf#page=9) に従い、両方の線分がダミー頂点間の線分である交差（タイプ2）を、対象層間の辺数 `|E|` で重み付けします。タイプ0・1の交差は重み1です。採否に使うのは、この重み付き交差数です。
 `--seed` で乱数seedを固定すると同じ入力を再生成できます。
@@ -83,7 +92,7 @@ BK系＋周期平滑化による座標割当 → 評価表示・描画保存、�
 ```
 
 `--no-optimize-seams` で境界最適化を無効化できます。
-`--no-unwind` でUNWIND-LEVELを無効化できます。
+UNWIND-LEVELは既定で無効です。どのsifting方式でも `--unwind` で有効化できます。
 比較モードでは、通過線分数が増加せず、辺同士の交差数が変わらないことも検証し、
 違反した場合は終了コード1を返します。
 
@@ -112,7 +121,7 @@ CLIの引数定義・検証は `cli_arguments.py`、境界最適化の比較は 
 
 ## UNWIND-LEVEL
 
-Algo2の回転・交差チェックの後、切れ目DPの前に、層間の共通の整数巻きを取り除きます。
+Algo2を有効にした場合は層回転の後に、いずれの場合も切れ目DPの前に、層間の共通の整数巻きを取り除きます。
 各層間でダミー間線分の最小巻き数 `m` を求め、その層間の全線分から `m` を引きます。
 内部線分がない層間では、同じ向きに換算した全線分の巻き数の最頻値を `m` とします。
 この選択は、その層間の非ゼロ巻き数を持つ線分の本数を最小にします。重複線分も本数に含めます。
@@ -128,13 +137,13 @@ Algo2の回転・交差チェックの後、切れ目DPの前に、層間の共�
 指摘画像の再現例では、上下の境界通過線分数3→0、交差数0→0を確認しました。
 [Algo2との違い・検証記録](../../documents/algo2_common_turn_check.md)も参照してください。
 
-`PipelineConfig(unwind_levels=False)` または `reduce_crossings(..., unwind=False)` で無効化できます。
+`PipelineConfig(unwind_levels=True)` または `reduce_crossings(..., unwind=True)` で有効化できます。
 旧版を再現する場合は、さらに `optimize_seams=False` を指定します。
 `--compare-seams` の比較前後には同じUNWIND設定を適用します。
 
 ## 境界通過線分数の最適化（追加機能）
 
-現在の `reduce_crossings` / `run_pipeline` は、sifting・回転・UNWINDの後に、
+現在の `reduce_crossings` / `run_pipeline` は、siftingと、指定した場合は層回転・UNWINDの後に、
 各レイヤーの切れ目を選ぶ厳密DPをデフォルトで実行します。
 `crossing/seam.py` の区間加算・最小値セグメント木で候補値を差分更新し、
 全隣接ペアの密な通過数表は構築しません。
@@ -204,7 +213,7 @@ rootの `__init__.py` は `Graph` だけを公開し、ソルバーやMatplotlib
 | `layering.balance_layers` | `balance/` から4手法を選ぶ。`lib/model.py` と `lib/results.py` が共通の制約・解の取得を担当する |
 | `layering.assign_layers` | 現在の階層数探索とバランス調整を順に実行する |
 | `subdivision.insert_dummy_nodes` | 長距離辺を分割し、重みとトーラスフラグを引き継ぐ |
-| `crossing.reduce_crossings` | `initialization.py` の円形重心初期順序、`sifting.py` のglobal guard付きsifting、`lib/embedding.py` の回転を順に適用する |
+| `crossing.reduce_crossings` | `initialization.py` の円形重心初期順序、`sifting.py` などのsifting、指定に応じて `lib/embedding.py` の層回転を適用する |
 | `crossing.count_crossings` | `lib/crossings.py` で現在のradial交差数を評価する |
 | `coordinates.assign_coordinates` | `brandes_koepf.py` の4方向BK系整列・圧縮・中央値統合と、`periodic.py` の周期的な射影・平滑化を行う |
 | `drawing.create_figure` | `preparation.py` の検証・補完、`geometry.py` の周期境界処理、`artists.py` の図形描画を組み立て、Figureを返す |

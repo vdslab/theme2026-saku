@@ -64,7 +64,7 @@ def guarded_seams(manifest, solver_seconds):
         with record_solver(SimpleNamespace(local_license=True, solver_seconds=solver_seconds), solves):
             try:
                 _, _, sub, paths = prepared(graph)
-                rotated = reduce_crossings(sub, unwind=False, optimize_seams=False)
+                rotated = reduce_crossings(sub, unwind=False, optimize_seams=False, algo2=True)
                 dp_only = optimize_seam(sub, rotated)
                 early = unwind_levels(sub, rotated)
                 first = optimize_seam(sub, early)
@@ -81,7 +81,7 @@ def guarded_seams(manifest, solver_seconds):
                 guarded = min((current, dp_only), key=seam_count)
                 checked = None
                 if len(graph.nodes) == 10:
-                    checked = current == reduce_crossings(sub, unwind=True, optimize_seams=True)
+                    checked = current == reduce_crossings(sub, unwind=True, optimize_seams=True, algo2=True)
             except (ValueError, AttributeError, RuntimeError, gp.GurobiError) as exc:
                 yield {**common, "variant": "input", "status": type(exc).__name__,
                        "solver_errno": getattr(exc, "errno", None)}

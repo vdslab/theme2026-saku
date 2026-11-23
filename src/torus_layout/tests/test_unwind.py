@@ -39,11 +39,28 @@ def test_screenshot_three_unnecessary_wraps_are_removed():
     assert (graph, crossing) == before
 
 
+def test_global_pipeline_applies_unwind_only_when_requested(monkeypatch):
+    from torus_layout.crossing import api
+
+    graph, _ = screenshot_case()
+    calls = []
+
+    def observe_unwind(*args, **kwargs):
+        calls.append(True)
+        return unwind_levels(*args, **kwargs)
+
+    monkeypatch.setattr(api, "unwind_levels", observe_unwind)
+    reduce_crossings(graph, sifting_method="global")
+    assert not calls
+    reduce_crossings(graph, unwind=True, sifting_method="global")
+    assert calls
+
+
 def test_parting_pipeline_unwinds_before_seam_selection(monkeypatch):
     from torus_layout.crossing import api
 
     graph, _ = screenshot_case()
-    baseline = reduce_crossings(graph, rounds=5, unwind=False, sifting_method="parting")
+    baseline = reduce_crossings(graph, rounds=5, unwind=False, sifting_method="parting", algo2=True)
     assert count_seam_segments(graph, baseline) == 3
     original_dp = api.optimize_seam
     calls = []
@@ -54,7 +71,7 @@ def test_parting_pipeline_unwinds_before_seam_selection(monkeypatch):
         return original_dp(graph, crossing)
 
     monkeypatch.setattr(api, "optimize_seam", check_dp_input)
-    result = reduce_crossings(graph, rounds=5, sifting_method="parting")
+    result = reduce_crossings(graph, rounds=5, unwind=True, sifting_method="parting", algo2=True)
     assert calls == [True]
     assert count_seam_segments(graph, result) == 0
     assert count_crossings(graph, result) == count_crossings(graph, baseline) == 0
@@ -110,8 +127,8 @@ def test_full_ws_case_removes_ten_and_eleven_wraps_after_seam_selection():
     ranks = {node: ranks[node] for node in nodes}
     assignment = LayerAssignmentResult(ranks, {e: ranks[e[0]] > ranks[e[1]] for e in edges}, 0)
     graph = insert_dummy_nodes(Graph(tuple(nodes), tuple(edges)), assignment)
-    baseline = reduce_crossings(graph, rounds=5, unwind=False, sifting_method="parting")
-    result = reduce_crossings(graph, rounds=5, sifting_method="parting")
+    baseline = reduce_crossings(graph, rounds=5, unwind=False, sifting_method="parting", algo2=True)
+    result = reduce_crossings(graph, rounds=5, unwind=True, sifting_method="parting", algo2=True)
     assert baseline.winding_numbers[52, 12] == baseline.winding_numbers[11, 12] == 3
     assert result.winding_numbers[10, 52] == 0
     assert result.winding_numbers[52, 12] == result.winding_numbers[11, 12] == 0
