@@ -65,10 +65,10 @@ def test_parting_pipeline_unwinds_before_seam_selection(monkeypatch):
     original_dp = api.optimize_seam
     calls = []
 
-    def check_dp_input(graph, crossing):
+    def check_dp_input(graph, crossing, *, prioritize_internal=False):
         assert count_seam_segments(graph, crossing) == 0
         calls.append(True)
-        return original_dp(graph, crossing)
+        return original_dp(graph, crossing, prioritize_internal=prioritize_internal)
 
     monkeypatch.setattr(api, "optimize_seam", check_dp_input)
     result = reduce_crossings(graph, rounds=5, unwind=True, sifting_method="parting", algo2=True)

@@ -9,6 +9,9 @@ from .styles import EDGE_STYLES, EdgeStyle
 from .models import DrawingData, DrawingOptions
 from .geometry import periodic_edge_segments
 
+NODE_OUTLINE_WIDTH = 0.8
+DUMMY_NODE_OUTLINE_WIDTH = 0.35
+
 
 def add_edge_patch(
     ax: Axes,
@@ -217,8 +220,9 @@ def draw_nodes(ax: Axes, data: DrawingData, options: DrawingOptions) -> None:
             s=node_size,
             c="#F2F7FA",
             edgecolors="#1A1A1A",
-            linewidths=0.8,
+            linewidths=NODE_OUTLINE_WIDTH,
             zorder=3,
+            marker="o",
         )
         for node in visible_nodes:
             ax.text(
@@ -240,7 +244,7 @@ def draw_nodes(ax: Axes, data: DrawingData, options: DrawingOptions) -> None:
             s=dummy_node_size,
             c="#777777",
             edgecolors="white",
-            linewidths=0.35,
+            linewidths=DUMMY_NODE_OUTLINE_WIDTH,
             marker="o",
             zorder=3,
         )

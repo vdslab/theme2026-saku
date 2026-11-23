@@ -511,9 +511,11 @@ def coordinate_study(graph, run):
     for name, fn in (
         ("uniform", lambda: uniform_coordinates(sub, crossing, 0)),
         ("uniform_smooth", lambda: uniform_coordinates(sub, crossing, constants.ALIGNMENT_ITERATIONS)),
-        ("bk_no_smooth", lambda: assign_coordinates(sub, crossing, smooth_iterations=0)),
-        ("bk", lambda: assign_coordinates(sub, crossing)),
-        ("bk_smooth_10", lambda: assign_coordinates(sub, crossing, smooth_iterations=10)),
+        ("bk_no_smooth", lambda: assign_coordinates(
+            sub, crossing, method="brandes_koepf", smooth_iterations=0)),
+        ("bk", lambda: assign_coordinates(sub, crossing, method="brandes_koepf")),
+        ("bk_smooth_10", lambda: assign_coordinates(
+            sub, crossing, method="brandes_koepf", smooth_iterations=10)),
         ("qp", lambda: assign_coordinates(sub, crossing, method="torus_qp")),
         ("lp", lambda: assign_coordinates(sub, crossing, method="torus_lp")),
         ("lp_bend_1", lambda: assign_coordinates(sub, crossing, method="torus_lp", bend_weight=1)),

@@ -38,7 +38,8 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
     assert payload["settings"]["pipeline"]["unwind_levels"] is expected_unwind
     assert payload["settings"]["pipeline"]["algo2"] is expected_unwind
     assert f"UNWIND: {expected_unwind}" in completed.stdout
-    assert payload["settings"]["pipeline"]["coordinate_method"] == "brandes_koepf"
+    assert payload["settings"]["pipeline"]["coordinate_method"] == "brandes_koepf_blocks_unsplit"
+    assert payload["settings"]["pipeline"]["coordinate_smooth_iterations"] == 4
     assert payload["settings"]["pipeline"]["sifting_method"] == expected_method
     assert payload["settings"]["license_mode"] == "local"
     assert payload["settings"]["drawing"]["tile_surroundings"] is True
@@ -60,22 +61,34 @@ def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint
     assert "境界通過線分数" in completed.stdout
 
 
-def test_cli_can_disable_dp_and_select_bk(tmp_path, capsys, monkeypatch):
+def test_cli_can_disable_dp_and_bk_smoothing(tmp_path, capsys, monkeypatch):
     import matplotlib.pyplot as plt
+    from torus_layout.coordinates import api
 
     def unexpected_show(*args, **kwargs):
         pytest.fail("--no-show must not open a window")
 
+    smoothing_calls = []
+    smooth_torus_edges = api.smooth_torus_edges
+
+    def record_smoothing(**kwargs):
+        smoothing_calls.append(kwargs["iterations"])
+        return smooth_torus_edges(**kwargs)
+
     monkeypatch.setattr(plt, "show", unexpected_show)
+    monkeypatch.setattr(api, "smooth_torus_edges", record_smoothing)
     assert main(["--nodes", "6", "--seed", "0", "--rounds", "0",
                  "--local-license", "--no-optimize-seams", "--compare-seams",
                  "--no-tile-surroundings", "--no-show", "--no-unwind",
                  "--coordinate-method", "brandes_koepf", "--sifting-method", "parting",
+                 "--smooth-iterations", "0",
                  "--output-dir", str(tmp_path)]) == 0
     payload = json.loads((tmp_path / "result.json").read_text())
     assert payload["settings"]["pipeline"]["optimize_seams"] is False
     assert payload["settings"]["pipeline"]["unwind_levels"] is False
     assert payload["settings"]["pipeline"]["sifting_method"] == "parting"
+    assert payload["settings"]["pipeline"]["coordinate_smooth_iterations"] == 0
+    assert smoothing_calls == [0, 0]
     assert payload["settings"]["drawing"]["tile_surroundings"] is False
     assert payload["metrics"]["seam_segments"] == payload["metrics"]["seam_segments_before"]
     assert _local_license.get() is False
@@ -85,6 +98,7 @@ def test_cli_can_disable_dp_and_select_bk(tmp_path, capsys, monkeypatch):
 @pytest.mark.parametrize("arguments", [
     ["--nodes", "0"], ["--rounds", "-1"], ["--edge-prob", "1.1"],
     ["--bend-weight", "nan"], ["--coordinate-method", "unknown"],
+    ["--smooth-iterations", "-1"],
 ])
 def test_cli_rejects_invalid_parameters_before_solving(arguments):
     with pytest.raises(SystemExit) as error:

@@ -41,10 +41,10 @@ def fixed_period_cases(manifest, solver_seconds):
             try:
                 _, _, sub, paths = prepared(graph)
                 crossing = reduce_crossings(sub)
-                left = api.assign_coordinates(sub, crossing)
+                left = api.assign_coordinates(sub, crossing, method="brandes_koepf")
                 right = api.assign_coordinates(sub, crossing, method="brandes_koepf_3x3")
                 with patch.object(api, "drawing_period", return_value=right.period):
-                    common_period = api.assign_coordinates(sub, crossing)
+                    common_period = api.assign_coordinates(sub, crossing, method="brandes_koepf")
             except (ValueError, AttributeError, RuntimeError, gp.GurobiError) as exc:
                 yield {**common, "variant": "input", "status": type(exc).__name__,
                        "solver_errno": getattr(exc, "errno", None)}

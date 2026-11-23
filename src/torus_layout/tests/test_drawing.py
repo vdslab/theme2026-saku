@@ -1,6 +1,7 @@
 import copy
 from dataclasses import replace
 from io import BytesIO
+from math import sqrt
 
 import matplotlib.pyplot as plt
 import pytest
@@ -85,6 +86,33 @@ def test_create_figure_and_vector_output(tmp_path):
     assert plt.get_fignums() == before
     draw_layout(graph, crossing, coordinates, show=False)
     assert plt.get_fignums() == before
+
+
+@pytest.mark.parametrize("tile", [False, True])
+def test_node_circles_fit_inside_the_boundary(tile):
+    graph, crossing, _ = drawing_case()
+    positions = {
+        0: (-0.49, -0.49), 1: (-0.49, 0.5),
+        2: (1.0, 0.0), 3: (1.0, 1.0),
+        4: (2.49, 1.49), 5: (2.49, 0.6),
+    }
+    before = positions.copy()
+    options = DrawingOptions(tile_surroundings=tile, draw_dummy_nodes=True)
+    fig = create_figure(graph, crossing, CoordinateResult(positions, 2.0), options=options)
+    try:
+        fig.canvas.draw()
+        axis = fig.axes[0]
+        assert axis.get_xlim() == (-0.5, 2.5)
+        assert axis.get_ylim() == (1.5, -0.5)
+        for markers in axis.collections:
+            points = axis.transData.transform(markers.get_offsets())
+            radius = (sqrt(markers.get_sizes()[0]) + markers.get_linewidths()[0]) * fig.dpi / 144
+            for x, y in points:
+                assert min(x - axis.bbox.xmin, axis.bbox.xmax - x,
+                           y - axis.bbox.ymin, axis.bbox.ymax - y) >= radius
+        assert positions == before
+    finally:
+        plt.close(fig)
 
 
 @pytest.mark.parametrize(

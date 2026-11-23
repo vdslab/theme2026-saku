@@ -58,23 +58,23 @@ class _RangeMinimum:
 class _Pair:
     source_size: int
     target_size: int
-    # Positions and winding, oriented from this layer to the next.
-    segments: tuple[tuple[int, int, int], ...]
+    # Source position, target position, oriented winding, and crossing cost.
+    segments: tuple[tuple[int, int, int, int], ...]
     initial: tuple[int, ...]
     events: tuple[tuple[tuple[int, int, int], ...], ...]
 
 
 def _prepare_pair(
-    source_size: int, target_size: int, segments: list[tuple[int, int, int]]
+    source_size: int, target_size: int, segments: list[tuple[int, int, int, int]]
 ) -> _Pair:
     # C(a, 0): baseline plus one suffix adjustment per segment.
-    baseline = sum(winding != 0 for _, _, winding in segments)
+    baseline = sum(weight for _, _, winding, weight in segments if winding != 0)
     difference = [0] * (source_size + 1)
     events: list[list[tuple[int, int, int]]] = [[] for _ in range(target_size)]
-    for source, target, winding in segments:
-        difference[source + 1] += int(winding + 1 != 0) - int(winding != 0)
-        prefix = int(winding - 1 != 0) - int(winding != 0)
-        suffix = int(winding != 0) - int(winding + 1 != 0)
+    for source, target, winding, weight in segments:
+        difference[source + 1] += weight * (int(winding + 1 != 0) - int(winding != 0))
+        prefix = weight * (int(winding - 1 != 0) - int(winding != 0))
+        suffix = weight * (int(winding != 0) - int(winding + 1 != 0))
         if prefix or suffix:
             events[target].append((source + 1, prefix, suffix))
     initial: list[int] = []
@@ -105,10 +105,10 @@ def _closing_costs(pair: _Pair, target_gap: int) -> list[int]:
     """C(a, target_gap) in linear time without materializing a matrix."""
     difference = [0] * (pair.source_size + 1)
     baseline = 0
-    for source, target, winding in pair.segments:
+    for source, target, winding, weight in pair.segments:
         adjusted = winding - int(target < target_gap)
-        baseline += int(adjusted != 0)
-        difference[source + 1] += int(adjusted + 1 != 0) - int(adjusted != 0)
+        baseline += weight * int(adjusted != 0)
+        difference[source + 1] += weight * (int(adjusted + 1 != 0) - int(adjusted != 0))
     result: list[int] = []
     value = baseline
     for delta in difference[:-1]:
@@ -122,31 +122,46 @@ def count_seam_segments(graph: SubdividedGraph, crossing: CrossingResult) -> int
     return sum(crossing.winding_numbers.get(edge, 0) != 0 for edge in graph.graph.edges)
 
 
+def seam_score(
+    graph: SubdividedGraph, crossing: CrossingResult, prioritize_internal: bool,
+) -> tuple[int, int]:
+    """Compare internal seam segments first when requested, then all segments."""
+    dummy = graph.dummy_nodes if prioritize_internal else set()
+    total = internal = 0
+    for u, v in graph.graph.edges:
+        if crossing.winding_numbers.get((u, v), 0) != 0:
+            total += 1
+            internal += u in dummy and v in dummy
+    return internal, total
+
+
 def _pairs(
-    graph: SubdividedGraph, crossing: CrossingResult, layers: list[int]
+    graph: SubdividedGraph, crossing: CrossingResult, layers: list[int], internal_penalty: int,
 ) -> list[_Pair]:
     location: dict[Node, tuple[int, int]] = {
         node: (index, position)
         for index, layer in enumerate(layers)
         for position, node in enumerate(crossing.order[layer])
     }
-    groups: list[list[tuple[int, int, int]]] = [[] for _ in layers]
+    groups: list[list[tuple[int, int, int, int]]] = [[] for _ in layers]
+    dummy = graph.dummy_nodes if internal_penalty else set()
     count = len(layers)
     for edge in graph.graph.edges:
         u, v = edge
         source, p = location[u]
         target, q = location[v]
         winding = crossing.winding_numbers.get(edge, 0)
+        weight = 1 + (internal_penalty if u in dummy and v in dummy else 0)
         # For two layers both directions belong to one pair, never both.
         if count == 2 and source != target:
             if source == 0:
-                groups[0].append((p, q, winding))
+                groups[0].append((p, q, winding, weight))
             else:
-                groups[0].append((q, p, -winding))
+                groups[0].append((q, p, -winding, weight))
         elif target == (source + 1) % count:
-            groups[source].append((p, q, winding))
+            groups[source].append((p, q, winding, weight))
         elif source == (target + 1) % count:
-            groups[target].append((q, p, -winding))
+            groups[target].append((q, p, -winding, weight))
         else:
             raise ValueError("seam optimization requires edges between cyclic adjacent layers")
     sizes = [max(1, len(crossing.order[layer])) for layer in layers]
@@ -156,12 +171,15 @@ def _pairs(
     ]
 
 
-def optimize_seam(graph: SubdividedGraph, crossing: CrossingResult) -> CrossingResult:
+def optimize_seam(
+    graph: SubdividedGraph, crossing: CrossingResult, *, prioritize_internal: bool = False,
+) -> CrossingResult:
     """Minimize seam segments over all gap combinations without mutating inputs.
 
     Proper cyclic adjacent-layer edges are required for two or more layers.
     Empty layers have one inert candidate; zero/one-layer inputs are unchanged.
-    The original embedding is retained on a tie in total seam count. No dense
+    When requested, internal segment count takes precedence over total count.
+    The original embedding is retained on a tie in cost. No dense
     cost matrices or three-dimensional DP table are allocated.
     """
     layers = sorted(crossing.order)
@@ -170,8 +188,12 @@ def optimize_seam(graph: SubdividedGraph, crossing: CrossingResult) -> CrossingR
     # A small start layer reduces the number of independent cyclic DP passes.
     start = min(range(len(layers)), key=lambda i: max(1, len(crossing.order[layers[i]])))
     layers = layers[start:] + layers[:start]
-    pairs = _pairs(graph, crossing, layers)
-    best_cost = count_seam_segments(graph, crossing)
+    # A single internal crossing costs more than every possible change in the
+    # total count, so the scalar DP has the same ordering as the two counts.
+    internal_penalty = len(graph.graph.edges) + 1 if prioritize_internal else 0
+    pairs = _pairs(graph, crossing, layers, internal_penalty)
+    internal, total = seam_score(graph, crossing, prioritize_internal)
+    best_cost = internal_penalty * internal + total
     best_gaps: list[int] | None = None
     for start_gap in range(pairs[0].source_size):
         values = [_INFINITY] * pairs[0].source_size

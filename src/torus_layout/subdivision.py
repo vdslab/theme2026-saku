@@ -118,3 +118,33 @@ def insert_dummy_nodes(
         Graph(tuple(nodes), tuple(edges)), divided_layers, flags, weights, graph.nodes,
         tuple(segment_counts),
     )
+
+
+def build_dummy_blocks(graph: SubdividedGraph) -> list[tuple[Node, ...]]:
+    """Group each original vertex and each nonbranching dummy path."""
+    dummy = graph.dummy_nodes
+    following: dict[Node, Node] = {}
+    incoming: dict[Node, Node] = {}
+    for u, v in dict.fromkeys(graph.graph.edges):
+        if u in dummy:
+            if u in following:
+                raise ValueError("dummy blocks require nonbranching dummy paths")
+            following[u] = v
+        if v in dummy:
+            if v in incoming:
+                raise ValueError("dummy blocks require nonbranching dummy paths")
+            incoming[v] = u
+    if following.keys() != dummy or incoming.keys() != dummy:
+        raise ValueError("dummy blocks require complete dummy paths")
+
+    blocks = [(node,) for node in graph.original_nodes]
+    for head in graph.graph.nodes:
+        if head not in dummy or incoming[head] in dummy:
+            continue
+        path = [head]
+        while following[path[-1]] in dummy:
+            path.append(following[path[-1]])
+        blocks.append(tuple(path))
+    if sum(map(len, blocks)) != len(graph.graph.nodes):
+        raise ValueError("dummy blocks require dummy paths between original vertices")
+    return blocks

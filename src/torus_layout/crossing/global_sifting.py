@@ -4,6 +4,7 @@ from collections import defaultdict
 from itertools import chain, combinations, product
 
 from ..models import Edge, Layers, Node, SubdividedGraph, Winding
+from ..subdivision import build_dummy_blocks
 from .lib.crossings import crossings_between_edges, pair_positions
 from .lib.embedding import edges_by_directed_strip, map_node_layers
 
@@ -22,7 +23,7 @@ def sift_blocks(
     if len(layers) < 2:
         return initial_order, winding
 
-    blocks = _build_blocks(graph)
+    blocks = build_dummy_blocks(graph)
     if any(len(nodes) >= len(layers) for nodes in blocks):
         raise ValueError("global sifting requires original edge spans of at most one horizontal period")
     node_block = {node: block for block, nodes in enumerate(blocks) for node in nodes}
@@ -93,35 +94,6 @@ def sift_blocks(
         if not improved:
             break
     return order, winding
-
-
-def _build_blocks(graph: SubdividedGraph) -> list[tuple[Node, ...]]:
-    dummy = graph.dummy_nodes
-    following: dict[Node, Node] = {}
-    incoming: dict[Node, Node] = {}
-    for u, v in dict.fromkeys(graph.graph.edges):
-        if u in dummy:
-            if u in following:
-                raise ValueError("global sifting requires nonbranching dummy paths")
-            following[u] = v
-        if v in dummy:
-            if v in incoming:
-                raise ValueError("global sifting requires nonbranching dummy paths")
-            incoming[v] = u
-    if following.keys() != dummy or incoming.keys() != dummy:
-        raise ValueError("global sifting requires complete dummy paths")
-
-    blocks = [(node,) for node in graph.original_nodes]
-    for head in graph.graph.nodes:
-        if head not in dummy or incoming[head] in dummy:
-            continue
-        path = [head]
-        while following[path[-1]] in dummy:
-            path.append(following[path[-1]])
-        blocks.append(tuple(path))
-    if sum(map(len, blocks)) != len(graph.graph.nodes):
-        raise ValueError("global sifting requires dummy paths between original vertices")
-    return blocks
 
 
 def _strip_score(

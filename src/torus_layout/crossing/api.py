@@ -12,7 +12,7 @@ from .lib.embedding import (
     postprocess_sifting_rotations,
 )
 from .lib.crossings import count_all_crossings
-from .seam import optimize_seam, count_seam_segments
+from .seam import optimize_seam, seam_score
 from .unwind import unwind_levels
 
 
@@ -24,11 +24,13 @@ def reduce_crossings(
     unwind: bool = constants.DEFAULT_UNWIND_LEVELS,
     sifting_method: SiftingMethod = constants.DEFAULT_SIFTING_METHOD,
     algo2: bool = constants.DEFAULT_ALGO2,
+    prioritize_internal_seams: bool = False,
 ) -> CrossingResult:
     """Run the selected sifting method, optional rotation, UNWIND-LEVEL, and seam selection.
 
     Use parting with Algo2 enabled and both boundary options disabled to reproduce the legacy path.
     The seam optimizer requires a proper graph with cyclic adjacent-layer segments.
+    Internal seam crossings can be minimized before the overall count.
     """
     layers = sorted(graph.layers)
     edges = list(graph.graph.edges)
@@ -49,11 +51,15 @@ def reduce_crossings(
         raise ValueError(f"unknown sifting method: {sifting_method!r}")
     if algo2:
         postprocess_sifting_rotations(order, winding, layers, edges)
-    return _process_boundaries(graph, CrossingResult(order, winding), unwind, optimize_seams)
+    return _process_boundaries(
+        graph, CrossingResult(order, winding), unwind, optimize_seams,
+        prioritize_internal_seams,
+    )
 
 
 def _process_boundaries(
     graph: SubdividedGraph, embedding: CrossingResult, unwind: bool, optimize_seams: bool,
+    prioritize_internal_seams: bool,
 ) -> CrossingResult:
     result = embedding
     if unwind:
@@ -61,17 +67,22 @@ def _process_boundaries(
     if not optimize_seams:
         return result
     early_unwind = result
-    result = optimize_seam(graph, result)
+    result = optimize_seam(graph, result, prioritize_internal=prioritize_internal_seams)
     if unwind:
         # A different cut can expose a common turn that was hidden beforehand.
         # Compare the new fallback before/after DP; retain the better result.
         inner_only = unwind_levels(graph, embedding, include_non_inner=False)
-        cut_first = result if inner_only == early_unwind else optimize_seam(graph, inner_only)
+        cut_first = result if inner_only == early_unwind else optimize_seam(
+            graph, inner_only, prioritize_internal=prioritize_internal_seams,
+        )
         late_unwind = unwind_levels(graph, cut_first)
         candidate = (
-            optimize_seam(graph, late_unwind) if late_unwind != cut_first else cut_first
+            optimize_seam(graph, late_unwind, prioritize_internal=prioritize_internal_seams)
+            if late_unwind != cut_first else cut_first
         )
-        if count_seam_segments(graph, candidate) < count_seam_segments(graph, result):
+        if seam_score(graph, candidate, prioritize_internal_seams) < seam_score(
+            graph, result, prioritize_internal_seams,
+        ):
             result = candidate
     return result
 

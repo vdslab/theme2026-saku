@@ -93,8 +93,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--coordinate-method",
-        choices=["torus_qp", "torus_lp", "brandes_koepf", "brandes_koepf_3x3"],
+        choices=[
+            "torus_qp",
+            "torus_lp",
+            "brandes_koepf",
+            "brandes_koepf_blocks",
+            "brandes_koepf_blocks_unsplit",
+            "brandes_koepf_3x3",
+        ],
         default=constants.DEFAULT_COORDINATE_METHOD,
+        help="座標割当方式（既定: %(default)s）",
+    )
+    parser.add_argument(
+        "--smooth-iterations",
+        type=_nonnegative_int,
+        default=constants.ALIGNMENT_ITERATIONS,
+        help="通常BK・ブロックBKの周期平滑化回数（0で無効、既定: %(default)s）",
     )
     parser.add_argument(
         "--bend-weight", type=_nonnegative_float, default=constants.DEFAULT_BEND_WEIGHT
@@ -115,7 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--unwind",
         action=argparse.BooleanOptionalAction,
         default=constants.DEFAULT_UNWIND_LEVELS,
-        help="UNWIND-LEVELを有効化",
+        help="UNWIND-LEVELを無効化",
     )
     parser.add_argument(
         "--compare-seams",

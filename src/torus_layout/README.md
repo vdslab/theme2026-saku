@@ -25,7 +25,7 @@ PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 グラフ生成 → 階層割当 → ダミー挿入 → sifting → 必要に応じて層回転 → 必要に応じてUNWIND-LEVEL → 境界最適化DP →
 BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
 既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
-階層バランス`diff_square`、siftingは`global`で最大5回、UNWIND無効、境界最適化有効、座標方式`brandes_koepf`です。
+階層バランス`diff_square`、siftingは`global`で最大5回、UNWIND無効、境界最適化有効、座標方式`brandes_koepf_blocks_unsplit`です。
 
 `radial` は原著のAlgorithm 1に沿い、片側の層を固定して、もう片側の頂点位置と辺の巻き数を差分で評価します。移動前の位置と巻き数を最初の最良候補とし、重み付き交差数が厳密に減った場合に更新します。最終層から第1層への接続も固有の層間として処理し、2層のときも両方向の帯を分けます。局所処理後は隣の層間や全体の交差が増えることがあります。
 
@@ -38,7 +38,6 @@ BK系＋周期平滑化による座標割当 → 評価表示・描画保存、�
 層回転（Algorithm 2）は既定で無効です。`--algo2`、`PipelineConfig(algo2=True)`、または `reduce_crossings(..., algo2=True)` で有効化できます。
 UNWINDとは独立した設定で、併用時は層回転を先に実行します。
 この実装は候補位置ごとに parting を列挙し、論文の差分高速化をそのまま再現したものではありません。
-座標割当は他方式との比較用に共通の BK を使います。
 
 `radial` では [原著 §V-A](https://www.infosun.fim.uni-passau.de/~chris/down/RadialVisualization.pdf#page=9) に従い、両方の線分がダミー頂点間の線分である交差（タイプ2）を、対象層間の辺数 `|E|` で重み付けします。タイプ0・1の交差は重み1です。採否に使うのは、この重み付き交差数です。
 `--seed` で乱数seedを固定すると同じ入力を再生成できます。
@@ -49,6 +48,7 @@ UNWINDとは独立した設定で、併用時は層回転を先に実行しま�
 周辺タイルは既定で有効です。`--no-tile-surroundings` で無効化できます。
 周辺はグレーアウトし、中央は元の色のまま表示します。ウィンドウは画像の縦横比に合わせ、
 上下の余白を付けません。周辺の濃さは `constants.DEFAULT_SURROUNDING_OPACITY` で調整できます。
+ノードの円が境界にかかる場合は、描画時に円の半径分の余白を確保します。
 
 | 出力 | 内容 |
 | --- | --- |
@@ -76,13 +76,14 @@ UNWINDとは独立した設定で、併用時は層回転を先に実行しま�
 
 生成器は `cyclic` / `watts_strogatz` / `random` / `dag` / `mixed`、
 座標方式は `torus_qp` / `torus_lp` / `brandes_koepf` /
+`brandes_koepf_blocks_unsplit` / `brandes_koepf_blocks` /
 `brandes_koepf_3x3` から選べます。
 `brandes_koepf_3x3` は周囲8方向にコピーを置き、巻き数に応じてコピー間を接続し、
 4方向BKの中央値統合後に中央のタイルだけを取り出す実験方式です。
 周期補正・平滑化は使わず、描画周期を座標の広がりに合わせます。
 コピーの座標は独立で、周期的に同じ配置となる制約は課していません。
 3×3の外側へ出るセグメントは除外します（巻き数の絶対値が2以上だと、
-中央タイルから出る辺も一部対象外になります）。既定方式は変更していません。
+中央タイルから出る辺も一部対象外になります）。
 実行例：
 
 ```sh
@@ -93,8 +94,9 @@ UNWINDとは独立した設定で、併用時は層回転を先に実行しま�
 
 `--no-optimize-seams` で境界最適化を無効化できます。
 UNWIND-LEVELは既定で無効です。どのsifting方式でも `--unwind` で有効化できます。
-比較モードでは、通過線分数が増加せず、辺同士の交差数が変わらないことも検証し、
-違反した場合は終了コード1を返します。
+比較モードでは、境界最適化の評価値と辺同士の交差数を検証します。
+既定の分割なし方式では、上下をまたぐダミー間線分の本数を最優先で減らし、
+同数なら全体の通過線分数が最少になる切れ目を選びます。ほかの座標方式では全体の通過線分数を使います。
 
 通常はルート `.env` のGurobi WLS設定を使います。ローカルライセンスを明示的に
 選ぶ場合だけ `--local-license` を付けます。接続失敗時の自動切替はしません。
@@ -112,7 +114,9 @@ CLIの引数定義・検証は `cli_arguments.py`、境界最適化の比較は 
 明示的なローカルライセンス選択を `layering/lib/solver.py` に追加し、
 その選択は実行スコープを抜けると元に戻るようにしています。
 
-> 座標割当の既定値は、新パイプライン・CLI・座標APIともにBK系です。
+> 既定の `brandes_koepf_blocks_unsplit` は、長辺ごとに全ダミー頂点で同じ `y` を共有します。層順と最小間隔を満たす最小の周期を使います。元の切れ目で内部線分の巻き数がすべて0なら、境界最適化後も各ブロックの頂点は同じ側に残るか、まとめて切れ目の反対側へ移ります。層内順序の制約が循環する場合は `--coordinate-method brandes_koepf_blocks` で分割を許可できます。
+> `--smooth-iterations 0` でBKの周期平滑化を無効化できます。既定は4回で、0回でも周期射影は行います。
+> `--coordinate-method brandes_koepf_blocks` は、長辺の連続するダミー頂点を同じ `y` に揃えてから、ブロック単位で平滑化します。層順・間隔の制約と両立しない箇所や、層内方向の巻きがある線分ではブロックを分けます。0回でもブロックの整列は行います。
 > `--coordinate-method torus_qp` または `torus_lp` でQP・LPを明示的に選べます。
 > `PipelineConfig(coordinate_method="torus_qp")` と `coordinate_bend_weight` も利用可能です。
 > [定式化・比較実験・手法選定](../../documents/torus_coordinate_assignment.md)を参照してください。

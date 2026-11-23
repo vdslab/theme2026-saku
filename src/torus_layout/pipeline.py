@@ -25,9 +25,11 @@ def run_pipeline(
     subdivision_time = perf_counter() - started
 
     started = perf_counter()
+    prioritize_internal_seams = config.coordinate_method == "brandes_koepf_blocks_unsplit"
     crossing = reduce_crossings(
         subdivided, rounds=config.rounds, optimize_seams=config.optimize_seams,
         unwind=config.unwind_levels, sifting_method=config.sifting_method, algo2=config.algo2,
+        prioritize_internal_seams=prioritize_internal_seams,
     )
     crossing_time = perf_counter() - started
 
@@ -35,6 +37,7 @@ def run_pipeline(
     coordinates = assign_coordinates(
         subdivided, crossing, method=config.coordinate_method,
         bend_weight=config.coordinate_bend_weight,
+        smooth_iterations=config.coordinate_smooth_iterations,
     )
     coordinate_time = perf_counter() - started
     return PipelineResult(

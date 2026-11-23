@@ -123,6 +123,24 @@ def paper_figure_size(
     return (width, height)
 
 
+def fit_marker_margins(
+    lower: float,
+    upper: float,
+    ranges: list[tuple[float, float, float]],
+) -> tuple[float, float]:
+    """Return the least compression and then the least shift that fit the circles."""
+    # Work relative to the lower boundary to avoid cancellation in the bounds.
+    span = upper - lower
+    scale = 1.0
+    for first, _, start_margin in ranges:
+        for _, last, end_margin in ranges:
+            if last > first:
+                scale = min(scale, (span - start_margin - end_margin) / (last - first))
+    earliest = max(margin - scale * (first - lower) for first, _, margin in ranges)
+    latest = min(span - margin - scale * (last - lower) for _, last, margin in ranges)
+    return scale, max(earliest, min(0.0, latest)) + (1 - scale) * lower
+
+
 def periodic_edge_segments(
     start: tuple[float, float],
     end: tuple[float, float],

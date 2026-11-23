@@ -47,6 +47,8 @@ def compute_positions(
     min_gap: float = constants.MIN_NODE_GAP,
     smooth_iterations: int = constants.ALIGNMENT_ITERATIONS,
     original_nodes: tuple[Node, ...] | None = None,
+    *,
+    period: float | None = None,
 ) -> Positions:
     """
     Compute node coordinates for the drawing stage.
@@ -63,6 +65,7 @@ def compute_positions(
         original_nodes: original (non-dummy) nodes.  If supplied, inner
             dummy-to-dummy segments are preferred when type-1 conflicts are
             marked, as in Brandes--Koepf.
+        period: optional vertical period for the initial BK layout.
 
     Returns:
         dict[node, (x, y)]: coordinates in the same drawing coordinate system as
@@ -79,7 +82,8 @@ def compute_positions(
     validate_graph(node_order, edges, psi)
     node_to_layer = map_node_layers(node_order)
     layer_index = {layer: index for index, layer in enumerate(layers)}
-    period = drawing_period(node_order, min_gap)
+    if period is None:
+        period = drawing_period(node_order, min_gap)
     dummy_nodes = find_dummy_nodes(node_order, original_nodes)
     variants: list[dict[Node, float]] = []
     horizontal_directions: list[bool] = []
@@ -135,13 +139,17 @@ def assign_coordinates(
     method: str = constants.DEFAULT_COORDINATE_METHOD,
     bend_weight: float = constants.DEFAULT_BEND_WEIGHT,
 ) -> CoordinateResult:
-    """Assign coordinates with BK, experimental 3x3 BK, QP, or L1 LP.
+    """Assign coordinates with BK, block-smoothed BK, 3x3 BK, QP, or L1 LP.
 
-    ``smooth_iterations`` applies to BK only. Optimizers keep the existing
-    period and embedding, and use graph.weights. ``bend_weight`` penalizes
-    changes in slope at degree-two dummy nodes (proper layered edges only).
+    ``smooth_iterations`` applies to standard and block-smoothed BK.
+    Optimizers keep the existing period and embedding, and use graph.weights.
+    ``bend_weight`` penalizes changes in slope at degree-two dummy nodes
+    (proper layered edges only).
     """
-    if method not in ("brandes_koepf", "brandes_koepf_3x3", "torus_qp", "torus_lp"):
+    if method not in (
+        "brandes_koepf", "brandes_koepf_blocks", "brandes_koepf_blocks_unsplit",
+        "brandes_koepf_3x3", "torus_qp", "torus_lp",
+    ):
         raise ValueError(f"unknown coordinate method: {method!r}")
     validate_parameters(min_gap, smooth_iterations)
     if method == "brandes_koepf_3x3":
@@ -149,7 +157,23 @@ def assign_coordinates(
 
         return assign_replicated_coordinates(graph, crossing, min_gap=min_gap)
     period = drawing_period(graph.layers, min_gap)
-    if method == "brandes_koepf":
+    if method in ("brandes_koepf_blocks", "brandes_koepf_blocks_unsplit"):
+        from .blocks import prepare_dummy_blocks, smooth_dummy_blocks
+
+        order = complete_order(crossing.order, graph.layers, sorted(graph.layers))
+        block_of, constraints = prepare_dummy_blocks(
+            graph, order, crossing.winding_numbers, split=method == "brandes_koepf_blocks",
+        )
+        period = constraints.period * min_gap
+        initial = compute_positions(
+            order, graph.layers, list(graph.graph.edges), graph.torus_flags,
+            crossing.winding_numbers, min_gap, 0, graph.original_nodes, period=period,
+        )
+        positions = smooth_dummy_blocks(
+            graph, crossing.winding_numbers, initial, min_gap, smooth_iterations,
+            block_of, constraints,
+        )
+    elif method == "brandes_koepf":
         positions = compute_positions(
             crossing.order,
             graph.layers,
