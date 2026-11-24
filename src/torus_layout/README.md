@@ -22,10 +22,10 @@ CLIと描画APIで従来から異なる周辺タイル表示の既定値は、�
 PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 ```
 
-グラフ生成 → 階層割当 → ダミー挿入 → sifting → 必要に応じて層回転 → 必要に応じてUNWIND-LEVEL → 境界最適化DP →
+グラフ生成 → 階層割当 → ダミー挿入 → sifting → 必要に応じて層回転 → 切れ目と整数周の同時最適化 →
 BK系による座標割当 → 評価表示・描画保存、まで実行します。
 既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
-階層バランス`diff_square`、siftingは`global`で最大5回、UNWIND無効、境界最適化有効、座標方式`brandes_koepf_blocks_unsplit`です。
+階層バランス`diff_square`、siftingは`global`で最大5回、UNWINDと境界最適化は有効、座標方式は`brandes_koepf_blocks_unsplit`です。
 
 `radial` は原著のAlgorithm 1に沿い、片側の層を固定して、もう片側の頂点位置と辺の巻き数を差分で評価します。移動前の位置と巻き数を最初の最良候補とし、重み付き交差数が厳密に減った場合に更新します。最終層から第1層への接続も固有の層間として処理し、2層のときも両方向の帯を分けます。局所処理後は隣の層間や全体の交差が増えることがあります。
 
@@ -92,11 +92,9 @@ UNWINDとは独立した設定で、併用時は層回転を先に実行しま�
   --no-show --output-dir output/torus_layout_3x3
 ```
 
-`--no-optimize-seams` で境界最適化を無効化できます。
-UNWIND-LEVELは既定で無効です。どのsifting方式でも `--unwind` で有効化できます。
+境界処理の既定は `--seam-method joint` です。従来の巻き戻しとDPを使うには `--seam-method legacy` を指定します。
+`--no-unwind` では整数周を固定して切れ目だけを最適化し、`--no-optimize-seams` では従来のUNWIND-LEVELだけを適用します。
 比較モードでは、境界最適化の評価値と辺同士の交差数を検証します。
-既定の分割なし方式では、上下をまたぐダミー間線分の本数を最優先で減らし、
-同数なら全体の通過線分数が最少になる切れ目を選びます。ほかの座標方式では全体の通過線分数を使います。
 
 通常はルート `.env` のGurobi WLS設定を使います。ローカルライセンスを明示的に
 選ぶ場合だけ `--local-license` を付けます。接続失敗時の自動切替はしません。
@@ -123,7 +121,7 @@ CLIの引数定義・検証は `cli_arguments.py`、境界最適化の比較は 
 > 旧実装と比較する場合は、現行側に `brandes_koepf` を指定し、
 > 境界最適化とUNWINDを無効にします。座標は旧実装の平滑化0回に対応します。
 
-## UNWIND-LEVEL
+## 従来方式のUNWIND-LEVEL
 
 Algo2を有効にした場合は層回転の後に、いずれの場合も切れ目DPの前に、層間の共通の整数巻きを取り除きます。
 各層間でダミー間線分の最小巻き数 `m` を求め、その層間の全線分から `m` を引きます。
@@ -141,28 +139,29 @@ Algo2を有効にした場合は層回転の後に、いずれの場合も切れ
 指摘画像の再現例では、上下の境界通過線分数3→0、交差数0→0を確認しました。
 [Algo2との違い・検証記録](../../documents/algo2_common_turn_check.md)も参照してください。
 
-`PipelineConfig(unwind_levels=True)` または `reduce_crossings(..., unwind=True)` で有効化できます。
+`PipelineConfig(unwind_levels=False)` または `reduce_crossings(..., unwind=False)` で無効化できます。
 旧版を再現する場合は、さらに `optimize_seams=False` を指定します。
 `--compare-seams` の比較前後には同じUNWIND設定を適用します。
 
-## 境界通過線分数の最適化（追加機能）
+## 境界通過線分数の最適化
 
-現在の `reduce_crossings` / `run_pipeline` は、siftingと、指定した場合は層回転・UNWINDの後に、
-各レイヤーの切れ目を選ぶ厳密DPをデフォルトで実行します。
-`crossing/seam.py` の区間加算・最小値セグメント木で候補値を差分更新し、
-全隣接ペアの密な通過数表は構築しません。
-循環順序と整数周の選択を固定し、上下境界を通過するダミー挿入後の線分数を
-最小化します。左右境界の通過数や、元の辺単位の重複除去は目的に含めません。
-通過数が同じなら入力の配置を維持します。
+既定の `joint` は `crossing/joint_seam.py` の循環DPで、各層の切れ目と隣接層ペアごとの共通整数巻きを選びます。
+ダミー同士の境界通過を0本にする組合せの中で、上下境界を通る全線分数を最小化します。
+0本にできる組合せがなければエラーで報告します。
+分割なしBKの層内順序制約が循環した場合は、従来方式でもダミー同士の通過を0本に保って座標を割り当てられるときに限り、警告を出して従来方式を適用します。
+CLIの `result.json` では `settings.seam_method_used` に実際の方式を記録します。
+
+従来方式の `legacy` はUNWIND-LEVELと `crossing/seam.py` の差分更新DPを順に適用します。
+このDPは各呼び出しに与えられた整数周を固定し、全隣接ペアの密な表を持たずに切れ目を選びます。
+既定の分割なし座標方式では内部線分数、全線分数の順に最小化し、ほかの座標方式では全線分数を最小化します。
 
 ```python
-# 比較用に新しい後処理を無効化する。
-config = PipelineConfig(optimize_seams=False)
-# 交差削減だけを呼ぶ場合:
-# crossing = reduce_crossings(subdivided, rounds=5, optimize_seams=False)
+config = PipelineConfig(seam_method="legacy")
+crossing = reduce_crossings(subdivided, seam_method="legacy")
 ```
 
-`crossing.optimize_seam(subdivided, crossing)` で既存の結果に単独適用でき、
+`crossing.optimize_joint_seam(subdivided, crossing)` で同時最適化を単独適用でき、解がない場合は `None` を返します。
+`crossing.optimize_seam(subdivided, crossing)` で固定した整数周に対する切れ目DPを適用でき、
 `crossing.count_seam_segments(subdivided, crossing)` で通過線分数を数えられます。
 入力は循環隣接レイヤー間の辺に分割済みであることが必要です。
 空レイヤーは動かさない1候補とし、0・1レイヤーの場合は入力を維持します。

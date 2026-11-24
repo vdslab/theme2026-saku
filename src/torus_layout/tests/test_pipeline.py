@@ -1,7 +1,9 @@
 import copy
 import pytest
 from torus_layout import Graph
-from torus_layout.models import PipelineConfig
+from generator import generate_graph
+from torus_layout.crossing.seam import seam_score
+from torus_layout.models import LayerAssignmentResult, LayerSearchResult, PipelineConfig
 from torus_layout.pipeline import run_pipeline
 from torus_layout.reporting import report_pipeline
 from torus_layout.layering.balance import diff, diff_square, qp
@@ -61,6 +63,27 @@ def test_empty_graph_keeps_none_result(local_solver, monkeypatch):
         monkeypatch.setattr(module, "create_gurobi_env", local_solver)
     assert legacy.layer_assignment([], [], "diff_square") is None
     assert run_pipeline(Graph((), ())) is None
+
+
+def test_joint_seam_uses_zero_internal_legacy_cut_if_unsplit_order_cycles(monkeypatch):
+    from torus_layout import pipeline
+
+    nodes, edges, _ = generate_graph("random", 12, seed=3, edge_prob=0.16)
+    graph = Graph(tuple(nodes), tuple(edges))
+    ranks = dict(zip(nodes, (0, 1, 4, 3, 3, 6, 1, 5, 3, 2, 1, 2)))
+    flags = {(u, v): ranks[u] > ranks[v] for u, v in edges}
+    assigned = LayerAssignmentResult(ranks, flags, 0)
+    search = LayerSearchResult(7, sum(flags.values()), 0)
+    monkeypatch.setattr(pipeline, "assign_layers", lambda *_: (search, assigned))
+
+    with pytest.warns(UserWarning, match="従来方式を適用"):
+        joint = run_pipeline(graph, PipelineConfig(rounds=2))
+    legacy = run_pipeline(graph, PipelineConfig(rounds=2, seam_method="legacy"))
+    assert joint is not None and legacy is not None
+    assert joint.seam_method_used == "legacy"
+    assert joint.crossing == legacy.crossing
+    assert joint.coordinates == legacy.coordinates
+    assert seam_score(joint.subdivided, joint.crossing, True) == (0, 5)
 
 
 def test_original_main_and_new_pipeline_save_identical_image(

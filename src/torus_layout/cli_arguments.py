@@ -114,6 +114,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="境界最適化DPを無効化",
     )
     parser.add_argument(
+        "--seam-method", choices=("joint", "legacy"), default=constants.DEFAULT_SEAM_METHOD,
+        help="境界処理方式。jointは切れ目と巻き戻しを同時最適化、legacyは従来方式（既定: %(default)s）",
+    )
+    parser.add_argument(
         "--algo2",
         action=argparse.BooleanOptionalAction,
         default=constants.DEFAULT_ALGO2,

@@ -179,6 +179,8 @@ def optimize_seam(
     Proper cyclic adjacent-layer edges are required for two or more layers.
     Empty layers have one inert candidate; zero/one-layer inputs are unchanged.
     When requested, internal segment count takes precedence over total count.
+    Each candidate is a left rotation of the supplied order by less than one
+    turn. Applying the optimizer again to its result can compose a full turn.
     The original embedding is retained on a tie in cost. No dense
     cost matrices or three-dimensional DP table are allocated.
     """

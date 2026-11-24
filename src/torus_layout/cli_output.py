@@ -51,6 +51,7 @@ def save_outputs(
         "seed": used_seed,
         "generator_parameters": parameters,
         "pipeline": asdict(config),
+        "seam_method_used": result.seam_method_used,
         "license_mode": "local" if args.local_license else "application_env",
         "compare_seams": args.compare_seams,
         "drawing": asdict(options),

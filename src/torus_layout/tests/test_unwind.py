@@ -39,7 +39,7 @@ def test_screenshot_three_unnecessary_wraps_are_removed():
     assert (graph, crossing) == before
 
 
-def test_global_pipeline_applies_unwind_only_when_requested(monkeypatch):
+def test_legacy_global_pipeline_applies_unwind_and_allows_opt_out(monkeypatch):
     from torus_layout.crossing import api
 
     graph, _ = screenshot_case()
@@ -50,9 +50,9 @@ def test_global_pipeline_applies_unwind_only_when_requested(monkeypatch):
         return unwind_levels(*args, **kwargs)
 
     monkeypatch.setattr(api, "unwind_levels", observe_unwind)
-    reduce_crossings(graph, sifting_method="global")
+    reduce_crossings(graph, unwind=False, sifting_method="global", seam_method="legacy")
     assert not calls
-    reduce_crossings(graph, unwind=True, sifting_method="global")
+    reduce_crossings(graph, sifting_method="global", seam_method="legacy")
     assert calls
 
 
@@ -71,7 +71,9 @@ def test_parting_pipeline_unwinds_before_seam_selection(monkeypatch):
         return original_dp(graph, crossing, prioritize_internal=prioritize_internal)
 
     monkeypatch.setattr(api, "optimize_seam", check_dp_input)
-    result = reduce_crossings(graph, rounds=5, unwind=True, sifting_method="parting", algo2=True)
+    result = reduce_crossings(
+        graph, rounds=5, unwind=True, sifting_method="parting", algo2=True, seam_method="legacy",
+    )
     assert calls == [True]
     assert count_seam_segments(graph, result) == 0
     assert count_crossings(graph, result) == count_crossings(graph, baseline) == 0

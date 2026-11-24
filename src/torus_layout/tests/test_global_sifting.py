@@ -41,13 +41,13 @@ def test_global_rotation_is_opt_in():
     flags = {(u, v): ranks[u] > ranks[v] for u, v in edges}
     graph = insert_dummy_nodes(Graph(tuple(nodes), tuple(edges)), LayerAssignmentResult(ranks, flags, 0))
 
-    result = reduce_crossings(graph, sifting_method="global")
+    result = reduce_crossings(graph, sifting_method="global", unwind=False)
     metrics = boundary_metrics(graph, result.winding_numbers)
 
     assert count_crossings(graph, result) == 2
     assert metrics["x_seam_events"] == 2
     assert metrics["y_seam_edges"] == metrics["y_seam_events"] == 5
-    rotated = reduce_crossings(graph, sifting_method="global", algo2=True)
+    rotated = reduce_crossings(graph, sifting_method="global", unwind=False, algo2=True)
     assert count_crossings(graph, rotated) == 2
     assert boundary_metrics(graph, rotated.winding_numbers)["y_seam_events"] == 12
 

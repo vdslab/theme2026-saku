@@ -9,5 +9,9 @@ from .seam import (
     count_seam_segments as count_seam_segments,
 )
 from .unwind import unwind_levels as unwind_levels
+from .joint_seam import optimize_joint_seam as optimize_joint_seam
 
-__all__ = ["reduce_crossings", "count_crossings", "optimize_seam", "count_seam_segments", "unwind_levels"]
+__all__ = [
+    "reduce_crossings", "count_crossings", "optimize_seam", "count_seam_segments",
+    "unwind_levels", "optimize_joint_seam",
+]

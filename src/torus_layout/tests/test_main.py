@@ -15,28 +15,39 @@ from torus_layout.layering.lib.solver import _local_license
 ROOT = Path(__file__).resolve().parents[3]
 
 
-@pytest.mark.parametrize("entrypoint", ["module", "script"])
-def test_entrypoint_runs_full_pipeline_and_saves_comparison(tmp_path, entrypoint):
+@pytest.mark.parametrize("entrypoint, seam_flags, expected_seam_method", [
+    ("module", [], "joint"),
+    ("module", ["--seam-method", "legacy"], "legacy"),
+    ("script", [], "joint"),
+])
+def test_entrypoint_runs_full_pipeline_and_saves_comparison(
+    tmp_path, entrypoint, seam_flags, expected_seam_method,
+):
     environment = dict(os.environ)
     environment.update(PYTHONPATH=str(ROOT / "src"), MPLBACKEND="Agg",
                        MPLCONFIGDIR=str(tmp_path / "mpl"), PYTHONDONTWRITEBYTECODE="1")
     entry = ["-m", "torus_layout"] if entrypoint == "module" else ["src/torus_layout/main.py"]
-    sifting = ["--sifting-method", "radial", "--unwind", "--algo2"] if entrypoint == "script" else []
+    sifting = ["--sifting-method", "radial", "--no-unwind", "--algo2"] if entrypoint == "script" else []
     expected_method = "radial" if entrypoint == "script" else "global"
     if entrypoint == "script":
         environment.pop("PYTHONPATH", None)
     command = [str(ROOT / "theme2026-saku/bin/python"), *entry,
                "--nodes", "12", "--neighbors", "4", "--seed", "0", "--rounds", "1",
-               *sifting, "--local-license", "--compare-seams", "--no-show", "--output-dir", str(tmp_path)]
+               *sifting, *seam_flags, "--local-license", "--compare-seams", "--no-show",
+               "--output-dir", str(tmp_path)]
     completed = subprocess.run(command, cwd=ROOT, env=environment,
                                capture_output=True, text=True, timeout=60)
     assert completed.returncode == 0, completed.stdout + completed.stderr
     payload = json.loads((tmp_path / "result.json").read_text())
     assert payload["status"] == "completed"
     assert payload["settings"]["pipeline"]["optimize_seams"] is True
-    expected_unwind = expected_method == "radial"
+    assert payload["settings"]["pipeline"]["seam_method"] == expected_seam_method
+    expected_unwind = entrypoint == "module"
     assert payload["settings"]["pipeline"]["unwind_levels"] is expected_unwind
-    assert payload["settings"]["pipeline"]["algo2"] is expected_unwind
+    assert payload["settings"]["seam_method_used"] == (
+        expected_seam_method if expected_unwind else None
+    )
+    assert payload["settings"]["pipeline"]["algo2"] is (entrypoint == "script")
     assert f"UNWIND: {expected_unwind}" in completed.stdout
     assert payload["settings"]["pipeline"]["coordinate_method"] == "brandes_koepf_blocks_unsplit"
     assert "coordinate_smooth_iterations" not in payload["settings"]["pipeline"]
@@ -86,6 +97,7 @@ def test_cli_can_disable_dp_with_bk(tmp_path, capsys, monkeypatch):
 @pytest.mark.parametrize("arguments", [
     ["--nodes", "0"], ["--rounds", "-1"], ["--edge-prob", "1.1"],
     ["--bend-weight", "nan"], ["--coordinate-method", "unknown"],
+    ["--seam-method", "unknown"],
     ["--smooth-iterations", "0"],
 ])
 def test_cli_rejects_invalid_parameters_before_solving(arguments):

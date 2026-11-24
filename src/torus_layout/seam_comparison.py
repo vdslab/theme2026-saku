@@ -29,10 +29,12 @@ def compare_seams(
     baseline = reduce_crossings(
         result.subdivided, rounds=config.rounds, optimize_seams=False,
         unwind=config.unwind_levels, sifting_method=config.sifting_method, algo2=config.algo2,
+        seam_method=config.seam_method,
     )
     before_seams = count_seam_segments(result.subdivided, baseline)
     before_crossings = count_crossings(result.subdivided, baseline)
-    prioritize_internal = config.coordinate_method == "brandes_koepf_blocks_unsplit"
+    joint = config.seam_method == "joint" and config.unwind_levels and config.optimize_seams
+    prioritize_internal = joint or config.coordinate_method == "brandes_koepf_blocks_unsplit"
     before_score = seam_score(result.subdivided, baseline, prioritize_internal)
     after_score = seam_score(result.subdivided, result.crossing, prioritize_internal)
     if after_score > before_score or after_crossings != before_crossings:

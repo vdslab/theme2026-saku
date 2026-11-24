@@ -47,6 +47,7 @@ def _run(args: argparse.Namespace) -> None:
         coordinate_method=args.coordinate_method,
         coordinate_bend_weight=args.bend_weight,
         optimize_seams=not args.no_optimize_seams,
+        seam_method=args.seam_method,
         unwind_levels=args.unwind,
         algo2=args.algo2,
         sifting_method=args.sifting_method,
@@ -56,7 +57,8 @@ def _run(args: argparse.Namespace) -> None:
     )
     print(
         f"階層割当: {config.balance_method}, 座標割当: {config.coordinate_method}, "
-        f"Algo2: {config.algo2}, UNWIND: {config.unwind_levels}, 境界最適化: {config.optimize_seams}"
+        f"Algo2: {config.algo2}, UNWIND: {config.unwind_levels}, "
+        f"境界最適化: {config.optimize_seams} ({config.seam_method})"
     )
     print(
         "Gurobi: " + ("local（明示指定）" if args.local_license else ".env WLS設定"),

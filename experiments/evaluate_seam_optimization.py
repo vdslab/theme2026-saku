@@ -59,7 +59,7 @@ def evaluate(args: argparse.Namespace) -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     rows = []
     saved = False
-    config = PipelineConfig(rounds=3, optimize_seams=False,
+    config = PipelineConfig(rounds=3, optimize_seams=False, seam_method="legacy",
                             coordinate_method=args.coordinate_method)
     for n in args.nodes:
         for seed in args.seeds:
@@ -80,7 +80,7 @@ def evaluate(args: argparse.Namespace) -> None:
                 baseline.subdivided, after, method=config.coordinate_method,
                 bend_weight=config.coordinate_bend_weight,
             )
-            # Repeat the public default path end-to-end for the first improved case.
+            # Repeat the sequential boundary path end-to-end for the first improved case.
             if after_count < before_count and not saved:
                 integrated = run_pipeline(baseline.original_graph, replace(config, optimize_seams=True))
                 if integrated is None:

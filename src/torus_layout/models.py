@@ -14,6 +14,7 @@ type Winding = dict[Edge, int]
 type Positions = dict[Node, tuple[float, float]]
 type BalanceMethod = Literal["diff", "diff_square", "qp", "barycenter"]
 type SiftingMethod = Literal["radial", "shortest", "parting", "global"]
+type SeamMethod = Literal["joint", "legacy"]
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,7 @@ class PipelineResult:
     crossing_time: float
     coordinate_time: float
     balance_time: float = 0.0
+    seam_method_used: SeamMethod | None = None
     subdivision_time: float = 0.0
 
 
@@ -97,3 +99,4 @@ class PipelineConfig:
     unwind_levels: bool = constants.DEFAULT_UNWIND_LEVELS
     sifting_method: SiftingMethod = constants.DEFAULT_SIFTING_METHOD
     algo2: bool = constants.DEFAULT_ALGO2
+    seam_method: SeamMethod = constants.DEFAULT_SEAM_METHOD

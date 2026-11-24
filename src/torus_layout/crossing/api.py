@@ -2,7 +2,7 @@
 
 from .. import constants
 
-from ..models import SubdividedGraph, CrossingResult, SiftingMethod
+from ..models import SubdividedGraph, CrossingResult, SeamMethod, SiftingMethod
 from .global_sifting import sift_blocks
 from .initialization import initial_orders
 from .sifting import run_radial_sifting, run_sifting_with_global_guard
@@ -12,6 +12,7 @@ from .lib.embedding import (
     postprocess_sifting_rotations,
 )
 from .lib.crossings import count_all_crossings
+from .joint_seam import optimize_joint_seam
 from .seam import optimize_seam, seam_score
 from .unwind import unwind_levels
 
@@ -25,13 +26,17 @@ def reduce_crossings(
     sifting_method: SiftingMethod = constants.DEFAULT_SIFTING_METHOD,
     algo2: bool = constants.DEFAULT_ALGO2,
     prioritize_internal_seams: bool = False,
+    seam_method: SeamMethod = constants.DEFAULT_SEAM_METHOD,
 ) -> CrossingResult:
     """Run the selected sifting method, optional rotation, UNWIND-LEVEL, and seam selection.
 
     Use parting with Algo2 enabled and both boundary options disabled to reproduce the legacy path.
     The seam optimizer requires a proper graph with cyclic adjacent-layer segments.
-    Internal seam crossings can be minimized before the overall count.
+    With UNWIND and seam optimization enabled, joint mode requires zero
+    internal seam segments. The legacy mode uses sequential UNWIND and DP.
     """
+    if seam_method not in ("joint", "legacy"):
+        raise ValueError(f"unknown seam method: {seam_method!r}")
     layers = sorted(graph.layers)
     edges = list(graph.graph.edges)
     order = initial_orders(graph.layers, layers, edges)[0]
@@ -53,14 +58,23 @@ def reduce_crossings(
         postprocess_sifting_rotations(order, winding, layers, edges)
     return _process_boundaries(
         graph, CrossingResult(order, winding), unwind, optimize_seams,
-        prioritize_internal_seams,
+        prioritize_internal_seams, seam_method=seam_method,
     )
 
 
 def _process_boundaries(
     graph: SubdividedGraph, embedding: CrossingResult, unwind: bool, optimize_seams: bool,
-    prioritize_internal_seams: bool,
+    prioritize_internal_seams: bool, *, seam_method: SeamMethod = constants.DEFAULT_SEAM_METHOD,
 ) -> CrossingResult:
+    if seam_method == "joint" and unwind and optimize_seams:
+        joint_result = optimize_joint_seam(graph, embedding)
+        if joint_result is None:
+            raise ValueError(
+                "同時境界最適化ではダミー同士の境界通過を0本にできません。"
+                "従来方式で続行するには --seam-method legacy を指定してください。"
+            )
+        return joint_result
+
     result = embedding
     if unwind:
         result = unwind_levels(graph, result)
