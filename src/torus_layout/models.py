@@ -97,4 +97,3 @@ class PipelineConfig:
     unwind_levels: bool = constants.DEFAULT_UNWIND_LEVELS
     sifting_method: SiftingMethod = constants.DEFAULT_SIFTING_METHOD
     algo2: bool = constants.DEFAULT_ALGO2
-    coordinate_smooth_iterations: int = constants.ALIGNMENT_ITERATIONS

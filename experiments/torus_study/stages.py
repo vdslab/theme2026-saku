@@ -16,7 +16,8 @@ from torus_layout import constants
 from torus_layout.coordinates import assign_coordinates
 from torus_layout.coordinates import api as coordinate_api
 from torus_layout.coordinates import brandes_koepf as bk
-from torus_layout.coordinates.periodic import drawing_period, smooth_torus_edges
+from torus_layout.coordinates.periodic import drawing_period
+from old_torus_layout.coordinate_assignment.brandes_koepf import _smooth_torus_edges
 from torus_layout.crossing import count_crossings, count_seam_segments, optimize_seam, reduce_crossings
 from torus_layout.crossing.lib.crossings import count_all_crossings
 from torus_layout.crossing.initialization import initial_orders
@@ -449,10 +450,22 @@ def uniform_coordinates(sub, crossing, iterations):
     y = {u: (period - len(order)) / 2 + i for order in crossing.order.values()
          for i, u in enumerate(order)}
     if iterations:
-        y = smooth_torus_edges(y, crossing.order, list(sub.graph.edges),
+        y = _smooth_torus_edges(y, crossing.order, list(sub.graph.edges),
                                crossing.winding_numbers, period, 1.0, iterations)
     return CoordinateResult({u: (float(i), y[u]) for i, layer in enumerate(sorted(crossing.order))
                              for u in crossing.order[layer]}, period)
+
+
+def historical_bk(sub, crossing, iterations):
+    """Replay the retired smoothing step for historical ablations."""
+    result = assign_coordinates(sub, crossing, method="brandes_koepf")
+    y = _smooth_torus_edges(
+        {node: y for node, (_, y) in result.positions.items()},
+        crossing.order, list(sub.graph.edges), crossing.winding_numbers,
+        result.period, 1.0, iterations,
+    )
+    return CoordinateResult({node: (x, y[node]) for node, (x, _) in result.positions.items()},
+                            result.period)
 
 
 def coordinate_metrics(sub, crossing, coordinates):
@@ -510,12 +523,11 @@ def coordinate_study(graph, run):
 
     for name, fn in (
         ("uniform", lambda: uniform_coordinates(sub, crossing, 0)),
-        ("uniform_smooth", lambda: uniform_coordinates(sub, crossing, constants.ALIGNMENT_ITERATIONS)),
+        ("uniform_smooth", lambda: uniform_coordinates(sub, crossing, 4)),
         ("bk_no_smooth", lambda: assign_coordinates(
-            sub, crossing, method="brandes_koepf", smooth_iterations=0)),
-        ("bk", lambda: assign_coordinates(sub, crossing, method="brandes_koepf")),
-        ("bk_smooth_10", lambda: assign_coordinates(
-            sub, crossing, method="brandes_koepf", smooth_iterations=10)),
+            sub, crossing, method="brandes_koepf")),
+        ("bk", lambda: historical_bk(sub, crossing, 4)),
+        ("bk_smooth_10", lambda: historical_bk(sub, crossing, 10)),
         ("qp", lambda: assign_coordinates(sub, crossing, method="torus_qp")),
         ("lp", lambda: assign_coordinates(sub, crossing, method="torus_lp")),
         ("lp_bend_1", lambda: assign_coordinates(sub, crossing, method="torus_lp", bend_weight=1)),
@@ -524,7 +536,7 @@ def coordinate_study(graph, run):
     run("coordinates", "bk_3x3", "bk", replicated)
 
     def bk_control(assignment):
-        return assignment(sub, crossing, smooth_iterations=0)
+        return assignment(sub, crossing, method="brandes_koepf")
 
     for direction in range(4):
         def single():

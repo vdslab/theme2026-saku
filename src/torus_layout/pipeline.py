@@ -37,7 +37,6 @@ def run_pipeline(
     coordinates = assign_coordinates(
         subdivided, crossing, method=config.coordinate_method,
         bend_weight=config.coordinate_bend_weight,
-        smooth_iterations=config.coordinate_smooth_iterations,
     )
     coordinate_time = perf_counter() - started
     return PipelineResult(

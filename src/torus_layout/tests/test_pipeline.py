@@ -32,8 +32,8 @@ def test_pipeline_matches_existing_path(
         list(nodes), list(edges), layers, flags, 2
     )
     order, divided_layers, divided_edges, divided_flags, winding, _ = expected
-    positions, _ = legacy.coordinate_assignment(
-        order, divided_layers, divided_edges, divided_flags, winding, list(nodes)
+    positions = legacy.assign_torus_brandes_koepf_coordinates(
+        order, divided_layers, divided_edges, divided_flags, winding, smooth_iterations=0, original_nodes=list(nodes)
     )
     actual = run_pipeline(graph, PipelineConfig(
         method, 2, coordinate_method="brandes_koepf", optimize_seams=False, unwind_levels=False,

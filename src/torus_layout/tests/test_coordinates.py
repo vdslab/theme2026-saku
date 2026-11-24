@@ -13,8 +13,7 @@ from old_torus_layout.coordinate_assignment.brandes_koepf import (
 
 @pytest.mark.parametrize("seed", range(5))
 @pytest.mark.parametrize("gap", [0.5, 1.0, 2.0])
-@pytest.mark.parametrize("iterations", [0, 4])
-def test_coordinates_match_legacy(seed, gap, iterations):
+def test_coordinates_match_legacy_without_smoothing(seed, gap):
     rng = random.Random(seed)
     nodes = tuple(range(12))
     ranks = {node: node // 4 for node in nodes}
@@ -37,11 +36,11 @@ def test_coordinates_match_legacy(seed, gap, iterations):
         divided.torus_flags,
         crossing.winding_numbers,
         gap,
-        iterations,
+        0,
         nodes,
     )
     actual = assign_coordinates(
-        divided, crossing, min_gap=gap, smooth_iterations=iterations, method="brandes_koepf",
+        divided, crossing, min_gap=gap, method="brandes_koepf",
     )
     assert actual.positions.keys() == expected.keys()
     for node, position in expected.items():
@@ -59,11 +58,13 @@ def test_existing_coordinate_regressions_with_new_implementation(monkeypatch):
     spec = importlib.util.spec_from_file_location("coordinate_regressions", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    monkeypatch.setattr(
-        module, "assign_torus_brandes_koepf_coordinates", compute_positions
-    )
+    def without_smoothing(*args, **kwargs):
+        kwargs.pop("smooth_iterations", None)
+        return compute_positions(*args, **kwargs)
+
+    monkeypatch.setattr(module, "assign_torus_brandes_koepf_coordinates", without_smoothing)
     for name in dir(module):
-        if name.startswith("test_"):
+        if name.startswith("test_") and name != "test_smoothing_includes_horizontal_wrap_edges":
             getattr(module, name)()
 
 
@@ -98,7 +99,13 @@ def test_block_coordinates_join_dummy_paths_when_straight_and_feasible(
         assert ys[0] + result.period - ys[-1] >= 0.5
 
 
-def test_default_unsplit_blocks_expand_period_only_as_needed():
+def test_default_unsplit_blocks_expand_period_without_projection(monkeypatch):
+    from torus_layout.coordinates import api
+
+    def unexpected_projection(*args):
+        pytest.fail("block placement should enforce cyclic gaps directly")
+
+    monkeypatch.setattr(api, "project_all_layers", unexpected_projection)
     order = {0: [0], 1: [2, 4], 2: [5, 3], 3: [1]}
     nodes = (0, 1, 4, 5, 2, 3)
     edges = ((0, 2), (2, 3), (3, 1))

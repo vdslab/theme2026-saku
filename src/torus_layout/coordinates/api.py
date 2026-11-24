@@ -3,7 +3,6 @@
 from .. import constants
 from ..constants import (
     MIN_NODE_GAP as MIN_NODE_GAP,
-    ALIGNMENT_ITERATIONS as ALIGNMENT_ITERATIONS,
 )
 
 from collections.abc import Mapping
@@ -20,13 +19,12 @@ from .periodic import (
     center_in_period,
     drawing_period,
     project_all_layers,
-    smooth_torus_edges,
 )
 from .preparation import (
     complete_order,
     find_dummy_nodes,
     validate_graph,
-    validate_parameters,
+    validate_min_gap,
 )
 from .brandes_koepf import (
     align_to_narrowest,
@@ -45,10 +43,10 @@ def compute_positions(
     t_val: Mapping[Edge, bool] | None = None,
     psi: Mapping[Edge, float] | None = None,
     min_gap: float = constants.MIN_NODE_GAP,
-    smooth_iterations: int = constants.ALIGNMENT_ITERATIONS,
     original_nodes: tuple[Node, ...] | None = None,
     *,
     period: float | None = None,
+    project_periodic: bool = True,
 ) -> Positions:
     """
     Compute node coordinates for the drawing stage.
@@ -61,18 +59,18 @@ def compute_positions(
         psi: dict[(u, v), int], top-bottom winding numbers.
         min_gap: minimum cyclic distance between consecutive nodes in one
             layer, including the last-to-first gap across the torus seam.
-        smooth_iterations: ordered smoothing rounds after BK compaction.
         original_nodes: original (non-dummy) nodes.  If supplied, inner
             dummy-to-dummy segments are preferred when type-1 conflicts are
             marked, as in Brandes--Koepf.
         period: optional vertical period for the initial BK layout.
+        project_periodic: enforce cyclic spacing in the returned coordinates.
 
     Returns:
         dict[node, (x, y)]: coordinates in the same drawing coordinate system as
         draw_radial_torus.  When ``min_gap`` is not 1, pass
         ``vertical_period=max_layer_size * min_gap`` to that drawing function.
     """
-    validate_parameters(min_gap, smooth_iterations)
+    validate_min_gap(min_gap)
     t_val = {} if t_val is None else t_val
     psi = {} if psi is None else psi
     layers = sorted(layer_dict.keys())
@@ -111,16 +109,8 @@ def compute_positions(
     )
     y_by_node = balanced_coordinates(variants)
     y_by_node = center_in_period(y_by_node, period, min_gap)
-    y_by_node = project_all_layers(y_by_node, node_order, period, min_gap)
-    y_by_node = smooth_torus_edges(
-        y_by_node=y_by_node,
-        node_order=node_order,
-        edges=edges,
-        psi=psi,
-        period=period,
-        min_gap=min_gap,
-        iterations=smooth_iterations,
-    )
+    if project_periodic:
+        y_by_node = project_all_layers(y_by_node, node_order, period, min_gap)
     x_min = -0.5
     pos: Positions = {}
     for layer in layers:
@@ -135,13 +125,11 @@ def assign_coordinates(
     crossing: CrossingResult,
     *,
     min_gap: float = constants.MIN_NODE_GAP,
-    smooth_iterations: int = constants.ALIGNMENT_ITERATIONS,
     method: str = constants.DEFAULT_COORDINATE_METHOD,
     bend_weight: float = constants.DEFAULT_BEND_WEIGHT,
 ) -> CoordinateResult:
-    """Assign coordinates with BK, block-smoothed BK, 3x3 BK, QP, or L1 LP.
+    """Assign coordinates with BK, block BK, 3x3 BK, QP, or L1 LP.
 
-    ``smooth_iterations`` applies to standard and block-smoothed BK.
     Optimizers keep the existing period and embedding, and use graph.weights.
     ``bend_weight`` penalizes changes in slope at degree-two dummy nodes
     (proper layered edges only).
@@ -151,14 +139,14 @@ def assign_coordinates(
         "brandes_koepf_3x3", "torus_qp", "torus_lp",
     ):
         raise ValueError(f"unknown coordinate method: {method!r}")
-    validate_parameters(min_gap, smooth_iterations)
+    validate_min_gap(min_gap)
     if method == "brandes_koepf_3x3":
         from .replicated import assign_replicated_coordinates
 
         return assign_replicated_coordinates(graph, crossing, min_gap=min_gap)
     period = drawing_period(graph.layers, min_gap)
     if method in ("brandes_koepf_blocks", "brandes_koepf_blocks_unsplit"):
-        from .blocks import prepare_dummy_blocks, smooth_dummy_blocks
+        from .blocks import prepare_dummy_blocks, place_dummy_blocks
 
         order = complete_order(crossing.order, graph.layers, sorted(graph.layers))
         block_of, constraints = prepare_dummy_blocks(
@@ -167,10 +155,11 @@ def assign_coordinates(
         period = constraints.period * min_gap
         initial = compute_positions(
             order, graph.layers, list(graph.graph.edges), graph.torus_flags,
-            crossing.winding_numbers, min_gap, 0, graph.original_nodes, period=period,
+            crossing.winding_numbers, min_gap, graph.original_nodes, period=period,
+            project_periodic=False,
         )
-        positions = smooth_dummy_blocks(
-            graph, crossing.winding_numbers, initial, min_gap, smooth_iterations,
+        positions = place_dummy_blocks(
+            graph, initial, min_gap,
             block_of, constraints,
         )
     elif method == "brandes_koepf":
@@ -181,7 +170,6 @@ def assign_coordinates(
             graph.torus_flags,
             crossing.winding_numbers,
             min_gap,
-            smooth_iterations,
             graph.original_nodes,
         )
     else:

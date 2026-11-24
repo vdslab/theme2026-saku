@@ -105,12 +105,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="座標割当方式（既定: %(default)s）",
     )
     parser.add_argument(
-        "--smooth-iterations",
-        type=_nonnegative_int,
-        default=constants.ALIGNMENT_ITERATIONS,
-        help="通常BK・ブロックBKの周期平滑化回数（0で無効、既定: %(default)s）",
-    )
-    parser.add_argument(
         "--bend-weight", type=_nonnegative_float, default=constants.DEFAULT_BEND_WEIGHT
     )
     parser.add_argument(

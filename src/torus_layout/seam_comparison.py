@@ -44,7 +44,6 @@ def compare_seams(
         baseline,
         method=config.coordinate_method,
         bend_weight=config.coordinate_bend_weight,
-        smooth_iterations=config.coordinate_smooth_iterations,
     )
     if prioritize_internal:
         print(f"内部線分の境界通過数: {before_score[0]} → {after_score[0]}")

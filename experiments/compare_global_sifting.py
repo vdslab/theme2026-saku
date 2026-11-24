@@ -100,32 +100,30 @@ def evaluate(name, family, graph, *, repetitions=3, matched_postprocessing=False
             raise AssertionError(f"{name}: global sifting returned {conflict_count} type-2 conflicts")
         count = count_crossings(divided, crossing)
         boundary = boundary_metrics(divided, crossing.winding_numbers)
-        for smoothing in (0, 4):
-            coordinates = assign_coordinates(divided, crossing, smooth_iterations=smoothing)
-            validation = coordinate_metrics(divided, crossing, coordinates)
-            assert not any(value for key, value in validation.items() if key.endswith("violations"))
-            routes, bounds = torus_routes(paths, divided, crossing, coordinates)
-            drawn = route_metrics(routes, bounds)
-            bends = {route.edge: turns(route.corners) for route in routes}
-            selected = [route for route in routes if route.edge in ((6, 8), (6, 11))]
-            selected_crossings = (crossing_metrics(selected, bounds)["geometric_crossings"]
-                                  if len(selected) == 2 else None)
-            outcomes.append({
-                **row, "status": "ok", "layers": len(divided.layers),
-                "dummy_nodes": len(divided.dummy_nodes), "method": method,
-                "smoothing": smoothing, "seconds": elapsed,
-                "repetitions": repetitions, "matched_postprocessing": matched_postprocessing,
-                "crossings": count, "type2": conflict_count,
-                "geometric_crossings": drawn["geometric_crossings"],
-                "bends": drawn["bends"], "over_two_bends": sum(n > 2 for n in bends.values()),
-                "total_edge_length": drawn["total_edge_length"],
-                "y_seam_segments": boundary["y_seam_segments"],
-                "y_seam_events": boundary["y_seam_events"],
-                "edge_6_8_bends": bends.get((6, 8)), "edge_6_11_bends": bends.get((6, 11)),
-                "edge_6_8_vs_6_11_crossings": selected_crossings,
-            })
-            if smoothing == 4:
-                drawings[method] = (divided, crossing, coordinates)
+        coordinates = assign_coordinates(divided, crossing)
+        validation = coordinate_metrics(divided, crossing, coordinates)
+        assert not any(value for key, value in validation.items() if key.endswith("violations"))
+        routes, bounds = torus_routes(paths, divided, crossing, coordinates)
+        drawn = route_metrics(routes, bounds)
+        bends = {route.edge: turns(route.corners) for route in routes}
+        selected = [route for route in routes if route.edge in ((6, 8), (6, 11))]
+        selected_crossings = (crossing_metrics(selected, bounds)["geometric_crossings"]
+                              if len(selected) == 2 else None)
+        outcomes.append({
+            **row, "status": "ok", "layers": len(divided.layers),
+            "dummy_nodes": len(divided.dummy_nodes), "method": method,
+            "seconds": elapsed,
+            "repetitions": repetitions, "matched_postprocessing": matched_postprocessing,
+            "crossings": count, "type2": conflict_count,
+            "geometric_crossings": drawn["geometric_crossings"],
+            "bends": drawn["bends"], "over_two_bends": sum(n > 2 for n in bends.values()),
+            "total_edge_length": drawn["total_edge_length"],
+            "y_seam_segments": boundary["y_seam_segments"],
+            "y_seam_events": boundary["y_seam_events"],
+            "edge_6_8_bends": bends.get((6, 8)), "edge_6_11_bends": bends.get((6, 11)),
+            "edge_6_8_vs_6_11_crossings": selected_crossings,
+        })
+        drawings[method] = (divided, crossing, coordinates)
     return outcomes, drawings
 
 
@@ -157,7 +155,7 @@ def save_pair_comparison(output, rows, index):
     for method, ax in zip(methods, axes, strict=True):
         ax.imshow(images[method].crop(crop))
         ax.set_axis_off()
-        m = next(r for r in rows if r["method"] == method and int(r["smoothing"]) == 4)
+        m = next(r for r in rows if r["method"] == method)
         ax.set_title(f"{method.capitalize()} sifting\n"
                      f"Crossings: {m['crossings']}  |  Type 2: {m['type2']}  |  Bends: {m['bends']}",
                      pad=4, fontsize=11, color="#182d30")

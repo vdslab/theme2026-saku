@@ -1,4 +1,4 @@
-"""Smooth dummy paths as shared vertical coordinates under fixed layer orders."""
+"""Place dummy paths as shared vertical coordinates under fixed layer orders."""
 
 from collections import defaultdict
 from dataclasses import dataclass
@@ -13,10 +13,13 @@ from ..subdivision import build_dummy_blocks
 class BlockConstraints:
     order: tuple[Node, ...]
     predecessors: dict[Node, set[Node]]
-    successors: dict[Node, set[Node]]
     lower: dict[Node, int]
     latest: dict[Node, int]
     period: int
+
+
+class UnsplitBlockOrderError(ValueError):
+    """The layer orders cannot be realized with a single y per dummy block."""
 
 
 def _block_constraints(
@@ -57,7 +60,7 @@ def _block_constraints(
             latest[block] = min(latest[block], latest[successor] - 1)
         if latest[block] < lower[block]:
             return None
-    return BlockConstraints(sequence, predecessors, successors, lower, latest, period)
+    return BlockConstraints(sequence, predecessors, lower, latest, period)
 
 
 def prepare_dummy_blocks(
@@ -72,7 +75,7 @@ def prepare_dummy_blocks(
         block_of = {node: group[0] for group in groups for node in group}
         constraints = _block_constraints(order, block_of, None)
         if constraints is None:
-            raise ValueError(
+            raise UnsplitBlockOrderError(
                 "ダミー列を分割しない座標割当では層内順序の制約が循環します。"
                 " --coordinate-method brandes_koepf_blocks で分割を許可できます。"
             )
@@ -102,12 +105,10 @@ def prepare_dummy_blocks(
     return block_of, constraints
 
 
-def smooth_dummy_blocks(
+def place_dummy_blocks(
     graph: SubdividedGraph,
-    winding: Winding,
     initial: Positions,
     min_gap: float,
-    iterations: int,
     block_of: dict[Node, Node],
     constraints: BlockConstraints,
 ) -> Positions:
@@ -124,30 +125,6 @@ def smooth_dummy_blocks(
         ])
         coordinates[block] = min(constraints.latest[block], max(lower, sum(values) / len(values)))
 
-    neighbors: dict[Node, list[tuple[Node, int]]] = defaultdict(list)
-    for u, v in graph.graph.edges:
-        source, target = block_of[u], block_of[v]
-        if source == target:
-            continue
-        offset = winding.get((u, v), 0) * constraints.period
-        neighbors[source].append((target, offset))
-        neighbors[target].append((source, -offset))
-
-    for iteration in range(iterations):
-        sequence = constraints.order if iteration % 2 == 0 else reversed(constraints.order)
-        for block in sequence:
-            adjacent = neighbors[block]
-            if not adjacent:
-                continue
-            target = sum(coordinates[other] + offset for other, offset in adjacent) / len(adjacent)
-            lower = max([constraints.lower[block]] + [
-                coordinates[other] + 1 for other in constraints.predecessors[block]
-            ])
-            upper = min([constraints.latest[block]] + [
-                coordinates[other] - 1 for other in constraints.successors[block]
-            ])
-            updated = 0.65 * target + 0.35 * coordinates[block]
-            coordinates[block] = min(upper, max(lower, updated))
     # For wide periods the renderer's cut can fall inside the rank bounds.
     # Translate all blocks together to keep every coordinate in the drawing.
     y_min, y_max = vertical_bounds(constraints.period, max(map(len, graph.layers.values())))

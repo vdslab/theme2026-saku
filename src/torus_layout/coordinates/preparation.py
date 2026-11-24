@@ -1,4 +1,4 @@
-from ..validation import is_integer, is_number, is_tuple
+from ..validation import is_number, is_tuple
 
 """元と同じ入力検証と順序の補完。"""
 from collections.abc import Mapping
@@ -36,15 +36,11 @@ def complete_order(
     return completed
 
 
-def validate_parameters(min_gap: float, smooth_iterations: int) -> None:
+def validate_min_gap(min_gap: float) -> None:
     if not is_number(min_gap) or not math.isfinite(min_gap):
         raise ValueError("min_gap must be a finite number")
     if min_gap <= 0:
         raise ValueError("min_gap must be greater than zero")
-    if isinstance(smooth_iterations, bool) or not is_integer(smooth_iterations):
-        raise ValueError("smooth_iterations must be a non-negative integer")
-    if smooth_iterations < 0:
-        raise ValueError("smooth_iterations must be a non-negative integer")
 
 
 def validate_graph(

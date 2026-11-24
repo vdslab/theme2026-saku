@@ -4,7 +4,7 @@
 
 この方式のCLI入力、階層割当・交差削減・座標割当、描画の既定値は
 [`constants.py`](constants.py) にまとめています。反復数は `DEFAULT_ROUNDS`、
-最小頂点間隔は `MIN_NODE_GAP`、平滑化回数は `ALIGNMENT_ITERATIONS` です。
+最小頂点間隔は `MIN_NODE_GAP` です。
 配色・線種は `drawing/styles.py` にあります。
 定数を編集した場合はプロセスを起動し直してください。CLI引数やAPI引数の明示指定が優先されます。
 CLIと描画APIで従来から異なる周辺タイル表示の既定値は、別の定数で維持しています。
@@ -23,7 +23,7 @@ PYTHONPATH=src ./theme2026-saku/bin/python -m torus_layout
 ```
 
 グラフ生成 → 階層割当 → ダミー挿入 → sifting → 必要に応じて層回転 → 必要に応じてUNWIND-LEVEL → 境界最適化DP →
-BK系＋周期平滑化による座標割当 → 評価表示・描画保存、まで実行します。
+BK系による座標割当 → 評価表示・描画保存、まで実行します。
 既定値はwatts_strogatz、25ノード、近傍数4、再配線率0.1、seed未指定、
 階層バランス`diff_square`、siftingは`global`で最大5回、UNWIND無効、境界最適化有効、座標方式`brandes_koepf_blocks_unsplit`です。
 
@@ -80,7 +80,7 @@ UNWINDとは独立した設定で、併用時は層回転を先に実行しま�
 `brandes_koepf_3x3` から選べます。
 `brandes_koepf_3x3` は周囲8方向にコピーを置き、巻き数に応じてコピー間を接続し、
 4方向BKの中央値統合後に中央のタイルだけを取り出す実験方式です。
-周期補正・平滑化は使わず、描画周期を座標の広がりに合わせます。
+周期射影を使わず、描画周期を座標の広がりに合わせます。
 コピーの座標は独立で、周期的に同じ配置となる制約は課していません。
 3×3の外側へ出るセグメントは除外します（巻き数の絶対値が2以上だと、
 中央タイルから出る辺も一部対象外になります）。
@@ -115,13 +115,13 @@ CLIの引数定義・検証は `cli_arguments.py`、境界最適化の比較は 
 その選択は実行スコープを抜けると元に戻るようにしています。
 
 > 既定の `brandes_koepf_blocks_unsplit` は、長辺ごとに全ダミー頂点で同じ `y` を共有します。層順と最小間隔を満たす最小の周期を使います。元の切れ目で内部線分の巻き数がすべて0なら、境界最適化後も各ブロックの頂点は同じ側に残るか、まとめて切れ目の反対側へ移ります。層内順序の制約が循環する場合は `--coordinate-method brandes_koepf_blocks` で分割を許可できます。
-> `--smooth-iterations 0` でBKの周期平滑化を無効化できます。既定は4回で、0回でも周期射影は行います。
-> `--coordinate-method brandes_koepf_blocks` は、長辺の連続するダミー頂点を同じ `y` に揃えてから、ブロック単位で平滑化します。層順・間隔の制約と両立しない箇所や、層内方向の巻きがある線分ではブロックを分けます。0回でもブロックの整列は行います。
+> `--coordinate-method brandes_koepf_blocks` は、長辺の連続するダミー頂点を同じ `y` に揃えます。層順・間隔の制約と両立しない箇所や、層内方向の巻きがある線分ではブロックを分けます。
+> ブロックBKは射影前のBK座標を目標にし、各ブロックの配置時に周期境界を含む最小間隔を確保します。通常BKは周期射影で最小間隔を確保します。
 > `--coordinate-method torus_qp` または `torus_lp` でQP・LPを明示的に選べます。
 > `PipelineConfig(coordinate_method="torus_qp")` と `coordinate_bend_weight` も利用可能です。
 > [定式化・比較実験・手法選定](../../documents/torus_coordinate_assignment.md)を参照してください。
-> 以下の旧実装との一致の記述は、座標方式に`brandes_koepf`を指定し、
-> 境界最適化を`optimize_seams=False`、UNWINDを`unwind_levels=False`で無効化した場合に適用されます。
+> 旧実装と比較する場合は、現行側に `brandes_koepf` を指定し、
+> 境界最適化とUNWINDを無効にします。座標は旧実装の平滑化0回に対応します。
 
 ## UNWIND-LEVEL
 
@@ -219,7 +219,7 @@ rootの `__init__.py` は `Graph` だけを公開し、ソルバーやMatplotlib
 | `subdivision.insert_dummy_nodes` | 長距離辺を分割し、重みとトーラスフラグを引き継ぐ |
 | `crossing.reduce_crossings` | `initialization.py` の円形重心初期順序、`sifting.py` などのsifting、指定に応じて `lib/embedding.py` の層回転を適用する |
 | `crossing.count_crossings` | `lib/crossings.py` で現在のradial交差数を評価する |
-| `coordinates.assign_coordinates` | `brandes_koepf.py` の4方向BK系整列・圧縮・中央値統合と、`periodic.py` の周期的な射影・平滑化を行う |
+| `coordinates.assign_coordinates` | `brandes_koepf.py` の4方向BK系整列・圧縮・中央値統合と、`periodic.py` の周期的な射影を行う |
 | `drawing.create_figure` | `preparation.py` の検証・補完、`geometry.py` の周期境界処理、`artists.py` の図形描画を組み立て、Figureを返す |
 | `drawing.draw_layout` | `output.py` で従来相当の保存・表示を行い、Figureを閉じる。周辺タイルは `tiles.py` が担当する |
 | `pipeline.run_pipeline` | 各工程の順序と既存相当の計測を担当する |
@@ -249,7 +249,7 @@ rootの `__init__.py` は `Graph` だけを公開し、ソルバーやMatplotlib
 - `CrossingResult` は、そのダミー挿入済みグラフの層内順序と巻き数です。
   通常の辺とsifting中の一時ID付き辺は別の型で扱います。
 - `CoordinateResult` は座標と実際の計算に使った周期です。
-  `min_gap` と `smooth_iterations` の既定値は現在の1.0と4です。
+  `min_gap` の既定値は1.0です。
 - 公開関数は入力を作業用に変更しません。`frozen=True` は辞書の中身まで不変にするものではありません。
 - `create_figure` の呼び出し側はFigureをcloseします。
   `draw_layout` は従来同様に出力後のcloseまで行います。座標を省略した場合の描画内の補完も維持します。

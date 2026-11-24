@@ -23,7 +23,7 @@ from torus_layout.subdivision import insert_dummy_nodes
 
 from .framework import graphviz, repository_baseline, torus
 from .geometry import route_metrics, torus_routes
-from .stages import (assignment_metrics, attempt_time, coordinate_metrics, copied, fixed_count, initialize,
+from .stages import (assignment_metrics, attempt_time, coordinate_metrics, copied, fixed_count, historical_bk, initialize,
                      prepared, rotate, sift, subdivision_metrics, uniform_coordinates)
 
 ROUNDS = constants.DEFAULT_ROUNDS
@@ -370,8 +370,12 @@ def coordinates(trial, run):
         for name,method,smoothing,bend in methods:
             def compute():
                 with patch.object(api,"drawing_period",return_value=period*factor):
-                    coords, seconds=attempt_time(api.assign_coordinates,sub,crossing,method=method,
-                                                 smooth_iterations=smoothing,bend_weight=bend)
+                    if smoothing:
+                        coords, seconds = attempt_time(historical_bk, sub, crossing, smoothing)
+                    else:
+                        coords, seconds = attempt_time(
+                            api.assign_coordinates, sub, crossing, method=method, bend_weight=bend,
+                        )
                 return {"seconds":seconds,"period_factor":factor,
                         **coordinate_metrics(sub,crossing,coords),
                         **display_metrics(sub,paths,crossing,coords)},None
@@ -488,8 +492,8 @@ def coordinate_audit(trial,run):
                                             ("lp_bend","torus_lp",0,1)):
             def check():
                 with patch.object(api,"drawing_period",return_value=minimum*factor):
-                    coords=api.assign_coordinates(sub,embedding,method=method,
-                                                  smooth_iterations=smooth,bend_weight=bend)
+                    coords = (historical_bk(sub, embedding, smooth) if smooth else
+                              api.assign_coordinates(sub, embedding, method=method, bend_weight=bend))
                 return {"embedding_crossings":expected, "strip_crossings":strip_crossings(sub,embedding,coords),
                         **coordinate_metrics(sub,embedding,coords),
                         **display_metrics(sub,paths,embedding,coords)},None

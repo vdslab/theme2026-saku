@@ -1,9 +1,7 @@
-"""周期的な座標平滑化と順序を保つ射影。"""
+"""周期境界で順序と最小間隔を保つ射影。"""
 
-from collections import defaultdict
-from collections.abc import Mapping
 from typing import TypedDict
-from ..models import Node, Edge, Layers
+from ..models import Node, Layers
 
 
 class IsotonicBlock(TypedDict):
@@ -41,41 +39,6 @@ def project_all_layers(
         for node, value in zip(nodes, values):
             projected[node] = value
     return projected
-
-
-def smooth_torus_edges(
-    y_by_node: dict[Node, float],
-    node_order: Layers,
-    edges: list[Edge],
-    psi: Mapping[Edge, float],
-    period: float,
-    min_gap: float,
-    iterations: int,
-) -> dict[Node, float]:
-    y_values = dict(y_by_node)
-    adjacency: dict[Node, list[tuple[Node, float]]] = defaultdict(list)
-    for edge in edges:
-        u, v = edge
-        winding = psi.get(edge, 0)
-        adjacency[v].append((u, -winding * period))
-        adjacency[u].append((v, winding * period))
-    for _ in range(iterations):
-        next_values = dict(y_values)
-        for nodes in node_order.values():
-            targets: list[float] = []
-            for node in nodes:
-                neighbors = adjacency.get(node, [])
-                if neighbors:
-                    target = sum((y_values[n] + offset for n, offset in neighbors))
-                    target /= len(neighbors)
-                    targets.append(0.65 * target + 0.35 * y_values[node])
-                else:
-                    targets.append(y_values[node])
-            projected = project_ordered_periodic(targets, period, min_gap)
-            for node, value in zip(nodes, projected):
-                next_values[node] = value
-        y_values = next_values
-    return y_values
 
 
 def project_ordered_periodic(

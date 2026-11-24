@@ -46,7 +46,6 @@ def _run(args: argparse.Namespace) -> None:
         rounds=args.rounds,
         coordinate_method=args.coordinate_method,
         coordinate_bend_weight=args.bend_weight,
-        coordinate_smooth_iterations=args.smooth_iterations,
         optimize_seams=not args.no_optimize_seams,
         unwind_levels=args.unwind,
         algo2=args.algo2,
