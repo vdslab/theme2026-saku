@@ -527,29 +527,6 @@ def drawing_section(root, rows):
             ("image_width_px","幅 (px)"), ("image_height_px","高さ (px)"), ("image_bytes","サイズ (byte)"))))
 
 
-def read_section(root):
-    cases = read_csv(root/"readability"/"answer_key.csv")
-    counts = Counter((r["size"],r["task"],r["wraps"]) for r in cases)
-    media = '<div class="examples">'
-    if cases:
-        representative = next((r for r in cases if r["task"]=="distance" and r["wraps"]=="1"
-                               and r["size"]=="20"),cases[0])
-        for style, title in (("sugiyama","平面杉山法"),("torus_base","トーラス中央のみ"),
-                             ("torus_context","トーラス＋周辺タイル")):
-            path = f'readability/images/{representative["trial"]}-{style}.png'
-            if (root/path).exists():
-                media += figure(path,f"同じ読み取り課題を{title}で表示した画像",title)
-    media += "</div>"
-    return section("readability","9. 読み取り実験の準備",f'''
-<p>{len(cases)} 問・{len(cases)*3} 画像を生成した。課題は矢印の向きと、有向最短経路の辺数。中心の配置・縮尺を固定し、周辺タイルの有無を比較できる。3 フォームに均等割付したとき、同じ項目が全体で 3 条件に回る。</p>
-<p class="caution">参加者の回答はない。幾何交差が少ないことや、境界通過線分が減ることから、人の正答率や時間の効果を推定していない。</p>
-<p><a href="readability/form_0.csv">出題フォーム 0</a> · <a href="readability/form_1.csv">フォーム 1</a> · <a href="readability/form_2.csv">フォーム 2</a> · <a href="readability/stimulus_audit.csv">刺激選定記録</a></p>
-''' + table("生成した課題", ("課題", "頂点数", "境界を通る", "項目数"), [
-        ("辺の向き" if task=="direction" else "最短経路の長さ", int(size), "あり" if wraps=="1" else "なし", count)
-        for (size,task,wraps),count in sorted(counts.items())])
-        + media)
-
-
 def followup_section(root):
     records = read_csv(root/"followup"/"fixed_period.csv")
     data = []
@@ -579,7 +556,7 @@ def followup_section(root):
         for measure,key in (("上下通過線分","seam_segments"), ("上下通過元辺","y_seam_edges"),
                             ("幾何交差","geometric_crossings"), ("総辺長","total_edge_length"))
     ])
-    return section("followup","10. 結果を受けた追加実験",'''
+    return section("followup","9. 結果を受けた追加実験",'''
 <h3>10.1 3×3 BK の改善は周期の違いでも説明できるか</h3>
 <p>通常の比較では 3×3 BK が曲がりを減らす一方で周期も変わる。そこで各族・頂点数・密度の seed 0 について、同じ層・順序・巻き数を使い、既定 BK の周期だけを 3×3 BK と同じ値に広げた。3×3 BK とこの対照の差は、共通の周期下で残る座標方式の差を示す。</p>
 ''' + figure(chart, "3×3 BKの曲がりの差を、既定周期のBKと同じ周期のBKに対して比較したグラフ。",
@@ -640,16 +617,14 @@ def main():
     synthetic = runs["framework_timed"]
     overall = paired(synthetic,"framework","torus","sugiyama","geometric_crossings")
     seam = paired(runs["crossing"],"crossing_step","unwind_1_dp_1","unwind_0_dp_0","seam_segments")
-    stimuli = len(read_csv(root/"readability"/"answer_key.csv"))
     sections = {
         "overview": "評価の要約", "framework": "全体比較", "layering": "階層割当", "subdivision": "ダミー挿入",
         "crossing": "交差・境界", "coordinates": "座標割当", "oracles": "厳密照合",
-        "scaling": "規模", "drawing": "描画", "readability": "読解", "followup": "追加実験", "methods": "実行条件",
+        "scaling": "規模", "drawing": "描画", "followup": "追加実験", "methods": "実行条件",
     }
     highlights = [
         (f"{len(overall)} 組","平面杉山とトーラスの交差を比較できた統制生成入力"),
         (f"{len(seam)} 組","UNWIND・DP の有無を比較できた入力"),
-        (f"{stimuli} 問","読み取り実験の刺激"),
     ]
     cards = "".join(f'<div class="card"><strong>{amount}</strong>{caption}</div>' for amount,caption in highlights)
     evaluation_path = root/"evaluation.json"
@@ -660,7 +635,7 @@ def main():
               layer_section(root,runs["layering"]), subdivision_section(runs["subdivision"]),
               crossing_section(root,runs["crossing"]), coordinate_section(root,runs["coordinates"]),
               oracle_section(runs["oracles_batched"]), scaling_section(root,runs["scaling"]),
-              drawing_section(root,runs["drawing"]), read_section(root), followup_section(root),
+              drawing_section(root,runs["drawing"]), followup_section(root),
               provenance_section(root,groups))
     body = ""
     for name, block in zip(sections, blocks, strict=True):
