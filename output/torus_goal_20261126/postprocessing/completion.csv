@@ -1,0 +1,6 @@
+scope,inputs,trials,radial_fail,global_fail,paired_complete
+all,30,60,13,0,17
+ring,7,14,1,0,6
+random,6,12,1,0,5
+dag,6,12,0,0,6
+public,11,22,11,0,0

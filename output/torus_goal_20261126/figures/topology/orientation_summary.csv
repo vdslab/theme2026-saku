@@ -1,0 +1,5 @@
+orientation,blocks,paired,increased,unchanged,decreased,median_change,bootstrap_low,bootstrap_high
+acyclic,20,20,14,1,5,4.0,0.5,7.0
+coherent,20,20,0,20,0,0.0,0.0,0.0
+flip_quarter,20,20,15,3,2,3.5,1.0,6.0
+random_direction,20,20,19,0,1,8.0,4.0,11.5

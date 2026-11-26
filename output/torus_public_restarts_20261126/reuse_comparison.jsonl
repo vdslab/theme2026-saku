@@ -1,0 +1,2 @@
+{"case": "krackhardt-advice-0-12", "without_reuse_status": "ok", "with_reuse_status": "ok", "without_reuse_seconds": 61.73105770799884, "with_reuse_seconds": 29.986046500001976, "equal_drawings": true, "speed_ratio": 2.0586594404165544}
+{"case": "krackhardt-advice-1-12", "without_reuse_status": "ok", "with_reuse_status": "ok", "without_reuse_seconds": 59.536474499996984, "with_reuse_seconds": 29.428345000000263, "equal_drawings": true, "speed_ratio": 2.0230996510336023}

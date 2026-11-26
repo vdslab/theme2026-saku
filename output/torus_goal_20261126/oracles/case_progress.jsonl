@@ -1,0 +1,5 @@
+{"case": "proper-3-2-0.25-0", "family": "proper", "status": "ok", "worker_seconds": 0.608525625000766, "recorded_variants": 4, "workers": "{\"oracles\": {\"status\": \"ok\", \"worker_seconds\": 0.608525625000766}}"}
+{"case": "proper-3-2-0.65-0", "family": "proper", "status": "ok", "worker_seconds": 0.6091052080009831, "recorded_variants": 4, "workers": "{\"oracles\": {\"status\": \"ok\", \"worker_seconds\": 0.6091052080009831}}"}
+{"case": "dag-6-2-0", "family": "dag", "status": "ok", "worker_seconds": 0.6187671660009073, "recorded_variants": 2, "workers": "{\"oracles\": {\"status\": \"ok\", \"worker_seconds\": 0.6187671660009073}}"}
+{"case": "random-6-2-0", "family": "random", "status": "ok", "worker_seconds": 0.6070302500011167, "recorded_variants": 2, "workers": "{\"oracles\": {\"status\": \"ok\", \"worker_seconds\": 0.6070302500011167}}"}
+{"case": "cycle-6-2-0", "family": "cycle", "status": "ok", "worker_seconds": 0.5603383330017095, "recorded_variants": 2, "workers": "{\"oracles\": {\"status\": \"ok\", \"worker_seconds\": 0.5603383330017095}}"}

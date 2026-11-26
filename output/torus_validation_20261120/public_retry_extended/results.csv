@@ -1,0 +1,3 @@
+group,family,seed,source_sha256,source,nodes,edges,scc_count,largest_scc_fraction,cyclic_node_fraction,selection,original_status,case,variant,status,error_type,error_location,wall_seconds,solver_limited
+public_retry,UKfaculty,0,,https://github.com/igraph/igraphdata/blob/main/data/UKfaculty.rda,14,99,2,0.9285714285714286,0.9285714285714286,"11,4,6,12,15,21,22,32,39,42,48,67,68,76",error,UKfaculty-induced-0,native,error,AttributeError,_attrutil.pyx:119,8.041672500083223,True
+public_retry,UKfaculty,0,,https://github.com/igraph/igraphdata/blob/main/data/UKfaculty.rda,14,99,2,0.9285714285714286,0.9285714285714286,"11,4,6,12,15,21,22,32,39,42,48,67,68,76",error,UKfaculty-induced-0,one_round_linear,error,AttributeError,_attrutil.pyx:119,8.020849749911577,True

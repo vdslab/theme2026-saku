@@ -1,0 +1,13 @@
+case,variant,status,nodes,edges,step,phase,complete,seconds,seam_method,segments,dummy_nodes
+watts_strogatz-500-2-0,torus_budgeted,ok,500,1000,1,insert_dummy_nodes,True,0.004393417002575006,,,
+watts_strogatz-500-2-0,torus_budgeted,ok,500,1000,2,reduce_crossings,True,21.580539249996946,joint,8484,7484
+watts_strogatz-500-2-0,torus_budgeted,ok,500,1000,3,initial_orders,True,0.04859733299963409,,,
+watts_strogatz-500-2-0,torus_budgeted,ok,500,1000,4,sift_blocks,True,20.00269725000544,,,
+watts_strogatz-500-2-0,torus_budgeted,ok,500,1000,5,_process_boundaries,True,1.5291318750023493,,,
+watts_strogatz-500-2-0,torus_budgeted,ok,500,1000,6,assign_coordinates,True,0.5628483750042506,,,
+watts_strogatz-1000-2-0,torus_budgeted,ok,1000,2000,1,insert_dummy_nodes,True,0.011095457994088065,,,
+watts_strogatz-1000-2-0,torus_budgeted,ok,1000,2000,2,reduce_crossings,True,28.20307020800101,joint,23616,21616
+watts_strogatz-1000-2-0,torus_budgeted,ok,1000,2000,3,initial_orders,True,0.16283020800619852,,,
+watts_strogatz-1000-2-0,torus_budgeted,ok,1000,2000,4,sift_blocks,True,20.011883917002706,,,
+watts_strogatz-1000-2-0,torus_budgeted,ok,1000,2000,5,_process_boundaries,True,8.027994541997032,,,
+watts_strogatz-1000-2-0,torus_budgeted,ok,1000,2000,6,assign_coordinates,True,2.3701406250038417,,,

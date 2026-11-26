@@ -1,0 +1,16 @@
+nodes,family,trials,assignment_comparable,drawing_comparable,dummy_nodes_diff_median,dummy_nodes_decrease,dummy_nodes_same,dummy_nodes_increase,max_span_diff_median,max_span_decrease,max_span_same,max_span_increase,seconds_diff_median,seconds_decrease,seconds_same,seconds_increase,drawing_seconds_diff_median,drawing_seconds_decrease,drawing_seconds_same,drawing_seconds_increase,geometric_crossings_diff_median,geometric_crossings_decrease,geometric_crossings_same,geometric_crossings_increase
+20,random,1,1,1,1,0,0,1,0,0,1,0,0.014103333000093699,0,0,1,0.005421334004495293,0,0,1,-2,1,0,0
+20,scc_chain,1,1,1,2,0,0,1,0,0,1,0,0.0040712920017540455,0,0,1,0.03942700001061894,0,0,1,-1,1,0,0
+20,watts_strogatz,1,1,1,0,0,1,0,0,0,1,0,0.017965707986149937,0,0,1,-0.00017508299788460135,1,0,0,0,0,1,0
+40,random,1,1,1,19,0,0,1,-2,1,0,0,0.05404945800546557,0,0,1,-0.06361329200444743,1,0,0,51,0,0,1
+40,scc_chain,1,1,1,2,0,0,1,0,0,1,0,0.8073362499999348,0,0,1,0.23348408300080337,0,0,1,61,0,0,1
+40,watts_strogatz,1,1,1,0,0,1,0,0,0,1,0,-0.04927287499594968,1,0,0,0.0011472499900264665,0,0,1,0,0,1,0
+60,random,1,1,1,5,0,0,1,0,0,1,0,0.01819983399764169,0,0,1,-7.7828487920050975,1,0,0,22,0,0,1
+60,scc_chain,1,1,1,5,0,0,1,0,0,1,0,0.6778465839888668,0,0,1,1.479226125011337,0,0,1,-16,1,0,0
+60,watts_strogatz,1,1,1,0,0,1,0,0,0,1,0,0.7266979580017505,0,0,1,-0.025706457992782816,1,0,0,1,0,0,1
+80,random,1,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0
+80,scc_chain,1,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0
+80,watts_strogatz,1,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0
+100,random,1,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0
+100,scc_chain,1,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0
+100,watts_strogatz,1,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0

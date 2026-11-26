@@ -1,0 +1,5 @@
+{
+  "coordinate_method": "brandes_koepf_blocks",
+  "input": "saved final embedding",
+  "postprocessing_settings": "../settings.json"
+}

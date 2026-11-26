@@ -1,0 +1,13 @@
+{
+  "source_sha256": "d897e3b189ef6d4973dfe395d7ea65aa5e057e3c9c2a0bf92ab85aadeb7c7c72",
+  "coordinate_domain_input": "output/torus_validation_20261120/coordinate_audit/inputs.jsonl",
+  "local_license": true,
+  "period_factors": [
+    1,
+    1.25,
+    1.6
+  ],
+  "minimum_node_gap": 1,
+  "render_entry_point": "torus_layout.drawing.preparation.prepare_drawing",
+  "solver_budget_override": null
+}

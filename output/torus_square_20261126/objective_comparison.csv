@@ -1,0 +1,13 @@
+case,family,nodes,edges,setup_status,setup_solver_limited,linear_status,linear_span_square_sum,quadratic_status,quadratic_span_square_sum,epigraph_status,epigraph_solve_seconds,epigraph_span_square_sum,epigraph_integer_lower_bound,epigraph_integer_gap,linear_drawing_status,linear_crossings,epigraph_drawing_status,epigraph_crossings
+dag-12-2-321,dag,12,24,ok,False,ok,152,ok,144,ok,0.0051481249975040555,144,144,0,,,ok,8
+dag-18-2-321,dag,18,36,ok,False,ok,223,ok,217,ok,0.005479749997903127,217,217,0,,,ok,41
+dag-36-2-321,dag,36,72,ok,False,ok,723,ok,703,ok,0.009790125004656147,703,703,0,,,ok,139
+dag-60-2-321,dag,60,120,ok,False,ok,545,ok,524,ok,0.02009583300241502,524,524,0,,,ok,359
+dag-90-2-321,dag,90,180,ok,False,ok,1027,license_size_limit,,ok,0.0269414160065935,1014,1014,0,,,ok,769
+dag-120-2-321,dag,120,240,ok,False,ok,1434,license_size_limit,,ok,0.029234749999886844,1368,1368,0,,,ok,1642
+watts_strogatz-12-2-321,watts_strogatz,12,24,ok,False,ok,104,ok,104,ok,0.010580082998785656,104,104,0,,,ok,2
+watts_strogatz-18-2-321,watts_strogatz,18,36,ok,False,ok,119,ok,119,ok,0.042465708997042384,119,119,0,,,ok,0
+watts_strogatz-36-2-321,watts_strogatz,36,72,ok,False,ok,2075,ok,2075,ok,0.06527245799952652,2075,2075,0,,,ok,1
+watts_strogatz-60-2-321,watts_strogatz,60,120,ok,False,ok,2110,ok,1828,ok,0.28553754099993967,1828,1828,0,,,ok,20
+watts_strogatz-90-2-321,watts_strogatz,90,180,ok,False,ok,6148,license_size_limit,,ok,0.2884148339944659,5487,5487,0,,,ok,37
+watts_strogatz-120-2-321,watts_strogatz,120,240,ok,False,ok,15450,license_size_limit,,ok,0.2731967080035247,15450,15450,0,,,ok,19

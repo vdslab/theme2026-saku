@@ -1,0 +1,2 @@
+case,family,status,worker_seconds,recorded_variants,workers
+dag-10-2-0,dag,ok,100.86261600116268,6,"{""torus"": {""status"": ""ok"", ""worker_seconds"": 17.735332417069003}, ""sugiyama"": {""status"": ""ok"", ""worker_seconds"": 16.323786250082776}, ""radial"": {""status"": ""ok"", ""worker_seconds"": 16.67374320793897}, ""dot"": {""status"": ""ok"", ""worker_seconds"": 16.39074670802802}, ""torus_without_unwind_or_dp"": {""status"": ""ok"", ""worker_seconds"": 16.61924520903267}, ""cylindrical_reference"": {""status"": ""ok"", ""worker_seconds"": 17.119762209011242}}"

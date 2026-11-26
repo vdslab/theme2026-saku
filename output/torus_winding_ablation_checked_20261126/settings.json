@@ -1,0 +1,14 @@
+{
+  "group": "winding_ablation",
+  "solver_seconds": 4.0,
+  "wall_seconds": 20.0,
+  "local_license": true,
+  "jobs": 2,
+  "dot": "/opt/homebrew/bin/dot",
+  "source_sha256": "d153c88d9c34f0f84410cf5438a4d2949d3fea9814c9ddb09e97711fd0fc1605",
+  "case_ids": null,
+  "reverse_order": false,
+  "sifting_budgets": null,
+  "sifting_check_limits": null,
+  "dot_version": "dot - graphviz version 16.1.1 (20261108.1752)"
+}

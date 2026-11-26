@@ -1,0 +1,16 @@
+group,metric,inputs,radial_total,global_total,radial_median,global_median,fewer,tied,more
+All inputs,crossings,30,8445,4270,43.5,26.5,22,4,4
+All inputs,type2,30,1023,0,0.0,0.0,10,20,0
+All inputs,y_seam_events,30,603,274,9.0,5.0,22,2,6
+All inputs,bends,30,2571,2534,32.5,38.5,12,3,15
+All inputs,over_two_bends,30,410,404,4.0,4.0,10,10,10
+Watts–Strogatz,crossings,19,365,255,7,5,11,4,4
+Watts–Strogatz,type2,19,0,0,0,0,0,19,0
+Watts–Strogatz,y_seam_events,19,132,89,6,4,11,2,6
+Watts–Strogatz,bends,19,479,507,22,25,4,3,12
+Watts–Strogatz,over_two_bends,19,38,41,1,2,4,8,7
+Public data,crossings,11,8080,4015,511,300,11,0,0
+Public data,type2,11,1023,0,55,0,10,1,0
+Public data,y_seam_events,11,471,185,34,19,11,0,0
+Public data,bends,11,2092,2027,134,136,8,0,3
+Public data,over_two_bends,11,372,363,24,24,6,2,3

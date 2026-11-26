@@ -1,0 +1,17 @@
+case,family,nodes,edges,setup_status,setup_solver_limited,linear_status,linear_span_square_sum,quadratic_status,quadratic_span_square_sum,epigraph_status,epigraph_solve_seconds,epigraph_span_square_sum,epigraph_integer_lower_bound,epigraph_integer_gap,linear_drawing_status,linear_crossings,epigraph_drawing_status,epigraph_crossings
+dag-90-2-322,dag,90,180,ok,False,ok,1094,license_size_limit,,ok,0.024968165998870973,1075,1075,0,ok,974,ok,1021
+dag-90-2-323,dag,90,180,ok,False,ok,1055,license_size_limit,,ok,0.026378874994406942,1053,1053,0,ok,1029,ok,1027
+dag-90-4-322,dag,90,360,ok,False,ok,11132,license_size_limit,,ok,0.045257458004925866,11095,11095,0,wall_timeout,,wall_timeout,
+dag-90-4-323,dag,90,360,ok,False,ok,6539,license_size_limit,,ok,0.04598791700118454,6504,6504,0,wall_timeout,,wall_timeout,
+dag-120-2-322,dag,120,240,ok,False,ok,1518,license_size_limit,,ok,0.030965874997491483,1448,1448,0,ok,1467,ok,1607
+dag-120-2-323,dag,120,240,ok,False,ok,1341,license_size_limit,,ok,0.03441512499557575,1294,1294,0,ok,1713,ok,1863
+dag-120-4-322,dag,120,480,ok,False,ok,11055,license_size_limit,,ok,0.05416437500389293,10997,10997,0,wall_timeout,,wall_timeout,
+dag-120-4-323,dag,120,480,ok,True,ok,6729,license_size_limit,,ok,0.060977000001003034,6726,6726,0,wall_timeout,,wall_timeout,
+watts_strogatz-90-2-322,watts_strogatz,90,180,ok,False,ok,4793,license_size_limit,,ok,0.21737749999738298,4685,4685,0,ok,10,ok,20
+watts_strogatz-90-2-323,watts_strogatz,90,180,ok,False,ok,19542,license_size_limit,,ok,0.17520666700147558,19522,19522,0,ok,74,ok,69
+watts_strogatz-90-4-322,watts_strogatz,90,360,ok,True,ok,12708,license_size_limit,,ok,4.023462416997063,12679,1575,11104,ok,517,ok,477
+watts_strogatz-90-4-323,watts_strogatz,90,360,ok,True,ok,20793,license_size_limit,,ok,4.027997167002468,20793,1712,19081,ok,494,ok,494
+watts_strogatz-120-2-322,watts_strogatz,120,240,ok,False,ok,27384,license_size_limit,,ok,0.22138674999587238,27381,27380,1,ok,40,ok,40
+watts_strogatz-120-2-323,watts_strogatz,120,240,ok,False,ok,21297,license_size_limit,,ok,4.017177624999022,20889,1675,19214,error,,error,
+watts_strogatz-120-4-322,watts_strogatz,120,480,wall_timeout,True,,,,,,,,,,,,,
+watts_strogatz-120-4-323,watts_strogatz,120,480,wall_timeout,True,,,,,,,,,,,,,

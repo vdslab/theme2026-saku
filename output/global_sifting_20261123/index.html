@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>トーラス描画でのGlobal Sifting比較</title>
+  <style>
+    :root { font: 16px/1.7 system-ui, -apple-system, "Hiragino Sans", sans-serif; color: #182d30; background: #fbfaf6; }
+    body { margin: 0; }
+    .wrap { width: min(68rem, calc(100% - 2rem)); margin: auto; }
+    header { padding: 2.5rem 0; background: #173b37; color: #fff; }
+    header a { color: #bce9dd; }
+    h1 { font-size: clamp(1.7rem, 5vw, 2.7rem); line-height: 1.2; margin: 0; }
+    h2 { line-height: 1.3; }
+    nav ul { display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding: 0; list-style: none; }
+    main { padding: 1rem 0 3rem; }
+    section + section { margin-top: 3rem; }
+    a { color: #11685e; text-underline-offset: .2em; }
+    p { max-width: 75ch; }
+    .scroll { overflow: auto; }
+    table { border-collapse: collapse; width: 100%; background: #fff; font-variant-numeric: tabular-nums; margin-bottom: 1rem; }
+    caption { text-align: start; font-weight: 650; padding: .5rem 0; }
+    th, td { text-align: start; padding: .45rem .65rem; border-bottom: 1px solid #d6ded9; }
+    thead { background: #e4f0eb; }
+    figure { margin: 1.2rem 0; padding: .8rem; background: #fff; border: 1px solid #d6ded9; }
+    figcaption { margin-bottom: .65rem; }
+    img { display: block; max-width: 100%; height: auto; margin-inline: auto; }
+    .links { margin-bottom: 0; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #eff2ef; padding: .7rem; }
+  </style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>トーラス描画でのGlobal Sifting比較</h1>
+  <p>GlobalはUNWIND-LEVELを省き、Radialは適用した。全体の交差数ではGlobalが少ない入力が22件、同じ入力が4件、多い入力が4件。タイプ2交差はRadialの1023件からGlobalで0件になった。全層で長辺の順序を揃えると、長辺の内部線分同士の交差を防げる。</p>
+  <nav aria-label="目次"><ul>
+    <li><a href="#update">UNWINDを省いた効果</a></li><li><a href="#numbers">数値比較</a></li><li><a href="#drawings">描画例</a></li>
+    <li><a href="#protocol">実装と比較条件</a></li><li><a href="#data">全結果</a></li>
+  </ul></nav>
+</div></header>
+<main class="wrap">
+  <section id="update"><h2>UNWINDを省いた効果</h2>
+    <p>Global Siftingは共通の切れ目を使い、長辺の内部線分の巻き数を0に保った状態で探索する。その後の回転や境界選択では、表示上の巻き数が変わることがある。</p>
+    <p>25ノードの再現例では、同じ層割当・Global Sifting結果に変更前と変更後の後処理を適用した。共通の回転後に第11層から第12層へ向かう長辺の内部線分が一つだけ巻き数+1になった。変更前のUNWINDは同じ層間の全線分から1を引いてその線分を0にする過程で、別の2線分の巻き数を−2にした。変更後は上下の総通過が9回から5回に減り、長辺の内部線分のうち1本が上下をまたぐ。</p>
+    <div class="scroll" tabindex="0" role="region" aria-label="25ノードの例でのUNWINDの比較">
+    <table><caption>25ノードの再現例（seed 2253231208）</caption><thead><tr><th scope="col">指標</th><th scope="col">変更前のGlobal（UNWINDあり）</th><th scope="col">変更後のGlobal（UNWINDなし）</th></tr></thead><tbody><tr><th scope="row">交差数</th><td>3</td><td>3</td></tr><tr><th scope="row">タイプ2交差数</th><td>0</td><td>0</td></tr><tr><th scope="row">上下境界をまたぐ線分数</th><td>7</td><td>5</td></tr><tr><th scope="row">上下境界の総通過回数</th><td>9</td><td>5</td></tr><tr><th scope="row">上下境界をまたぐ長辺の内部線分数</th><td>0</td><td>1</td></tr><tr><th scope="row">曲がり数（1°超）</th><td>31</td><td>29</td></tr></tbody></table>
+    </div>
+    <figure><figcaption>変更前のGlobal。第11層と第12層の間に上下境界へ向かう線が集中。</figcaption>
+      <img src="unwind_case_previous.png" alt="UNWINDありのGlobal。上下境界通過が9回の25ノードのトーラス描画。">
+    </figure>
+    <figure><figcaption>変更後のGlobal。交差数は3件で同じ。上下境界の総通過は5回。</figcaption>
+      <img src="unwind_case_current.png" alt="UNWINDなしのGlobal。上下境界通過が5回の25ノードのトーラス描画。">
+    </figure>
+    <p>この25ノード例は手法の比較用30入力に加えず、UNWINDの変更前後を確かめる個別例として計測した。<a href="unwind_case.csv">個別例の測定値CSV</a></p>
+  </section>
+  <section id="numbers"><h2>数値比較</h2>
+    <p>表の「減少・同数・増加」は、各入力でGlobalの値を同じ入力のRadialと比べた件数。総通過回数は各線分の巻き数の絶対値の和で、巻き数−2は2回と数える。</p>
+    <div class="scroll" tabindex="0" role="region" aria-label="入力群別の比較">
+    <table><caption>入力群別の交差数</caption><thead><tr><th scope="col">辺の向き・入力群</th><th scope="col">入力数</th><th scope="col">Radial平均</th><th scope="col">Global平均</th><th scope="col">減少 / 同数 / 増加</th></tr></thead><tbody><tr><th scope="row">円環沿い</th><td>7</td><td>2.71</td><td>2.00</td><td>2 / 3 / 2</td></tr><tr><th scope="row">ランダム方向</th><td>6</td><td>25.00</td><td>16.67</td><td>5 / 0 / 1</td></tr><tr><th scope="row">DAG</th><td>6</td><td>32.67</td><td>23.50</td><td>4 / 1 / 1</td></tr><tr><th scope="row">公開データ</th><td>11</td><td>734.55</td><td>365.00</td><td>11 / 0 / 0</td></tr></tbody></table>
+    </div>
+    <div class="scroll" tabindex="0" role="region" aria-label="全測定項目の比較">
+    <table><caption>全入力の中央値（共通のBK平滑化4回）</caption><thead><tr><th scope="col">指標</th><th scope="col">Radial</th><th scope="col">Global</th><th scope="col">減少 / 同数 / 増加</th></tr></thead><tbody><tr><th scope="row">交差数（層順・巻き数）</th><td>43.5</td><td>26.5</td><td>22 / 4 / 4</td></tr><tr><th scope="row">交差数（描画の中心線）</th><td>43.5</td><td>26.5</td><td>22 / 4 / 4</td></tr><tr><th scope="row">タイプ2交差</th><td>0.0</td><td>0.0</td><td>10 / 20 / 0</td></tr><tr><th scope="row">曲がり数（1°超）</th><td>34.0</td><td>36.5</td><td>14 / 3 / 13</td></tr><tr><th scope="row">3回以上曲がる元の辺の本数</th><td>3.0</td><td>4.0</td><td>9 / 8 / 13</td></tr><tr><th scope="row">総辺長</th><td>158.8</td><td>161.4</td><td>19 / 0 / 11</td></tr><tr><th scope="row">上下境界をまたぐ線分数</th><td>7.5</td><td>7.0</td><td>16 / 1 / 13</td></tr><tr><th scope="row">上下境界の総通過回数</th><td>7.5</td><td>7.0</td><td>14 / 2 / 14</td></tr><tr><th scope="row">交差削減工程（秒）</th><td>0.156</td><td>0.448</td><td>7 / 0 / 23</td></tr></tbody></table>
+    </div>
+    <p>合成入力での交差数の減少・同数・増加は 11 / 4 / 4 件、公開データ試行では 11 / 0 / 0 件だった。
+    交差の単純合計は合成入力で 365 → 255、公開データで 8080 → 4015。
+    単純合計には交差の多い入力が強く反映される。</p>
+    <p>上下境界の通過は、全入力で合計 821 → 309 回だった。入力ごとの減少・同数・増加は 14 / 2 / 14 件で、減った回数の大きい入力が合計に強く反映されている。</p>
+    <p>タイプ2は、長辺の内部線分同士の交差を指す。Radialで発生したのは10入力。Globalでは全30入力で0件だった。
+    交差削減工程の時間は、入力ごとのGlobal/Radial比の中央値で2.40倍だった。
+    座標を描いた後の幾何交差と層順・巻き数による交差が、どちらかの方式で一致しなかった入力は0件。</p>
+    <p>平滑化を0回に揃えた対照では、曲がり数がGlobalで減少・同数・増加した入力はそれぞれ 11 / 2 / 17 件だった。座標処理の選択も曲がりに影響する。</p>
+    <figure><figcaption>入力ごとの交差数の差。左に伸びるほどGlobalで交差が少ない。</figcaption>
+      <img src="crossing_deltas.png" alt="各入力でGlobalとRadialの交差数の差を表示した横棒グラフ。">
+    </figure>
+  </section>
+  <section id="drawings"><h2>描画例</h2>
+    <p>中央タイルを同じ描画設定で表示した。縦長の図は左がRadial、右がGlobal。横長の図は上がRadial、下がGlobal。線がどこで交差し、長い辺がどこで向きを変えるかを比較できる。</p>
+    <p>30ノードの例では全体の交差数は 5 → 5。
+    指摘のあった6→8と6→11の相互交差は 1 → 0。
+    6→11の曲がりは、平滑化4回で 3 → 3、
+    平滑化0回で 3 → 3 だった。</p>
+    <figure><figcaption>6→8（青）と6→11（橙）の拡大。上がRadial、下がGlobal。座標の縮尺を揃えて表示した。</figcaption>
+      <img src="witness_edges.png" alt="6から8および11に向かう二つの辺を色分けしたRadialとGlobalの比較。">
+    </figure>
+    <figure>
+      <figcaption><strong>ws-30-42-ring</strong> これまで検討してきた30ノードの横長の例。
+      交差 5 → 5、タイプ2 0 → 0、曲がり 43 → 51。</figcaption>
+      <img src="example_1.png" alt="ws-30-42-ringでのRadialとGlobalの描画。">
+      <p class="links"><a href="example_1_radial.png">Radialを拡大</a> · <a href="example_1_global.png">Globalを拡大</a></p>
+    </figure><figure>
+      <figcaption><strong>ws-18-42-dag</strong> 合成入力のうち交差数の差がGlobal側に最も有利な例。
+      交差 58 → 27、タイプ2 0 → 0、曲がり 26 → 26。</figcaption>
+      <img src="example_2.png" alt="ws-18-42-dagでのRadialとGlobalの描画。">
+      <p class="links"><a href="example_2_radial.png">Radialを拡大</a> · <a href="example_2_global.png">Globalを拡大</a></p>
+    </figure><figure>
+      <figcaption><strong>ws-18-42-random</strong> 合成入力のうち交差数の差がGlobal側に最も不利な例。
+      交差 21 → 23、タイプ2 0 → 0、曲がり 24 → 22。</figcaption>
+      <img src="example_3.png" alt="ws-18-42-randomでのRadialとGlobalの描画。">
+      <p class="links"><a href="example_3_radial.png">Radialを拡大</a> · <a href="example_3_global.png">Globalを拡大</a></p>
+    </figure><figure>
+      <figcaption><strong>macaque-induced-0</strong> 公開データで交差数の差が最も大きかった例。
+      交差 1711 → 793、タイプ2 221 → 0、曲がり 277 → 250。</figcaption>
+      <img src="example_4.png" alt="macaque-induced-0でのRadialとGlobalの描画。">
+      <p class="links"><a href="example_4_radial.png">Radialを拡大</a> · <a href="example_4_global.png">Globalを拡大</a></p>
+    </figure>
+    <p>Globalは各長辺のダミー頂点列の相対順を保つため、層ごとに異なる順序を取りたい場合にも同じ順序で通す。この制約はタイプ2交差を防ぎ、層順変更の選択肢を減らす。全交差数や曲がり数の改善幅は、入力と座標処理に依存する。</p>
+  </section>
+  <section id="protocol"><h2>実装と比較条件</h2>
+    <p><strong>Radial</strong> は2007年論文を参照した既存のトーラス実装で、隣接する帯を一つずつ評価し、タイプ2交差には対象帯の線分数を重みとして使う。
+    <strong>Global</strong> は2011年論文 §5.4 をトーラスに適用した方式。元頂点を単独のブロック、各長辺のダミー頂点列を一つのブロックとし、全層で共有する順序の中で挿入候補を探索し、影響する帯全体の交差数を減らす。最終層から第1層へ戻る帯も評価する。外部線分の巻き数は帯ごとに −1・0・1 のparting候補を調べ、共有の切れ目では内部線分の巻き数を0にする。論文のpartingを順次進める実装と比べ、今回は候補位置ごとに列挙するため、計時はこの実装同士の比較を示す。</p>
+    <p><strong>統制条件。</strong> 各入力で層割当とダミー挿入を一度だけ実行し、同じ結果を両方式に渡した。
+    初期の層順には共通の重心法を使い、Globalの探索前に全層で共有するブロック順へ射影した。巻き数の初期化も各方式の手順に従った。
+    同じ5回設定を指定し、回転・境界最適化・周期射影・BKを共通にした。RadialにのみUNWINDを適用した。Globalは改善が止まると早期終了する。
+    各方式を3回ずつ交互に実行し、交差削減工程の中央値を記録した。工程時間にはsiftingと各方式に適用した後処理を含む。同じarm64環境上の経過時間で、一部の測定中にテスト等も実行した。
+    層割当はローカルGurobiでモデルごと3秒・1スレッド。制限つき求解を含む比較入力は1件だった。</p>
+    <p><strong>入力と限界。</strong> Watts–Strogatzの6骨格を3通りに向けた18入力と、30ノードの追加例、Sampson・UKfaculty・macaqueの公開データ試行を利用した。実データの時点や誘導部分グラフには重複があり、入力は独立な標本として扱っていない。全入力で両方式の結果を取得した。
+    比較したのは後処理を含む交差削減工程。共通の座標割当と平滑化では長辺ブロックの直線性を拘束しない。タイプ2が0でも完成図で3回以上曲がる辺はあり得る。</p>
+    <p><a href="https://www.infosun.fim.uni-passau.de/~chris/down/RadialVisualization.pdf#page=7">Bachmaier 2007 §IV-D</a> ·
+    <a href="https://www.infosun.fim.uni-passau.de/~chris/down/GlobalCrossingReductionPP.pdf#page=21">Bachmaierら 2011 §5.4</a> ·
+    <a href="../../src/torus_layout/crossing/global_sifting.py">Global Sifting実装</a> ·
+    <a href="../../experiments/compare_global_sifting.py">実験スクリプト</a> ·
+    <a href="../torus_validation_20261120/sources/provenance.json">公開データの出典とハッシュ</a></p>
+  </section>
+  <section id="data"><h2>全結果</h2>
+    <div class="scroll" tabindex="0" role="region" aria-label="全入力の対応比較">
+    <table><caption>各入力の対応比較（Radial → Global）</caption><thead><tr><th scope="col">入力</th><th scope="col">入力群</th><th scope="col">頂点</th><th scope="col">層</th><th scope="col">交差</th><th scope="col">タイプ2</th><th scope="col">上下通過</th><th scope="col">曲がり</th><th scope="col">秒</th></tr></thead><tbody><tr><th scope="row">UKfaculty-induced-0</th><td>公開データ</td><td>14</td><td>11</td><td>1146 → 471</td><td>202 → 0</td><td>115 → 20</td><td>380 → 358</td><td>7.315 → 19.970</td></tr><tr><th scope="row">UKfaculty-induced-1</th><td>公開データ</td><td>14</td><td>11</td><td>889 → 479</td><td>124 → 0</td><td>123 → 19</td><td>349 → 363</td><td>7.237 → 19.546</td></tr><tr><th scope="row">UKfaculty-induced-2</th><td>公開データ</td><td>14</td><td>7</td><td>230 → 89</td><td>19 → 0</td><td>31 → 5</td><td>96 → 103</td><td>0.645 → 1.531</td></tr><tr><th scope="row">UKfaculty-induced-3</th><td>公開データ</td><td>14</td><td>7</td><td>484 → 215</td><td>55 → 0</td><td>53 → 18</td><td>142 → 131</td><td>1.226 → 4.507</td></tr><tr><th scope="row">macaque-induced-0</th><td>公開データ</td><td>14</td><td>7</td><td>1711 → 793</td><td>221 → 0</td><td>146 → 31</td><td>277 → 250</td><td>7.352 → 27.691</td></tr><tr><th scope="row">macaque-induced-1</th><td>公開データ</td><td>14</td><td>7</td><td>1013 → 541</td><td>132 → 0</td><td>70 → 26</td><td>220 → 207</td><td>4.188 → 12.207</td></tr><tr><th scope="row">macaque-induced-2</th><td>公開データ</td><td>14</td><td>7</td><td>1696 → 835</td><td>205 → 0</td><td>115 → 31</td><td>276 → 261</td><td>7.397 → 26.985</td></tr><tr><th scope="row">macaque-induced-3</th><td>公開データ</td><td>14</td><td>5</td><td>511 → 300</td><td>29 → 0</td><td>26 → 27</td><td>102 → 101</td><td>1.221 → 4.200</td></tr><tr><th scope="row">sampson-time-1</th><td>公開データ</td><td>18</td><td>8</td><td>164 → 133</td><td>32 → 0</td><td>15 → 7</td><td>105 → 99</td><td>0.507 → 1.274</td></tr><tr><th scope="row">sampson-time-2</th><td>公開データ</td><td>18</td><td>6</td><td>115 → 86</td><td>0 → 0</td><td>26 → 3</td><td>77 → 76</td><td>0.511 → 1.961</td></tr><tr><th scope="row">sampson-time-3</th><td>公開データ</td><td>18</td><td>6</td><td>121 → 73</td><td>4 → 0</td><td>4 → 2</td><td>83 → 80</td><td>0.505 → 1.945</td></tr><tr><th scope="row">ws-12-17-dag</th><td>DAG</td><td>12</td><td>6</td><td>4 → 5</td><td>0 → 0</td><td>5 → 4</td><td>17 → 14</td><td>0.040 → 0.063</td></tr><tr><th scope="row">ws-12-17-random</th><td>ランダム方向</td><td>12</td><td>7</td><td>4 → 3</td><td>0 → 0</td><td>2 → 4</td><td>16 → 19</td><td>0.025 → 0.025</td></tr><tr><th scope="row">ws-12-17-ring</th><td>円環沿い</td><td>12</td><td>11</td><td>0 → 0</td><td>0 → 0</td><td>4 → 4</td><td>8 → 10</td><td>0.004 → 0.001</td></tr><tr><th scope="row">ws-12-42-dag</th><td>DAG</td><td>12</td><td>6</td><td>11 → 6</td><td>0 → 0</td><td>4 → 7</td><td>16 → 16</td><td>0.030 → 0.054</td></tr><tr><th scope="row">ws-12-42-random</th><td>ランダム方向</td><td>12</td><td>10</td><td>4 → 3</td><td>0 → 0</td><td>7 → 7</td><td>20 → 24</td><td>0.030 → 0.027</td></tr><tr><th scope="row">ws-12-42-ring</th><td>円環沿い</td><td>12</td><td>9</td><td>0 → 0</td><td>0 → 0</td><td>4 → 6</td><td>6 → 7</td><td>0.006 → 0.002</td></tr><tr><th scope="row">ws-18-17-dag</th><td>DAG</td><td>18</td><td>5</td><td>22 → 13</td><td>0 → 0</td><td>3 → 4</td><td>19 → 21</td><td>0.145 → 0.302</td></tr><tr><th scope="row">ws-18-17-random</th><td>ランダム方向</td><td>18</td><td>7</td><td>12 → 4</td><td>0 → 0</td><td>8 → 3</td><td>33 → 31</td><td>0.079 → 0.143</td></tr><tr><th scope="row">ws-18-17-ring</th><td>円環沿い</td><td>18</td><td>17</td><td>0 → 1</td><td>0 → 0</td><td>6 → 8</td><td>13 → 18</td><td>0.009 → 0.005</td></tr><tr><th scope="row">ws-18-42-dag</th><td>DAG</td><td>18</td><td>6</td><td>58 → 27</td><td>0 → 0</td><td>7 → 8</td><td>26 → 26</td><td>0.130 → 0.447</td></tr><tr><th scope="row">ws-18-42-random</th><td>ランダム方向</td><td>18</td><td>6</td><td>21 → 23</td><td>0 → 0</td><td>3 → 4</td><td>24 → 22</td><td>0.063 → 0.153</td></tr><tr><th scope="row">ws-18-42-ring</th><td>円環沿い</td><td>18</td><td>16</td><td>5 → 2</td><td>0 → 0</td><td>9 → 13</td><td>21 → 28</td><td>0.014 → 0.009</td></tr><tr><th scope="row">ws-24-17-dag</th><td>DAG</td><td>24</td><td>4</td><td>34 → 34</td><td>0 → 0</td><td>2 → 4</td><td>25 → 25</td><td>0.245 → 0.584</td></tr><tr><th scope="row">ws-24-17-random</th><td>ランダム方向</td><td>24</td><td>8</td><td>56 → 26</td><td>0 → 0</td><td>8 → 3</td><td>50 → 48</td><td>0.168 → 0.550</td></tr><tr><th scope="row">ws-24-17-ring</th><td>円環沿い</td><td>24</td><td>23</td><td>2 → 3</td><td>0 → 0</td><td>8 → 9</td><td>35 → 39</td><td>0.025 → 0.018</td></tr><tr><th scope="row">ws-24-42-dag</th><td>DAG</td><td>24</td><td>6</td><td>67 → 56</td><td>0 → 0</td><td>2 → 9</td><td>32 → 31</td><td>0.179 → 0.449</td></tr><tr><th scope="row">ws-24-42-random</th><td>ランダム方向</td><td>24</td><td>6</td><td>53 → 41</td><td>0 → 0</td><td>2 → 7</td><td>40 → 43</td><td>0.183 → 0.719</td></tr><tr><th scope="row">ws-24-42-ring</th><td>円環沿い</td><td>24</td><td>21</td><td>7 → 3</td><td>0 → 0</td><td>10 → 8</td><td>30 → 34</td><td>0.023 → 0.019</td></tr><tr><th scope="row">ws-30-42-ring</th><td>円環沿い</td><td>30</td><td>27</td><td>5 → 5</td><td>0 → 0</td><td>3 → 8</td><td>43 → 51</td><td>0.041 → 0.047</td></tr></tbody></table>
+    </div>
+    <p><a href="measurements.csv">測定値CSV（平滑化0回・4回）</a> · <a href="examples.csv">描画例の選択CSV</a></p>
+    <pre><code>PYTHONHASHSEED=0 MPLBACKEND=Agg ./theme2026-saku/bin/python experiments/compare_global_sifting.py output/global_sifting_20261123</code></pre>
+  </section>
+</main>
+</body>
+</html>

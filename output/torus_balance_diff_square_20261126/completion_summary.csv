@@ -1,0 +1,16 @@
+nodes,family,trials,search_status,linear_assignment_status,square_assignment_status,linear_drawing_status,square_drawing_status,linear_timeout_no_solution,square_license_size_limit
+20,random,5,5,5,5,5,5,0,0
+20,scc_chain,5,5,5,5,5,5,0,0
+20,watts_strogatz,10,10,10,10,10,10,0,0
+40,random,5,5,5,5,5,5,0,0
+40,scc_chain,5,5,5,5,5,5,0,0
+40,watts_strogatz,10,10,10,10,10,10,0,0
+60,random,5,5,5,5,5,5,0,0
+60,scc_chain,5,5,5,5,5,5,0,0
+60,watts_strogatz,10,10,10,10,10,10,0,0
+80,random,5,5,5,0,5,0,0,5
+80,scc_chain,5,5,4,0,4,0,1,5
+80,watts_strogatz,10,10,10,0,10,0,0,10
+100,random,5,5,5,0,5,0,0,5
+100,scc_chain,5,5,4,0,4,0,1,5
+100,watts_strogatz,10,10,10,0,10,0,0,10

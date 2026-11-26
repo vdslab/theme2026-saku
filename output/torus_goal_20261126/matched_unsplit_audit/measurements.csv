@@ -1,0 +1,61 @@
+case,family,nodes,edges,solver_limited,coordinate_method,layers,dummy_nodes,method,seconds,repetitions,matched_postprocessing,crossings,type2,y_seam_segments,y_seam_events,status,geometric_crossings,bends,over_two_bends,total_edge_length,edge_6_8_bends,edge_6_11_bends,edge_6_8_vs_6_11_crossings,error
+ws-12-17-ring,ring,12,24,False,brandes_koepf_blocks_unsplit,11,11,radial,0.0036947920016245916,1,True,0,0,6,6,ok,0,4,0,45.51508126928645,0,,,
+ws-12-17-ring,ring,12,24,False,brandes_koepf_blocks_unsplit,11,11,global,0.0008528329999535345,1,True,0,0,2,2,ok,0,4,0,40.653115193962314,0,,,
+ws-12-17-random,random,12,24,False,brandes_koepf_blocks_unsplit,7,21,global,0.023389875001157634,1,True,3,0,6,6,ok,3,18,0,86.40529109167672,0,,,
+ws-12-17-random,random,12,24,False,brandes_koepf_blocks_unsplit,7,21,radial,0.02185345799807692,1,True,4,0,2,2,ok,4,16,0,72.00379240788634,0,,,
+ws-12-17-dag,dag,12,24,False,brandes_koepf_blocks_unsplit,6,19,radial,0.03617766700335778,1,True,4,0,6,6,ok,4,13,0,84.07342198405566,,,,
+ws-12-17-dag,dag,12,24,False,brandes_koepf_blocks_unsplit,6,19,global,0.05526174999977229,1,True,5,0,3,3,ok,5,12,0,64.69008823313771,,,,
+ws-12-42-ring,ring,12,24,False,brandes_koepf_blocks_unsplit,9,10,global,0.001895166999020148,1,True,0,0,4,4,ok,0,8,0,45.48592582483107,1,,,
+ws-12-42-ring,ring,12,24,False,brandes_koepf_blocks_unsplit,9,10,radial,0.004526125005213544,1,True,0,0,5,5,ok,0,6,0,41.85607261445324,0,,,
+ws-12-42-random,random,12,24,False,brandes_koepf_blocks_unsplit,10,36,global,0.02426000000559725,1,True,3,0,7,7,ok,3,14,0,99.74672614843793,,,,
+ws-12-42-random,random,12,24,False,brandes_koepf_blocks_unsplit,10,36,radial,0.027469917004054878,1,True,4,0,4,4,ok,4,12,0,81.91301566605591,,,,
+ws-12-42-dag,dag,12,24,False,brandes_koepf_blocks_unsplit,6,16,global,0.04638400000112597,1,True,6,0,4,4,ok,6,14,0,66.93514322516454,0,,,
+ws-12-42-dag,dag,12,24,False,brandes_koepf_blocks_unsplit,6,16,radial,0.026756624996778555,1,True,11,0,4,4,ok,11,15,0,83.12673154385759,0,,,
+ws-18-17-ring,ring,18,36,False,brandes_koepf_blocks_unsplit,17,21,radial,0.006892875004268717,1,True,0,0,9,9,ok,0,10,0,72.03718250130204,1,,,
+ws-18-17-ring,ring,18,36,False,brandes_koepf_blocks_unsplit,17,21,global,0.003886042002704926,1,True,1,0,5,5,ok,1,12,0,69.60772814912987,1,,,
+ws-18-17-random,random,18,36,False,brandes_koepf_blocks_unsplit,7,34,global,0.11509766699600732,1,True,4,0,3,3,ok,4,25,0,105.43903454140585,1,,,
+ws-18-17-random,random,18,36,False,brandes_koepf_blocks_unsplit,7,34,radial,0.06133045799651882,1,True,12,0,3,3,ok,12,21,0,107.21091742214936,1,,,
+ws-18-17-dag,dag,18,36,False,brandes_koepf_blocks_unsplit,5,22,radial,0.11308187500253553,1,True,22,0,3,3,ok,22,17,0,101.86071503577608,,,,
+ws-18-17-dag,dag,18,36,False,brandes_koepf_blocks_unsplit,5,22,global,0.23898437499883585,1,True,13,0,2,2,ok,13,18,0,107.91372095672969,,,,
+ws-18-42-ring,ring,18,36,False,brandes_koepf_blocks_unsplit,16,28,global,0.008734083996387199,1,True,2,0,10,10,ok,2,18,0,110.76077021991594,1,2,0,
+ws-18-42-ring,ring,18,36,False,brandes_koepf_blocks_unsplit,16,28,radial,0.014020083996001631,1,True,5,0,8,8,ok,5,14,0,93.00983908393223,1,2,0,
+ws-18-42-random,random,18,36,False,brandes_koepf_blocks_unsplit,6,25,global,0.11801387499872362,1,True,23,0,4,4,ok,23,18,0,104.3691324958215,,,,
+ws-18-42-random,random,18,36,False,brandes_koepf_blocks_unsplit,6,25,radial,0.05023987500317162,1,True,21,0,14,17,ok,21,22,0,311.10957581000145,,,,
+ws-18-42-dag,dag,18,36,False,brandes_koepf_blocks_unsplit,6,28,global,0.4113915839989204,1,True,27,0,4,4,ok,27,21,0,152.64787598729993,,,,
+ws-18-42-dag,dag,18,36,False,brandes_koepf_blocks_unsplit,6,28,radial,0.11430900000414113,1,True,58,0,9,11,ok,58,22,0,257.73575858404126,,,,
+ws-24-17-ring,ring,24,48,False,brandes_koepf_blocks_unsplit,23,44,radial,0.02219025000522379,1,True,2,0,9,9,ok,2,17,0,140.07700889068846,1,,,
+ws-24-17-ring,ring,24,48,False,brandes_koepf_blocks_unsplit,23,44,global,0.015734916996734682,1,True,3,0,7,7,ok,3,19,0,141.98091487554612,1,,,
+ws-24-17-random,random,24,48,False,brandes_koepf_blocks_unsplit,8,53,global,0.5494492919970071,1,True,26,0,4,4,ok,26,36,0,247.6251249086744,2,,,
+ws-24-17-random,random,24,48,False,brandes_koepf_blocks_unsplit,8,53,radial,0.16986795800039545,1,True,56,0,20,20,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+ws-24-17-dag,dag,24,48,False,brandes_koepf_blocks_unsplit,4,25,radial,0.24485812500643078,1,True,34,0,2,2,ok,34,25,0,145.37484106006838,,,,
+ws-24-17-dag,dag,24,48,False,brandes_koepf_blocks_unsplit,4,25,global,0.6163998339980026,1,True,34,0,3,3,ok,34,24,0,154.0879783148849,,,,
+ws-24-42-ring,ring,24,48,False,brandes_koepf_blocks_unsplit,21,40,global,0.01878841700090561,1,True,3,0,4,4,ok,3,16,0,115.56068434268273,1,2,0,
+ws-24-42-ring,ring,24,48,False,brandes_koepf_blocks_unsplit,21,40,radial,0.025899959000525996,1,True,7,0,11,11,ok,7,16,0,136.04883921616582,1,2,0,
+ws-24-42-random,random,24,48,False,brandes_koepf_blocks_unsplit,6,44,global,0.7122144579989254,1,True,41,0,8,8,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+ws-24-42-random,random,24,48,False,brandes_koepf_blocks_unsplit,6,44,radial,0.18360412499896483,1,True,53,0,2,2,ok,53,33,0,183.64046040398304,1,,,
+ws-24-42-dag,dag,24,48,False,brandes_koepf_blocks_unsplit,6,32,global,0.4475037079973845,1,True,56,0,3,3,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+ws-24-42-dag,dag,24,48,False,brandes_koepf_blocks_unsplit,6,32,radial,0.17753787499532336,1,True,67,0,6,6,ok,67,28,0,264.41537818088517,,0,,
+ws-30-42-ring,ring,30,60,False,brandes_koepf_blocks_unsplit,27,75,global,0.04493779200129211,1,True,5,0,6,6,ok,5,18,0,185.81540981516676,1,1,0,
+ws-30-42-ring,ring,30,60,False,brandes_koepf_blocks_unsplit,27,75,radial,0.03831391700077802,1,True,5,0,4,4,ok,5,18,0,201.1842908576653,1,2,1,
+sampson-time-1,public,18,55,False,brandes_koepf_blocks_unsplit,8,106,radial,0.47729262500070035,1,True,164,32,19,19,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+sampson-time-1,public,18,55,False,brandes_koepf_blocks_unsplit,8,106,global,1.0716245000003255,1,True,133,0,7,7,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+sampson-time-2,public,18,57,False,brandes_koepf_blocks_unsplit,6,80,radial,0.44063870800164295,1,True,115,0,20,20,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+sampson-time-2,public,18,57,False,brandes_koepf_blocks_unsplit,6,80,global,1.7104922080034157,1,True,86,0,3,3,ok,86,48,0,340.29140669012446,,,,
+sampson-time-3,public,18,56,False,brandes_koepf_blocks_unsplit,6,83,radial,0.47121395800058963,1,True,121,4,4,4,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+sampson-time-3,public,18,56,False,brandes_koepf_blocks_unsplit,6,83,global,1.7744560840001213,1,True,73,0,2,2,ok,73,57,0,321.1515583391904,,,,
+UKfaculty-induced-0,public,14,99,True,brandes_koepf_blocks_unsplit,11,396,radial,7.362568958000338,1,True,1146,202,34,34,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+UKfaculty-induced-0,public,14,99,True,brandes_koepf_blocks_unsplit,11,396,global,19.912686666997615,1,True,471,0,20,20,ok,471,155,0,2282.5264249563543,,,,
+UKfaculty-induced-1,public,14,98,False,brandes_koepf_blocks_unsplit,11,389,radial,6.9252012919969275,1,True,889,124,48,48,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+UKfaculty-induced-1,public,14,98,False,brandes_koepf_blocks_unsplit,11,389,global,20.113373542000772,1,True,479,0,19,19,ok,479,148,0,2180.4062200797503,,,,
+UKfaculty-induced-2,public,14,51,False,brandes_koepf_blocks_unsplit,7,106,radial,0.5534997919967282,1,True,230,19,13,13,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+UKfaculty-induced-2,public,14,51,False,brandes_koepf_blocks_unsplit,7,106,global,1.4464774579973891,1,True,89,0,5,5,ok,89,61,0,449.79900949536074,0,,,
+UKfaculty-induced-3,public,14,71,False,brandes_koepf_blocks_unsplit,7,145,radial,1.2245067080002627,1,True,484,55,43,53,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+UKfaculty-induced-3,public,14,71,False,brandes_koepf_blocks_unsplit,7,145,global,4.433420291999937,1,True,215,0,16,16,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-0,public,14,119,False,brandes_koepf_blocks_unsplit,7,288,radial,7.363325499994971,1,True,1711,221,79,94,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-0,public,14,119,False,brandes_koepf_blocks_unsplit,7,288,global,28.202570458997798,1,True,793,0,33,33,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-1,public,14,99,False,brandes_koepf_blocks_unsplit,7,231,radial,4.243068249998032,1,True,1013,132,86,114,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-1,public,14,99,False,brandes_koepf_blocks_unsplit,7,231,global,12.162157582999498,1,True,541,0,24,24,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-2,public,14,119,False,brandes_koepf_blocks_unsplit,7,284,radial,7.327132167003583,1,True,1696,205,46,46,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-2,public,14,119,False,brandes_koepf_blocks_unsplit,7,284,global,26.53494941599638,1,True,835,0,31,31,ok,835,172,0,3258.3996373752457,0,1,0,
+macaque-induced-3,public,14,77,False,brandes_koepf_blocks_unsplit,5,110,radial,1.199259749999328,1,True,511,29,26,26,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。
+macaque-induced-3,public,14,77,False,brandes_koepf_blocks_unsplit,5,110,global,4.144076958000369,1,True,300,0,25,25,coordinate_error,,,,,,,,ダミー列を分割しない座標割当では層内順序の制約が循環します。 --coordinate-method brandes_koepf_blocks で分割を許可できます。

@@ -1,0 +1,15 @@
+{
+  "group": "large_delta_scoring",
+  "solver_seconds": 1.5,
+  "wall_seconds": 1800.0,
+  "local_license": true,
+  "jobs": 1,
+  "dot": "/opt/homebrew/bin/dot",
+  "source_sha256": "1e8a1709ab50fdcd32cdba5622c6e758bb8d9083f3d5904636f29c59302a00fa",
+  "case_ids": [
+    "watts_strogatz-1000-2-0"
+  ],
+  "sifting_budgets": null,
+  "sifting_check_limits": null,
+  "dot_version": "dot - graphviz version 16.1.1 (20261108.1752)"
+}

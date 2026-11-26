@@ -1,0 +1,113 @@
+{
+  "topology": {
+    "inputs": 80,
+    "statuses": {
+      "ok": 160
+    }
+  },
+  "scc_control": {
+    "inputs": 30,
+    "statuses": {
+      "ok": 60
+    }
+  },
+  "degree_control": {
+    "inputs": 18,
+    "statuses": {
+      "ok": 36
+    }
+  },
+  "degree_control_random": {
+    "inputs": 30,
+    "statuses": {
+      "ok": 60
+    }
+  },
+  "public": {
+    "inputs": 11,
+    "statuses": {
+      "ok": 29,
+      "wall_timeout": 4
+    }
+  },
+  "public_retry": {
+    "inputs": 4,
+    "statuses": {
+      "ok": 8
+    }
+  },
+  "framework": {
+    "inputs": 48,
+    "statuses": {
+      "ok": 464,
+      "error": 16
+    }
+  },
+  "framework_memory": {
+    "inputs": 24,
+    "statuses": {
+      "ok": 158,
+      "error": 10
+    }
+  },
+  "oracles": {
+    "inputs": 5,
+    "statuses": {
+      "ok": 14
+    }
+  },
+  "crossing_order": {
+    "inputs": 16,
+    "statuses": {
+      "ok": 476,
+      "error": 4
+    }
+  },
+  "coordinates_blocks": {
+    "inputs": 16,
+    "statuses": {
+      "ok": 355,
+      "invalid_coordinates": 12,
+      "error": 1
+    }
+  },
+  "scaling": {
+    "inputs": 24,
+    "statuses": {
+      "ok": 16,
+      "error": 8
+    }
+  },
+  "linear_scaling": {
+    "inputs": 8,
+    "statuses": {
+      "ok": 32,
+      "license_size_limit": 4
+    }
+  },
+  "matched": {
+    "inputs": 30,
+    "statuses": {
+      "ok": 32,
+      "failed": 14
+    }
+  },
+  "matched_split": {
+    "inputs": 30,
+    "statuses": {
+      "ok": 60
+    }
+  },
+  "matched_unsplit_audit": {
+    "inputs": 30,
+    "statuses": {
+      "ok": 41,
+      "coordinate_error": 19
+    }
+  },
+  "audit": {
+    "drawing_domain_ok": 144,
+    "tests_passed": 1435,
+    "local_document_links": "resolved"
+  }
+}

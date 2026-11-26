@@ -1,0 +1,5 @@
+family,attempted,pairs,geometric_crossings_median_delta,geometric_crossings_fewer,geometric_crossings_more,bends_median_delta,bends_fewer,bends_more,overlapping_edge_pairs_median_delta,overlapping_edge_pairs_fewer,overlapping_edge_pairs_more,length_per_frame_diagonal_median_delta,length_per_frame_diagonal_fewer,length_per_frame_diagonal_more,torus_reverse_edges_total,dot_reverse_fraction_median,torus_x_seam_edge_fraction_median,torus_either_seam_edge_fraction_median
+dag,12,12,1.0,2,7,-30.0,12,0,0.0,2,0,-1.2316589760923566,12,0,0,0.0,0.0,0.1076388888888889
+random,12,12,4.0,4,8,-30.5,12,0,0.0,0,0,-0.47703352280105715,8,4,0,0.14583333333333334,0.09722222222222221,0.2013888888888889
+scc_chain,12,12,26.5,0,12,-38.5,12,0,0.0,0,0,2.6470351263101657,0,12,0,0.25,0.25,0.3125
+watts_strogatz,12,12,-1.0,9,0,-24.0,12,0,0.0,0,0,-2.898056270639864,12,0,0,0.1423611111111111,0.059027777777777776,0.14583333333333334

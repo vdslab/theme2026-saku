@@ -1,0 +1,5 @@
+case,family,nodes,edges,allocation,stage,status
+dag-120-2-323,dag,120,240,linear,sift_blocks,wall_timeout
+dag-120-2-323,dag,120,240,epigraph,sift_blocks,wall_timeout
+watts_strogatz-120-2-322,watts_strogatz,120,240,linear,geometry,ok
+watts_strogatz-120-2-322,watts_strogatz,120,240,epigraph,geometry,ok

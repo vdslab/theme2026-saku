@@ -1,0 +1,27 @@
+{
+  "solver_seconds": 4.0,
+  "threads": 1,
+  "solver_seed": 0,
+  "jobs": 1,
+  "pythonhashseed": "0",
+  "sizes": [
+    20,
+    40,
+    60,
+    80,
+    100
+  ],
+  "repetitions_per_family": 1,
+  "families": [
+    "random",
+    "scc_chain",
+    "watts_strogatz"
+  ],
+  "edge_density": 2,
+  "methods": {
+    "linear": "diff",
+    "square": "diff_square"
+  },
+  "default_pipeline_config": "PipelineConfig(balance_method='diff_square', rounds=5, coordinate_method='brandes_koepf_blocks_unsplit', coordinate_bend_weight=0.0, optimize_seams=True, unwind_levels=True, sifting_method='global', algo2=False, seam_method='joint')",
+  "order": "alternates per case; starts linear on even case index"
+}

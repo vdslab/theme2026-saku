@@ -1,0 +1,2 @@
+{"family": "cycle", "attempted": 6, "paired": 6, "fewer": 6, "equal": 0, "more": 0, "median_change": -2241.5, "median_relative_change": -0.7024149707276275}
+{"family": "watts_strogatz", "attempted": 6, "paired": 6, "fewer": 6, "equal": 0, "more": 0, "median_change": -262.0, "median_relative_change": -0.7184316108821756}

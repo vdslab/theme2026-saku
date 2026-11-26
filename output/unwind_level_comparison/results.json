@@ -1,0 +1,14 @@
+[
+  {
+    "unwind": false,
+    "crossings": 0,
+    "seam_segments": 3,
+    "image": "output/unwind_level_comparison/before.png"
+  },
+  {
+    "unwind": true,
+    "crossings": 0,
+    "seam_segments": 0,
+    "image": "output/unwind_level_comparison/after.png"
+  }
+]

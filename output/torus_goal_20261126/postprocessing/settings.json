@@ -1,0 +1,33 @@
+{
+  "configs": {
+    "radial": {
+      "balance_method": "diff_square",
+      "rounds": 5,
+      "coordinate_method": "brandes_koepf_blocks_unsplit",
+      "coordinate_bend_weight": 0.0,
+      "optimize_seams": true,
+      "unwind_levels": true,
+      "sifting_method": "radial",
+      "algo2": true,
+      "seam_method": "legacy"
+    },
+    "global": {
+      "balance_method": "diff_square",
+      "rounds": 5,
+      "coordinate_method": "brandes_koepf_blocks_unsplit",
+      "coordinate_bend_weight": 0.0,
+      "optimize_seams": true,
+      "unwind_levels": true,
+      "sifting_method": "global",
+      "algo2": false,
+      "seam_method": "joint"
+    }
+  },
+  "post_layering_budget_seconds": 60,
+  "solver_model_budget_seconds": 3.0,
+  "solver_threads": 1,
+  "solver_seed": 0,
+  "smoke": false,
+  "previous": "output/torus_goal_20261126/matched_split/measurements.csv",
+  "replay": null
+}

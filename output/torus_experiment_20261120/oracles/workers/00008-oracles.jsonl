@@ -1,0 +1,8 @@
+{"experiment": "sifting_oracle", "variant": "enumerate_zero", "baseline": "enumerate_zero", "status": "running"}
+{"experiment": "sifting_oracle", "variant": "enumerate_zero", "baseline": "enumerate_zero", "status": "ok", "wall_seconds": 5.449983291327953e-05, "embedding_crossings": 1, "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}
+{"experiment": "sifting_oracle", "variant": "sift_zero", "baseline": "enumerate_zero", "status": "running"}
+{"experiment": "sifting_oracle", "variant": "sift_zero", "baseline": "enumerate_zero", "status": "ok", "wall_seconds": 0.0014986249152570963, "embedding_crossings": 1, "inner_segment_crossings": 0, "seam_segments": 0, "winding_magnitude": 0, "angular_span_sum": 2.0, "angular_span_max": 0.5, "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}
+{"experiment": "seam_oracle", "variant": "enumerate_gaps", "baseline": "enumerate_gaps", "status": "running"}
+{"experiment": "seam_oracle", "variant": "enumerate_gaps", "baseline": "enumerate_gaps", "status": "ok", "wall_seconds": 3.833393566310406e-05, "seam_segments": 1, "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}
+{"experiment": "seam_oracle", "variant": "dp", "baseline": "enumerate_gaps", "status": "running"}
+{"experiment": "seam_oracle", "variant": "dp", "baseline": "enumerate_gaps", "status": "ok", "wall_seconds": 0.00014887494035065174, "embedding_crossings": 0, "inner_segment_crossings": 0, "seam_segments": 1, "winding_magnitude": 1, "angular_span_sum": 2.0, "angular_span_max": 0.5, "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}

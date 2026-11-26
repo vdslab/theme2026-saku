@@ -1,0 +1,277 @@
+{
+  "status": "completed",
+  "settings": {
+    "graph": "watts_strogatz",
+    "nodes": 8,
+    "seed": 42,
+    "generator_parameters": {
+      "k": 2,
+      "p": 0.0
+    },
+    "pipeline": {
+      "balance_method": "diff_square",
+      "rounds": 5,
+      "coordinate_method": "torus_lp",
+      "coordinate_bend_weight": 0.0,
+      "optimize_seams": true
+    },
+    "license_mode": "local",
+    "compare_seams": false,
+    "drawing": {
+      "draw_dummy_nodes": false,
+      "align_edges": true,
+      "alignment_iterations": 8,
+      "figsize": null,
+      "dpi": 300,
+      "show_legend": true,
+      "show_layer_labels": true,
+      "node_size": 260,
+      "dummy_node_size": 28,
+      "font_size": 8,
+      "edge_width": 0.9,
+      "vertical_period": null,
+      "tile_surroundings": false,
+      "surrounding_opacity": 0.8,
+      "tile_gap": 0
+    }
+  },
+  "metrics": {
+    "original_nodes": 8,
+    "original_edges": 8,
+    "subdivided_nodes": 8,
+    "segments": 8,
+    "layers": 8,
+    "seam_segments": 0,
+    "crossings": 0,
+    "seam_segments_before": null,
+    "crossings_before": null,
+    "layer_search_seconds": 0.016453027725219727,
+    "balance_seconds": 0.0005049705505371094,
+    "crossing_seconds": 0.0014219589065760374,
+    "coordinate_seconds": 0.0014533749781548977,
+    "computation_wall_seconds": 0.021898666862398386
+  },
+  "input_graph": {
+    "nodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        6,
+        7
+      ]
+    ]
+  },
+  "layer_assignment": [
+    [
+      0,
+      5
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      6,
+      3
+    ],
+    [
+      7,
+      4
+    ]
+  ],
+  "order": [
+    [
+      0,
+      [
+        3
+      ]
+    ],
+    [
+      1,
+      [
+        4
+      ]
+    ],
+    [
+      2,
+      [
+        5
+      ]
+    ],
+    [
+      3,
+      [
+        6
+      ]
+    ],
+    [
+      4,
+      [
+        7
+      ]
+    ],
+    [
+      5,
+      [
+        0
+      ]
+    ],
+    [
+      6,
+      [
+        1
+      ]
+    ],
+    [
+      7,
+      [
+        2
+      ]
+    ]
+  ],
+  "segments": [
+    {
+      "source": 0,
+      "target": 1,
+      "winding": 0,
+      "horizontal_wrap": false
+    },
+    {
+      "source": 7,
+      "target": 0,
+      "winding": 0,
+      "horizontal_wrap": false
+    },
+    {
+      "source": 1,
+      "target": 2,
+      "winding": 0,
+      "horizontal_wrap": false
+    },
+    {
+      "source": 2,
+      "target": 3,
+      "winding": 0,
+      "horizontal_wrap": true
+    },
+    {
+      "source": 3,
+      "target": 4,
+      "winding": 0,
+      "horizontal_wrap": false
+    },
+    {
+      "source": 4,
+      "target": 5,
+      "winding": 0,
+      "horizontal_wrap": false
+    },
+    {
+      "source": 5,
+      "target": 6,
+      "winding": 0,
+      "horizontal_wrap": false
+    },
+    {
+      "source": 6,
+      "target": 7,
+      "winding": 0,
+      "horizontal_wrap": false
+    }
+  ],
+  "coordinates": [
+    [
+      3,
+      0.0,
+      -0.49999999
+    ],
+    [
+      4,
+      1.0,
+      -0.49999999
+    ],
+    [
+      5,
+      2.0,
+      -0.49999999
+    ],
+    [
+      6,
+      3.0,
+      -0.49999999
+    ],
+    [
+      7,
+      4.0,
+      -0.49999999
+    ],
+    [
+      0,
+      5.0,
+      -0.49999999
+    ],
+    [
+      1,
+      6.0,
+      -0.49999999
+    ],
+    [
+      2,
+      7.0,
+      -0.49999999
+    ]
+  ],
+  "period": 1.0
+}

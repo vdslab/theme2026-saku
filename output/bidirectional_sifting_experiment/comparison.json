@@ -1,0 +1,122 @@
+[
+  {
+    "input": "output/torus_layout_bk_unprojected/result.json",
+    "seed": 535979539,
+    "methods": {
+      "current_5": {
+        "total_crossings": 15,
+        "24_1_vs_24_3_crossings": 1
+      },
+      "current_10": {
+        "total_crossings": 15,
+        "24_1_vs_24_3_crossings": 1
+      },
+      "reverse_second_pass_5": {
+        "total_crossings": 13,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_10": {
+        "total_crossings": 13,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_5": {
+        "total_crossings": 11,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_10": {
+        "total_crossings": 11,
+        "24_1_vs_24_3_crossings": 0
+      }
+    }
+  },
+  {
+    "input": "output/bk_3x3_experiment/bk_unprojected.json",
+    "seed": 1569070748,
+    "methods": {
+      "current_5": {
+        "total_crossings": 7,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "current_10": {
+        "total_crossings": 7,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_5": {
+        "total_crossings": 3,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_10": {
+        "total_crossings": 3,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_5": {
+        "total_crossings": 3,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_10": {
+        "total_crossings": 3,
+        "24_1_vs_24_3_crossings": 0
+      }
+    }
+  },
+  {
+    "input": "output/unwind_missing_inner_fix/result.json",
+    "seed": 1392931424,
+    "methods": {
+      "current_5": {
+        "total_crossings": 2,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "current_10": {
+        "total_crossings": 2,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_5": {
+        "total_crossings": 1,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_10": {
+        "total_crossings": 1,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_5": {
+        "total_crossings": 1,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_10": {
+        "total_crossings": 1,
+        "24_1_vs_24_3_crossings": 0
+      }
+    }
+  },
+  {
+    "input": "output/unwind_cli_check/result.json",
+    "seed": 3409470963,
+    "methods": {
+      "current_5": {
+        "total_crossings": 0,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "current_10": {
+        "total_crossings": 0,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_5": {
+        "total_crossings": 0,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "reverse_second_pass_10": {
+        "total_crossings": 0,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_5": {
+        "total_crossings": 0,
+        "24_1_vs_24_3_crossings": 0
+      },
+      "alternating_sweeps_10": {
+        "total_crossings": 0,
+        "24_1_vs_24_3_crossings": 0
+      }
+    }
+  }
+]

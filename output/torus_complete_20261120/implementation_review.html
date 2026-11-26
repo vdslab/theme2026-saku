@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>残っている修正と検討事項 | トーラス階層グラフ描画</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182d30;
+      --muted: #4c6062;
+      --paper: #fbfaf6;
+      --surface: #fff;
+      --line: #d6ded9;
+      --teal: #11685e;
+      --pale: #e5f3ee;
+      --gold: #854b21;
+      --amber: #faeddb;
+      --red: #8a392f;
+      --rose: #faeae4;
+      font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      background: var(--paper);
+      color: var(--ink);
+    }
+    *, *::before, *::after { box-sizing: border-box }
+    body { margin: 0 }
+    h1, h2, h3, p, figure, dl { margin: 0 }
+    h1, h2, h3 { line-height: 1.34 }
+    a { color: var(--teal); text-underline-offset: .2em; overflow-wrap: anywhere }
+    a:focus-visible, [tabindex]:focus-visible { outline: 3px solid #188576; outline-offset: 4px }
+    [id] { scroll-margin-top: 1.25rem }
+    .wrap { width: min(71rem, 100% - 2.5rem); margin-inline: auto }
+    .skip { position: absolute; top: .5rem; left: .5rem; padding: .55rem .75rem; background: white; transform: translateY(-180%) }
+    .skip:focus { transform: translateY(0) }
+    .hero { background: #163937; color: #f6faf7; padding-block: clamp(2.1rem, 5.6vw, 4.4rem) }
+    .hero .topic { color: #afe5d6; font-size: .86rem; font-weight: 710 }
+    h1 { font-size: clamp(1.9rem, 5.05vw, 3.6rem); letter-spacing: -.04em; margin-block: .5rem .8rem }
+    .hero .lede { max-width: 60ch; color: #e0efea }
+    .jump { display: flex; flex-wrap: wrap; gap: .45rem .6rem; margin: 1.25rem 0 0; padding: 0; list-style: none }
+    .jump a { display: block; padding: .29rem .68rem; color: #f4fbf8; border: 1px solid #76928b; border-radius: .3rem; text-decoration: none; font-size: .88rem }
+    .jump a:hover { background: #29534d; text-decoration: underline }
+    .jump a:focus-visible { outline-color: #f2ca85 }
+    main { padding-block: 1.85rem 4rem }
+    main > section + section { margin-top: 3.4rem }
+    h2 { font-size: clamp(1.38rem, 3.7vw, 2rem); letter-spacing: -.025em }
+    h2 + p { margin-top: .55rem; color: var(--muted); max-width: 68ch }
+    .plan { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; margin: 1rem 0; padding: 0; list-style: none }
+    .plan li { padding: .8rem .95rem; background: var(--surface); border: 1px solid var(--line); border-block-start: .22rem solid var(--teal); border-radius: .32rem }
+    .plan li:first-child { border-block-start-color: var(--red) }
+    .plan li:nth-child(2) { border-block-start-color: var(--gold) }
+    .plan strong { display: block; margin-bottom: .18rem }
+    .plan a { display: inline-block }
+    .evidence { color: var(--muted); margin-top: .9rem; font-size: .88rem }
+    .items { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; margin-top: 1rem; align-items: stretch }
+    .item { background: var(--surface); border: 1px solid var(--line); border-radius: .43rem; padding: clamp(.9rem, 2.5vw, 1.22rem); min-width: 0 }
+    .item:target { outline: 3px solid var(--teal); outline-offset: 3px }
+    h3 { font-size: 1.18rem; letter-spacing: -.014em }
+    .item .claim { margin-top: .62rem }
+    .item dl { margin-top: .68rem; display: grid; grid-template-columns: max-content minmax(0,1fr); gap: .34rem .75rem; font-size: .94rem }
+    .item dt { font-weight: 710; color: var(--muted) }
+    .item dd { margin: 0 }
+    .item .evidence { padding-top: .65rem; border-block-start: 1px solid var(--line) }
+    .callout { padding: .95rem; background: var(--rose); color: #672b21; border-inline-start: .26rem solid var(--red); margin-block: 1rem; max-width: 73ch }
+    .timing { margin-top: 1rem; border: 1px solid var(--line); background: var(--surface); border-radius: .43rem; padding: clamp(.85rem, 3vw, 1.3rem) }
+    figcaption { margin-bottom: .75rem }
+    figcaption strong { display: block; margin-bottom: .2rem }
+    figcaption span { color: var(--muted); font-size: .9rem }
+    .table-wrap { overflow-x: auto }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .93rem }
+    caption { text-align: start; padding: 0 0 .45rem; color: var(--muted) }
+    th, td { text-align: start; border-block-end: 1px solid var(--line); padding: .4rem .55rem; vertical-align: top }
+    thead { background: var(--pale) }
+    .timing td:last-child { text-align: end; white-space: nowrap }
+    .bars { width: 58%; vertical-align: middle }
+    .bar-track { height: .58rem; background: #edf1ee; border-radius: .15rem }
+    .bar { display: block; min-width: 2px; height: 100%; background: #207e6d; border-radius: .15rem }
+    .size { font-variant-numeric: tabular-nums }
+    code { font-family: ui-monospace, monospace; font-size: .88em; overflow-wrap: anywhere }
+    footer { padding-block: 1.4rem; background: #e8ede7; color: var(--muted); font-size: .9rem }
+    footer a + a { margin-left: .9rem }
+    @media (max-width: 45rem) {
+      .plan, .items { grid-template-columns: 1fr }
+      .wrap { width: calc(100% - 1.7rem) }
+      main > section + section { margin-top: 2.6rem }
+      .bars { width: 37% }
+    }
+    @media (max-width: 26rem) {
+      .timing th, .timing td { padding-inline: .27rem }
+      .item dl { gap: .3rem .55rem }
+    }
+    @media print {
+      :root { background: white }
+      .hero, footer { background: white; color: var(--ink); padding-block: .7rem }
+      .hero .topic, .hero .lede { color: var(--ink) }
+      .wrap { width: 100% }
+      .jump, .skip { display: none }
+      main { padding-block: .7rem }
+      .items, .plan { display: block }
+      .item, .plan li, .timing { break-inside: avoid; margin-block: .55rem }
+      a { color: var(--ink) }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">本文へ移動</a>
+  <header class="hero">
+    <div class="wrap">
+      <p class="topic">トーラス階層グラフ描画</p>
+      <h1>残っている修正と検討事項</h1>
+      <p class="lede" id="order">2026年11月23日時点。実装修正コミット <code>9e8afa4d</code> を基準に、残っている修正、手法の検討、再測定の課題を対象別にまとめた。</p>
+      <nav aria-label="目次">
+        <ul class="jump">
+          <li><a href="#layering">層割当</a></li>
+          <li><a href="#crossing-and-seam">交差削減と境界の選択</a></li>
+          <li><a href="#coordinates-and-drawing">座標割当と描画</a></li>
+          <li><a href="#evaluation">実験評価と計測</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+    <section id="layering" aria-labelledby="layering-title">
+      <h2 id="layering-title">層割当</h2>
+      <p>層数探索、層調整の目的と初期解、最適化結果の扱い。</p>
+      <div class="items">
+        <article id="binary-search" class="item">
+          <h3>時間切れで判定できない層数候補</h3>
+          <p class="claim">現行は途中の候補で解がなければ層数を増やす。候補の実行不能を証明できるとは限らない。UKfacultyの再現では、目標33本に対して7層の下界は43本だった。</p>
+          <dl><dt>決めること</dt><dd>下界で達成不能を証明できる候補と、判定材料が足りない候補を区別する。後者を再試行するか、暫定結果とともに返すかを決める。</dd><dt>確認</dt><dd>小規模入力を全列挙と照合し、時間制限付き入力では完走率と最小層数の保証条件を記録する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/layering/search.py">層数の二分探索</a> · <a href="../torus_validation_20261120/public_retry_extended/rows.jsonl">7層の目的下界</a></p>
+        </article>
+        <article id="rank-objective" class="item">
+          <h3>層割当の目的値と完成図の品質が一致しない</h3>
+          <p class="claim">固定層数案より通過元辺が平均5.03本減り、層は平均4.36増えた。同じ層数・通過辺数では二乗和が狙った指標を改善したが、完成図の交差は追試で平均＋0.88だった。</p>
+          <dl><dt>見直し</dt><dd>通過元辺、層数、長辺の分布、完成図交差を別指標として明示する。</dd><dt>確認</dt><dd>線形・二乗和・層数変更を同じ入力で比較し、固定案の実行不能も件数に残す。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/layering/balance/diff_square.py">層調整の目的関数</a> · <a href="../torus_validation_20261120/ranks/results.csv">層割当と完成図の集計</a></p>
+        </article>
+        <article id="warm-start" class="item">
+          <h3>層調整にMIP startを使うか</h3>
+          <p class="claim">現行の層調整は層数と通過辺数を受け取る。割当も初期解として渡した追試では、予算内に解が得られた条件が14/16件から16/16件に増えた。別の比較では二乗和が同じ26でも、完成図の交差が2から1、境界通過線分が2から3に変わった。</p>
+          <dl><dt>決めること</dt><dd>初期解を既定で使うか、比較用の選択肢にするかを決める。</dd><dt>確認</dt><dd>同じモデル・予算で解の有無、最適性、時間、下流の交差・境界通過を比較する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/layering/router.py">層調整への引き渡し</a> · <a href="../torus_validation_20261120/ranks/results.csv">初期解あり・なしの追試</a></p>
+        </article>
+        <article id="qp-rounding" class="item">
+          <h3>層割当のQPで丸め後に制約違反が出る</h3>
+          <p class="claim">選択式の層調整<code>qp</code>には、連続緩和を整数に丸めた後で制約に違反する既知例がある。</p>
+          <dl><dt>決めること</dt><dd>整数化の方法、丸め後の検査と失敗時の扱いを決める。</dd><dt>確認</dt><dd>丸め後の層差と通過辺数を検査し、既知の入力で制約が保たれるか確認する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/layering/balance/qp.py">層割当のQP</a> · <a href="../../src/torus_layout/tests/test_layering.py">従来挙動の回帰テスト</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section id="crossing-and-seam" aria-labelledby="crossing-and-seam-title">
+      <h2 id="crossing-and-seam-title">交差削減と境界の選択</h2>
+      <p>層内順序と巻き数の探索、切れ目の候補と評価単位。</p>
+      <div class="items">
+        <article id="two-layer" class="item">
+          <h3>partingの2層時の交差誤計数</h3>
+          <p class="claim">同じ2層間でも、中央と左右境界に別々の帯がある。partingの局所評価では、その2辺を交差と誤計数する再現例がある。帯を分けた別の再現例では最終交差が1から0に変わった。</p>
+          <dl><dt>候補</dt><dd>2層の局所評価を有向の帯ごとに分ける。既定のradialはすでに帯を分けている。</dd><dt>確認</dt><dd>別の帯で0交差となる例と、同じ帯で実際に交差する例を測る。partingを使った比較結果は変更前後を区別する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/crossing/lib/embedding.py">局所評価用の辺の向き揃え</a> · <a href="audits/two_layer_crossing.json">4頂点の入力と計数結果</a></p>
+        </article>
+        <article id="sifting-budget" class="item">
+          <h3>siftingの反復回数と初期順</h3>
+          <p class="claim">既定は5回で、1回も指定できる。過去の16件では1回と5回の交差数が15件で一致し、残る1件では1回の方が7交差多かった。</p>
+          <dl><dt>決めること</dt><dd>既定の5回を維持するか、収束時の停止や複数の初期順を採用するか。</dd><dt>確認</dt><dd>現行のradialを基準に、同じ計算予算で時間と交差数を比較する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/crossing/sifting.py">反復のループ</a> · <a href="../torus_validation_20261120/sifting/results.csv">回数と初期順の結果</a></p>
+        </article>
+        <article id="rotation-objective" class="item">
+          <h3>巻き数と回転の探索が評価目標に依存する</h3>
+          <p class="claim">固定巻き数のsiftingは8/40件で厳密値を逃し、最大差4。自由化で厳密値が9/20件改善する一方、実際の探索では固定版が勝つ例もあった。回転後の角度変位は21/72件で増加した。</p>
+          <dl><dt>見直し</dt><dd>巻き数の自由度は保持し、角度変位を改善したい場合は回転前後の採否にも使う。</dd><dt>確認</dt><dd>交差と角度変位の両方を記録し、厳密値との比較では巻き数の許容範囲を明示する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/crossing/lib/embedding.py">回転量の決定</a> · <a href="../torus_validation_20261120/winding/results.csv">巻き数の全列挙</a> · <a href="../torus_experiment_20261120/index.html#crossing">回転前後の測定</a></p>
+        </article>
+        <article id="seam-choice" class="item">
+          <h3>UNWINDなしの切れ目候補を加えるか</h3>
+          <p class="claim">現行はUNWINDの適用順を変えた候補を比較する。11月20日の追試では、UNWINDなしのDP候補まで残すと28件中2件で通過線分が減り、交差数は全件同じだった。</p>
+          <dl><dt>決めること</dt><dd>現在の候補に、同じ回転後の状態からUNWINDを省いてDPを適用する候補を加えるか。</dd><dt>確認</dt><dd>通過線分数、交差数、追加の計算時間を同じ入力で比較する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/crossing/api.py">候補選択</a> · <a href="../torus_validation_20261120/seams/results.csv">追試28件</a></p>
+        </article>
+        <article id="seam-objective" class="item">
+          <h3>境界を通る線分と元の辺のどちらを減らすか</h3>
+          <p class="claim">現行DPの目的は通過線分数。元辺数と通過回数は表示用に集計している。過去36件中2件では線分数と元辺数の最小解が異なった。</p>
+          <dl><dt>決めること</dt><dd>論文で最小化すると述べる単位を明記する。元辺数を優先する場合は選択基準を定義する。</dd><dt>確認</dt><dd>線分優先では11線分・7元辺、元辺優先では12線分・6元辺になる既知例で、各目的値を全列挙と照合する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/crossing/seam.py">切れ目DPの目的</a> · <a href="../torus_validation_20261120/index.html#seams">元辺数と線分数の対照例</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section id="coordinates-and-drawing" aria-labelledby="coordinates-and-drawing-title">
+      <h2 id="coordinates-and-drawing-title">座標割当と描画</h2>
+      <p>辺長・曲がりの調整、周期境界の整合、周辺タイルの表示。</p>
+      <div class="items">
+        <article id="bk-smoothing" class="item">
+          <h3>既定BKの平滑化で曲がりが増える</h3>
+          <p class="claim">4回平滑化は72件中70件で総辺長を短くし、62件で曲がりを増やした。周期射影を外した対照は61/72件で範囲または順序に違反した。</p>
+          <dl><dt>見直し</dt><dd>周期射影を維持し、平滑化の回数と曲がりへの影響を比較して既定値を判断する。</dd><dt>確認</dt><dd>同じ層順・巻き数・周期で辺長と曲がりを測り、最小間隔と描画範囲も検査する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/coordinates/api.py">周期射影と平滑化</a> · <a href="../torus_experiment_20261120/index.html#coordinates">平滑化・射影の比較</a></p>
+        </article>
+        <article id="lp-qp" class="item">
+          <h3>LPの曲がり重みとQPの完走率に注意が要る</h3>
+          <p class="claim">最小周期のLP・重み1は既定BKより16/16件で曲がりが減り、総辺長は8件短縮・8件増加。重み4は重み1より総辺長が平均1.21増えた。QPでは12/72件の求解エラーがあった。</p>
+          <dl><dt>見直し</dt><dd>辺長、曲がり、実行時間、完走率を揃えて比較し、重みや方式を選ぶ。</dd><dt>確認</dt><dd>描画範囲の妥当な条件だけで品質を比較し、QPの失敗も試行の分母に含める。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/coordinates/optimization.py">LP・QPの目的関数</a> · <a href="../torus_experiment_20261120/coordinates/results.csv">QPを含む初回結果</a> · <a href="../torus_validation_20261120/coordinates/results.csv">重みの追試</a></p>
+        </article>
+        <article id="replicated-bk" class="item">
+          <h3>3×3 BKで中央の辺が抜け、コピー座標が独立する</h3>
+          <p class="claim">同周期の既定BKより曲がりは平均8.69減ったが、総辺長は16/16件で増えた。前回72件中12件では中央から出る辺も配置計算から抜けた。コピー間の周期平行移動は制約していない。</p>
+          <dl><dt>見直し</dt><dd>採用する場合は、複数巻きを含む中央の辺を配置計算に含め、コピー間の周期整合性を担保する。</dd><dt>確認</dt><dd>中央の辺の欠落と周期からの位置ずれを別々に測り、同周期で曲がりと辺長を再比較する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/coordinates/replicated.py">3×3展開</a> · <a href="../../documents/bk_3x3_experiment.md">コピー間の周期誤差</a> · <a href="../torus_validation_20261120/index.html#coordinates">同周期の比較</a></p>
+        </article>
+        <article id="surrounding-tiles" class="item">
+          <h3>周辺タイルは画像容量を増やす</h3>
+          <p class="claim">4組の画像でファイルサイズ中央値は約34 KBから92 KBへ増えた。CLIでは周辺タイルが既定で表示される。描画時間と読解成績への効果は未確定。</p>
+          <dl><dt>見直し</dt><dd>画像容量・出力時間と、周辺タイルがある場合の読解成績をそれぞれ測って既定表示を判断する。</dd><dt>確認</dt><dd>中央の配置と縮尺を固定し、境界をまたぐ最短経路の正答率と回答時間を比較する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/drawing/output.py">周辺タイルの画像出力</a> · <a href="../torus_experiment_20261120/drawing/results.csv">画像の出力結果</a> · <a href="../torus_validation_20261120/readability/index.html">参加者向け提示画面</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section id="evaluation" aria-labelledby="evaluation-title">
+      <h2 id="evaluation-title">実験評価と計測</h2>
+      <p>比較対象と入力の選び方、規模限界、論文に載せる数値の再集計。</p>
+      <div class="items">
+        <article id="input-scope" class="item">
+          <h3>トーラス方式が有利になる入力条件</h3>
+          <p class="claim">過去の同じ20骨格では、dotとの差は円環に沿う向きで平均−3.00交差、ランダム方向で＋7.05、DAGで＋6.50だった。</p>
+          <dl><dt>残作業</dt><dd>現行コードで、DAG、方向を乱した入力、元の向きを保った実データを条件別に比較する。</dd><dt>確認</dt><dd>交差、逆行辺、完走率を併記し、比較できた入力数と実データの標本範囲を示す。</dd></dl>
+          <p class="evidence"><a href="../../src/generator/watts_strogatz.py">既定生成器の辺の向き</a> · <a href="../torus_validation_20261120/index.html#topology">方向とSCCを統制した比較</a> · <a href="../torus_validation_20261120/index.html#public">実データ</a></p>
+        </article>
+        <article id="license" class="item">
+          <h3>フルライセンスで既定方式の規模限界を測る</h3>
+          <p class="claim">過去のローカル制限下では、90・120頂点の二乗和モデル4件がサイズ上限に達した。WLSは検証時に名前解決で止まった。</p>
+          <dl><dt>残作業</dt><dd>WLS接続を確認できた環境で、既定の二乗和モデルと交差削減5回の条件を再測定する。</dd><dt>確認</dt><dd>完走率、サイズ上限、モデル単位と全体の時間切れを別々に集計する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/layering/balance/diff_square.py">二乗和モデル</a> · <a href="../torus_experiment_20261120/followup/license.csv">上限前後の試験</a> · <a href="../torus_validation_20261120/wls_escalated/rows.jsonl">WLSの名前解決エラー</a></p>
+        </article>
+        <article id="remeasure" class="item">
+          <h3>論文に載せる交差数と工程時間を再集計</h3>
+          <p class="claim">交差計測器の境界判定が変わり、交差削減時間からダミー挿入を分離した。</p>
+          <dl><dt>残作業</dt><dd>比較対象を同じ計測器・計時範囲で測る。結果が得られた件数と、方式間で両方の結果が揃った件数を示す。</dd><dt>確認</dt><dd>対象コードのコミット、入力、計算予算を記録し、過去の集計と区別する。</dd></dl>
+          <p class="evidence"><a href="../../experiments/torus_study/geometry.py">交差計測</a> · <a href="../../src/torus_layout/pipeline.py">工程計時</a></p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap"><a href="index.html">総合実験報告書</a><a href="../torus_experiment_20261120/index.html">初回の実験結果</a><a href="../torus_validation_20261120/index.html">追試結果</a></div>
+  </footer>
+</body>
+</html>

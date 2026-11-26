@@ -1,0 +1,48 @@
+{
+  "order": {
+    "0": [
+      0,
+      1
+    ],
+    "1": [
+      2,
+      3
+    ]
+  },
+  "edges": [
+    {
+      "source": 0,
+      "target": 3,
+      "horizontal_wrap": false,
+      "vertical_winding": 0
+    },
+    {
+      "source": 2,
+      "target": 1,
+      "horizontal_wrap": true,
+      "vertical_winding": 0
+    }
+  ],
+  "coordinates": {
+    "0": [
+      0.0,
+      0.0
+    ],
+    "1": [
+      0.0,
+      1.0
+    ],
+    "2": [
+      1.0,
+      0.0
+    ],
+    "3": [
+      1.0,
+      1.0
+    ]
+  },
+  "period": 2.0,
+  "local_crossings": 1,
+  "embedding_crossings": 0,
+  "geometric_crossings": 0
+}

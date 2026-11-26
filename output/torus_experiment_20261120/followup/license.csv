@@ -1,0 +1,7 @@
+variant,variables,constraints,status,solver_status,solver_errno
+linear_variables,2000,0,ok,2,
+linear_variables,2001,0,error,1,10010
+linear_constraints,1,2000,ok,2,
+linear_constraints,1,2001,error,1,10010
+quadratic_variables,200,0,ok,2,
+quadratic_variables,201,0,error,1,10010

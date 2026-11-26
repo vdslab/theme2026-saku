@@ -1,0 +1,11 @@
+case,seed,layer_width,layers,sifting_seconds,crossings_0,crossings_1,crossings_delta,geometric_crossings_0,geometric_crossings_1,geometric_crossings_delta,bends_0,bends_1,bends_delta,either_seam_edges_0,either_seam_edges_1,either_seam_edges_delta,x_seam_edges_0,x_seam_edges_1,x_seam_edges_delta,y_seam_edges_0,y_seam_edges_1,y_seam_edges_delta
+width-variation-955-uniform,955,16,8,1.8714571250020526,2019,928,-1091,2019,928,-1091,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-955-alternating,955,16,8,1.9566527920032968,1230,841,-389,1230,841,-389,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-954-uniform,954,16,8,1.8301270409938297,966,809,-157,966,809,-157,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-954-alternating,954,16,8,1.9188195419992553,1082,841,-241,1082,841,-241,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-953-uniform,953,16,8,1.854899124999065,1158,933,-225,1158,933,-225,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-953-alternating,953,16,8,1.9041700840025442,1035,834,-201,1035,834,-201,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-952-uniform,952,16,8,1.8259326670013252,1096,899,-197,1096,899,-197,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-952-alternating,952,16,8,1.9114325829941663,1166,880,-286,1166,880,-286,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-951-uniform,951,16,8,1.8209995830038679,1126,856,-270,1126,856,-270,0,0,0,48,48,0,48,48,0,0,0,0
+width-variation-951-alternating,951,16,8,1.9309299169981387,1058,830,-228,1058,830,-228,0,0,0,48,48,0,48,48,0,0,0,0

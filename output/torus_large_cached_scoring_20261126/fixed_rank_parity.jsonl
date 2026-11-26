@@ -1,0 +1,2 @@
+{"case": "fixed-ring-100-5-2", "equal_orders_and_windings": true, "baseline_seconds": 3.732054624997545, "integer_sparse_seconds": 0.5936082080006599, "vector_cached_seconds": 1.0407320000012987}
+{"case": "fixed-ring-100-10-2", "equal_orders_and_windings": true, "baseline_seconds": 6.632441791000019, "integer_sparse_seconds": 1.9722912079960224, "vector_cached_seconds": 2.0966834999999264}

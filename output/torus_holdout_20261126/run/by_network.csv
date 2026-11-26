@@ -1,0 +1,4 @@
+network,attempted,paired,torus_status,fewer,equal,more,median_delta,min_delta,max_delta
+email_eu,6,6,"{""ok"": 6}",0,0,6,108.5,15,241
+krackhardt,12,9,"{""ok"": 9, ""wall_timeout"": 3}",0,0,9,65,40,164
+sociopatterns,6,6,"{""ok"": 6}",0,0,6,65.5,37,154

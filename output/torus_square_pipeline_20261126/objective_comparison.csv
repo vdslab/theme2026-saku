@@ -1,0 +1,17 @@
+case,family,nodes,edges,setup_status,setup_solver_limited,linear_status,linear_span_square_sum,quadratic_status,quadratic_span_square_sum,epigraph_status,epigraph_solve_seconds,epigraph_span_square_sum,epigraph_integer_lower_bound,epigraph_integer_gap,linear_drawing_status,linear_crossings,epigraph_drawing_status,epigraph_crossings,linear_pipeline_status,epigraph_pipeline_status,linear_seam,epigraph_seam,linear_pipeline_crossings,epigraph_pipeline_crossings,linear_geometry_status,epigraph_geometry_status,linear_geometric_crossings,epigraph_geometric_crossings
+dag-90-2-322,dag,90,180,ok,False,ok,1094,license_size_limit,,ok,0.028596374999324325,1075,1075,0,,,,,ok,wall_timeout,joint,,681,,ok,,681,
+dag-90-2-323,dag,90,180,ok,False,ok,1055,license_size_limit,,ok,0.02724383399618091,1053,1053,0,,,,,ok,ok,joint,joint,740,744,ok,ok,740,744
+dag-90-4-322,dag,90,360,ok,False,ok,11132,license_size_limit,,ok,0.0458516669968958,11095,11095,0,,,,,wall_timeout,wall_timeout,,,,,,,,
+dag-90-4-323,dag,90,360,ok,False,ok,6539,license_size_limit,,ok,0.06594904200028395,6504,6504,0,,,,,wall_timeout,wall_timeout,,,,,,,,
+dag-120-2-322,dag,120,240,ok,False,ok,1518,license_size_limit,,ok,0.03996041600476019,1448,1448,0,,,,,wall_timeout,wall_timeout,,,,,,,,
+dag-120-2-323,dag,120,240,ok,False,ok,1341,license_size_limit,,ok,0.03811154200229794,1294,1294,0,,,,,wall_timeout,wall_timeout,,,,,,,,
+dag-120-4-322,dag,120,480,ok,False,ok,11055,license_size_limit,,ok,0.05623924999963492,10997,10997,0,,,,,wall_timeout,wall_timeout,,,,,,,,
+dag-120-4-323,dag,120,480,ok,True,ok,6729,license_size_limit,,ok,0.06266549999418203,6726,6726,0,,,,,wall_timeout,wall_timeout,,,,,,,,
+watts_strogatz-90-2-322,watts_strogatz,90,180,ok,False,ok,4793,license_size_limit,,ok,0.2158940419976716,4685,4685,0,,,,,ok,ok,joint,joint,9,14,ok,ok,9,14
+watts_strogatz-90-2-323,watts_strogatz,90,180,ok,False,ok,19542,license_size_limit,,ok,0.17079749999538762,19522,19522,0,,,,,ok,ok,joint,joint,64,68,ok,ok,64,68
+watts_strogatz-90-4-322,watts_strogatz,90,360,ok,True,ok,12708,license_size_limit,,ok,4.022960750000493,12679,1586,11093,,,,,ok,wall_timeout,joint,,402,,ok,,402,
+watts_strogatz-90-4-323,watts_strogatz,90,360,ok,True,ok,20793,license_size_limit,,ok,4.025212333006493,20793,1714,19079,,,,,wall_timeout,wall_timeout,,,,,,,,
+watts_strogatz-120-2-322,watts_strogatz,120,240,ok,False,ok,27384,license_size_limit,,ok,0.19328458300151397,27381,27380,1,,,,,ok,ok,joint,joint,38,38,ok,ok,38,38
+watts_strogatz-120-2-323,watts_strogatz,120,240,ok,False,ok,21297,license_size_limit,,ok,4.016798249998828,20889,1548,19341,,,,,ok,ok,joint,legacy,65,59,ok,ok,65,59
+watts_strogatz-120-4-322,watts_strogatz,120,480,wall_timeout,True,,,,,,,,,,,,,,,,,,,,,,,
+watts_strogatz-120-4-323,watts_strogatz,120,480,wall_timeout,True,,,,,,,,,,,,,,,,,,,,,,,

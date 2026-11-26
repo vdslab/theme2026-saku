@@ -1,0 +1,9 @@
+case,variant,status,nodes,edges,step,phase,complete,seconds,seam_method,segments,dummy_nodes
+watts_strogatz-500-2-0,torus_cached_rounds5,wall_timeout,500,1000,1,insert_dummy_nodes,True,0.004544916999293491,,,
+watts_strogatz-500-2-0,torus_cached_rounds5,wall_timeout,500,1000,2,reduce_crossings,False,119.99906487500266,joint,8484,7484
+watts_strogatz-500-2-0,torus_cached_rounds5,wall_timeout,500,1000,3,initial_orders,True,0.04924670899345074,,,
+watts_strogatz-500-2-0,torus_cached_rounds5,wall_timeout,500,1000,4,sift_blocks,False,119.94978920799622,,,
+watts_strogatz-1000-2-0,torus_cached_rounds5,wall_timeout,1000,2000,1,insert_dummy_nodes,True,0.011368250001396518,,,
+watts_strogatz-1000-2-0,torus_cached_rounds5,wall_timeout,1000,2000,2,reduce_crossings,False,119.99261470799684,joint,23616,21616
+watts_strogatz-1000-2-0,torus_cached_rounds5,wall_timeout,1000,2000,3,initial_orders,True,0.1540387909990386,,,
+watts_strogatz-1000-2-0,torus_cached_rounds5,wall_timeout,1000,2000,4,sift_blocks,False,119.83850675000576,,,

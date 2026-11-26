@@ -1,0 +1,2 @@
+{"experiment": "framework", "variant": "cylindrical_reference", "baseline": "torus", "status": "running"}
+{"experiment": "framework", "variant": "cylindrical_reference", "baseline": "torus", "status": "error", "wall_seconds": 0.018522667000070214, "error_type": "GurobiError", "error_location": "env.pxi:112", "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}

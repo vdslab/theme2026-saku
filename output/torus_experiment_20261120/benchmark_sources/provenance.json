@@ -1,0 +1,205 @@
+[
+  {
+    "family": "att",
+    "nodes": 827,
+    "name": "g.10.37.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.10.37.graphml",
+    "sha": "0a02f506b8e6b653a282baf22afed0e51994b2ef"
+  },
+  {
+    "family": "att",
+    "nodes": 909,
+    "name": "g.10.28.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.10.28.graphml",
+    "sha": "0e4a9fb52a40d41159b7d1e9387927a341a558f1"
+  },
+  {
+    "family": "att",
+    "nodes": 1399,
+    "name": "g.12.111.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.12.111.graphml",
+    "sha": "1224f4773bd3712bd2d3a9e3dd6c131d9b06cc38"
+  },
+  {
+    "family": "att",
+    "nodes": 986,
+    "name": "g.12.94.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.12.94.graphml",
+    "sha": "15212436819e56163db30be7e4914a35981a2f36"
+  },
+  {
+    "family": "att",
+    "nodes": 1435,
+    "name": "g.16.82.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.16.82.graphml",
+    "sha": "01bbddcbc26ef0e210b9148a617c2120868ba068"
+  },
+  {
+    "family": "att",
+    "nodes": 1682,
+    "name": "g.16.64.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.16.64.graphml",
+    "sha": "05ad4006028f3c1b0e67260ee04ce1e5fc4308ef"
+  },
+  {
+    "family": "att",
+    "nodes": 2268,
+    "name": "g.20.45.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.20.45.graphml",
+    "sha": "011671751b3268b1468c06fe4e9a3d22b1111ce7"
+  },
+  {
+    "family": "att",
+    "nodes": 3220,
+    "name": "g.20.46.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.20.46.graphml",
+    "sha": "08c3ab3d5c5c89f60fad80d4f66e6bbe778162c8"
+  },
+  {
+    "family": "att",
+    "nodes": 2467,
+    "name": "g.24.41.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.24.41.graphml",
+    "sha": "018d5fcd0776150af386181acd2edb567f38bfb9"
+  },
+  {
+    "family": "att",
+    "nodes": 1708,
+    "name": "g.24.26.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/north/g.24.26.graphml",
+    "sha": "1c05ccb66b756e88ddb7fcb0f55428fbcddbce9f"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1073,
+    "name": "g.10.8.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.10.8.graphml",
+    "sha": "082e1c4e34901ff267ce311df751f2de404281d1"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1073,
+    "name": "g.10.7.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.10.7.graphml",
+    "sha": "20e69252c70af7548cbed36fa4ac0e6180e59aa2"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1152,
+    "name": "g.12.1.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.12.1.graphml",
+    "sha": "06bf64d30e18c8bc2e9fd5ef4cf41d5946a3d032"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1275,
+    "name": "g.12.9.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.12.9.graphml",
+    "sha": "18f3634910c3ec9cef26609d42aa56b4d551c407"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1516,
+    "name": "g.16.2.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.16.2.graphml",
+    "sha": "19c3a7529cd846644e5ea878e7e1bdd62fad510e"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1598,
+    "name": "g.16.10.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.16.10.graphml",
+    "sha": "2c20833c2aadcf6e8464487bce18d1da52af812c"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1883,
+    "name": "g.20.3.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.20.3.graphml",
+    "sha": "40a001ec5018cfe72333b53cdef199bfddb40c94"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 1881,
+    "name": "g.20.6.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.20.6.graphml",
+    "sha": "40daa1b37d3d85442b04d102627346d58b983e32"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 2330,
+    "name": "g.24.4.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.24.4.graphml",
+    "sha": "1eb11a524d4e3a49958390acaf797602c0e1cc2e"
+  },
+  {
+    "family": "dagmar",
+    "nodes": 2209,
+    "name": "g.24.9.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/randDAG/g.24.9.graphml",
+    "sha": "30e200e3c6282c94426f7504af8fb11540e9eef3"
+  },
+  {
+    "family": "rome",
+    "nodes": 811,
+    "name": "grafo1071.10.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1071.10.graphml",
+    "sha": "14a99874e714bbf899259345aa84d10a3202b983"
+  },
+  {
+    "family": "rome",
+    "nodes": 811,
+    "name": "grafo1010.10.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1010.10.graphml",
+    "sha": "225ad94276f3f437f6885fc3320ab11075f19dec"
+  },
+  {
+    "family": "rome",
+    "nodes": 889,
+    "name": "grafo1020.12.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1020.12.graphml",
+    "sha": "2a9678c08a1759143fec63b7597e36f3b0da6d3d"
+  },
+  {
+    "family": "rome",
+    "nodes": 930,
+    "name": "grafo1001.12.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1001.12.graphml",
+    "sha": "8e14e8786407815ef6a3b590e68ed3f2cd910a70"
+  },
+  {
+    "family": "rome",
+    "nodes": 1254,
+    "name": "grafo1080.16.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1080.16.graphml",
+    "sha": "06d4744adf9a3a9cdbd7eecb59d181bfdb9222c6"
+  },
+  {
+    "family": "rome",
+    "nodes": 1211,
+    "name": "grafo1057.16.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1057.16.graphml",
+    "sha": "2b9d3c3a07aabbc4db5e6104c8cbfb09b1401a97"
+  },
+  {
+    "family": "rome",
+    "nodes": 1454,
+    "name": "grafo1002.20.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1002.20.graphml",
+    "sha": "5882b80749a07f8cae5caedded19b125c2c69496"
+  },
+  {
+    "family": "rome",
+    "nodes": 1498,
+    "name": "grafo1007.20.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1007.20.graphml",
+    "sha": "74f2ed7af1a246fbbeefb3a1888dc4c6ede90d65"
+  },
+  {
+    "family": "rome",
+    "nodes": 1780,
+    "name": "grafo1033.24.graphml",
+    "url": "https://github.com/VisDunneRight/benchmark_sets_analysis_data/blob/main/data/rome/grafo1033.24.graphml",
+    "sha": "053929d5f294f63679915ae2394ec4c453235233"
+  }
+]

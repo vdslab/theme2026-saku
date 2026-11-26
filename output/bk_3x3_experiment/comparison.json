@@ -1,0 +1,1166 @@
+[
+  {
+    "input": "output/torus_layout/result.json",
+    "seed": 1569070748,
+    "methods": {
+      "brandes_koepf": {
+        "period": 6.0,
+        "long_edges": 23,
+        "edges_above_two_bends": 6,
+        "max_bends": 9,
+        "total_bends": 58,
+        "squared_vertical_displacement": 97.49401274857662,
+        "edge_bends": [
+          {
+            "edge": [
+              2,
+              4
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              3,
+              5
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              4,
+              6
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              5,
+              7
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              7,
+              13
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              9,
+              21
+            ],
+            "bends": 9
+          },
+          {
+            "edge": [
+              10,
+              15
+            ],
+            "bends": 3
+          },
+          {
+            "edge": [
+              12,
+              22
+            ],
+            "bends": 8
+          },
+          {
+            "edge": [
+              13,
+              15
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              14,
+              16
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              15,
+              17
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              16,
+              18
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              17,
+              19
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              18,
+              20
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              19,
+              6
+            ],
+            "bends": 9
+          },
+          {
+            "edge": [
+              19,
+              21
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              20,
+              1
+            ],
+            "bends": 4
+          },
+          {
+            "edge": [
+              20,
+              4
+            ],
+            "bends": 7
+          },
+          {
+            "edge": [
+              21,
+              23
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              0
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              22,
+              24
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              23,
+              2
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              24,
+              1
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.007086375029757619
+      },
+      "bk_unprojected": {
+        "period": 10.5,
+        "long_edges": 23,
+        "edges_above_two_bends": 2,
+        "max_bends": 4,
+        "total_bends": 25,
+        "squared_vertical_displacement": 401.5,
+        "edge_bends": [
+          {
+            "edge": [
+              2,
+              4
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              3,
+              5
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              4,
+              6
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              5,
+              7
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              7,
+              13
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              9,
+              21
+            ],
+            "bends": 3
+          },
+          {
+            "edge": [
+              10,
+              15
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              22
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              13,
+              15
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              14,
+              16
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              15,
+              17
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              16,
+              18
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              17,
+              19
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              18,
+              20
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              19,
+              6
+            ],
+            "bends": 4
+          },
+          {
+            "edge": [
+              19,
+              21
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              20,
+              1
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              20,
+              4
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              21,
+              23
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              22,
+              0
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              24
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              23,
+              2
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              24,
+              1
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.004653334151953459
+      },
+      "brandes_koepf_3x3": {
+        "period": 14.0,
+        "long_edges": 23,
+        "edges_above_two_bends": 2,
+        "max_bends": 4,
+        "total_bends": 27,
+        "squared_vertical_displacement": 701.25,
+        "edge_bends": [
+          {
+            "edge": [
+              2,
+              4
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              3,
+              5
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              4,
+              6
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              5,
+              7
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              7,
+              13
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              9,
+              21
+            ],
+            "bends": 4
+          },
+          {
+            "edge": [
+              10,
+              15
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              22
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              13,
+              15
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              14,
+              16
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              15,
+              17
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              16,
+              18
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              17,
+              19
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              18,
+              20
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              19,
+              6
+            ],
+            "bends": 4
+          },
+          {
+            "edge": [
+              19,
+              21
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              20,
+              1
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              20,
+              4
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              21,
+              23
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              0
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              24
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              23,
+              2
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              24,
+              1
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.06353862513788044
+      }
+    },
+    "replica_consistency": {
+      "rms_y_translation_error": 8.871204196099248,
+      "max_y_translation_error": 17.5,
+      "omitted_outer_segments": 27,
+      "central_segments_missing_target_copy": 0
+    }
+  },
+  {
+    "input": "output/unwind_missing_inner_fix/result.json",
+    "seed": 1392931424,
+    "methods": {
+      "brandes_koepf": {
+        "period": 4.0,
+        "long_edges": 22,
+        "edges_above_two_bends": 3,
+        "max_bends": 8,
+        "total_bends": 34,
+        "squared_vertical_displacement": 35.742094385977694,
+        "edge_bends": [
+          {
+            "edge": [
+              0,
+              2
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              1,
+              3
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              2,
+              4
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              4,
+              10
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              4,
+              11
+            ],
+            "bends": 3
+          },
+          {
+            "edge": [
+              5,
+              7
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              6,
+              8
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              7,
+              9
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              8,
+              10
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              9,
+              11
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              10,
+              12
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              14
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              23
+            ],
+            "bends": 5
+          },
+          {
+            "edge": [
+              13,
+              15
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              14,
+              16
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              15,
+              17
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              15,
+              18
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              16,
+              18
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              19,
+              5
+            ],
+            "bends": 8
+          },
+          {
+            "edge": [
+              20,
+              22
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              0
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              24,
+              1
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.0032045829575508833
+      },
+      "bk_unprojected": {
+        "period": 5.5,
+        "long_edges": 22,
+        "edges_above_two_bends": 0,
+        "max_bends": 2,
+        "total_bends": 14,
+        "squared_vertical_displacement": 72.0,
+        "edge_bends": [
+          {
+            "edge": [
+              0,
+              2
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              1,
+              3
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              2,
+              4
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              4,
+              10
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              4,
+              11
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              5,
+              7
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              6,
+              8
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              7,
+              9
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              8,
+              10
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              9,
+              11
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              10,
+              12
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              14
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              23
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              13,
+              15
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              14,
+              16
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              15,
+              17
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              15,
+              18
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              16,
+              18
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              19,
+              5
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              20,
+              22
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              0
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              24,
+              1
+            ],
+            "bends": 0
+          }
+        ],
+        "seconds": 0.0021155420690774918
+      },
+      "brandes_koepf_3x3": {
+        "period": 7.0,
+        "long_edges": 22,
+        "edges_above_two_bends": 0,
+        "max_bends": 2,
+        "total_bends": 18,
+        "squared_vertical_displacement": 87.0,
+        "edge_bends": [
+          {
+            "edge": [
+              0,
+              2
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              1,
+              3
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              2,
+              4
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              4,
+              10
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              4,
+              11
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              5,
+              7
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              6,
+              8
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              7,
+              9
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              8,
+              10
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              9,
+              11
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              10,
+              12
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              14
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              12,
+              23
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              13,
+              15
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              14,
+              16
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              15,
+              17
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              15,
+              18
+            ],
+            "bends": 2
+          },
+          {
+            "edge": [
+              16,
+              18
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              19,
+              5
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              20,
+              22
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              22,
+              0
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              24,
+              1
+            ],
+            "bends": 0
+          }
+        ],
+        "seconds": 0.028490165947005153
+      }
+    },
+    "replica_consistency": {
+      "rms_y_translation_error": 2.1937410968480306,
+      "max_y_translation_error": 5.0,
+      "omitted_outer_segments": 15,
+      "central_segments_missing_target_copy": 0
+    }
+  },
+  {
+    "input": "output/unwind_cli_check/result.json",
+    "seed": 3409470963,
+    "methods": {
+      "brandes_koepf": {
+        "period": 3.0,
+        "long_edges": 4,
+        "edges_above_two_bends": 0,
+        "max_bends": 1,
+        "total_bends": 2,
+        "squared_vertical_displacement": 4.0,
+        "edge_bends": [
+          {
+            "edge": [
+              5,
+              24
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              11,
+              0
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              23,
+              12
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              24,
+              5
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.0012142080813646317
+      },
+      "bk_unprojected": {
+        "period": 3.0,
+        "long_edges": 4,
+        "edges_above_two_bends": 0,
+        "max_bends": 1,
+        "total_bends": 2,
+        "squared_vertical_displacement": 4.0,
+        "edge_bends": [
+          {
+            "edge": [
+              5,
+              24
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              11,
+              0
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              23,
+              12
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              24,
+              5
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.0008780418429523706
+      },
+      "brandes_koepf_3x3": {
+        "period": 3.0,
+        "long_edges": 4,
+        "edges_above_two_bends": 0,
+        "max_bends": 1,
+        "total_bends": 2,
+        "squared_vertical_displacement": 4.0,
+        "edge_bends": [
+          {
+            "edge": [
+              5,
+              24
+            ],
+            "bends": 1
+          },
+          {
+            "edge": [
+              11,
+              0
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              23,
+              12
+            ],
+            "bends": 0
+          },
+          {
+            "edge": [
+              24,
+              5
+            ],
+            "bends": 1
+          }
+        ],
+        "seconds": 0.009774041827768087
+      }
+    },
+    "replica_consistency": {
+      "rms_y_translation_error": 0.0,
+      "max_y_translation_error": 0.0,
+      "omitted_outer_segments": 9,
+      "central_segments_missing_target_copy": 0
+    }
+  }
+]

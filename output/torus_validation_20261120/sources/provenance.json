@@ -1,0 +1,22 @@
+{
+  "sampson.zip": {
+    "origin_url": "https://github.com/networkx/networkx/blob/main/examples/drawing/sampson_data.zip",
+    "sha256": "371d5ace6f825a943d803b1e7036c170b5fdb378879cb6ee1b3683722ec78b6e"
+  },
+  "UKfaculty.rda": {
+    "origin_url": "https://github.com/igraph/igraphdata/blob/main/data/UKfaculty.rda",
+    "sha256": "9c6b55317cbb88936ea9c88c329675d82ac1307fe805c9d54072b1a00a4a9101"
+  },
+  "macaque.rda": {
+    "origin_url": "https://github.com/igraph/igraphdata/blob/main/data/macaque.rda",
+    "sha256": "5121b281c5afed450213f2879ba97bdd6d10151d3de6fec5d27dbd6797765a97"
+  },
+  "UKfaculty.csv": {
+    "sha256": "c8b30f9f1ac3b582c7b9e856be990e1f0364cd4cddf9d9c8aaba7b8c4211e6fa",
+    "derived_from": "UKfaculty.rda"
+  },
+  "macaque.csv": {
+    "sha256": "01c64be567b9dd52a1ddc8d3530023389e9e4ee2ef1b4351d6368817e1a046ce",
+    "derived_from": "macaque.rda"
+  }
+}

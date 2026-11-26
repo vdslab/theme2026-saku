@@ -1,0 +1,11 @@
+{
+  "holdout_inputs": 12,
+  "previous_manifest_files": 80,
+  "previous_inputs_with_edge_lists": 1608,
+  "exact_graph_overlap": 0,
+  "seeds": [
+    811,
+    812,
+    813
+  ]
+}

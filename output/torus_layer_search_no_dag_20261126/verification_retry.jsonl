@@ -1,0 +1,1 @@
+{"case": "watts_strogatz-100-2-701", "original_wraps": 6, "original_layers": 48, "result": "match", "calls": [{"layers": 100, "time_limit": 10.0, "status": 2, "solutions": 8, "solver_seconds": 2.9268529415130615, "bound": 6.0, "wraps": 6, "phase": "upper"}]}

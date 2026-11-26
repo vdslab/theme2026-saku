@@ -1,0 +1,2 @@
+{"experiment": "framework", "variant": "torus", "baseline": "sugiyama", "status": "running"}
+{"experiment": "framework", "variant": "torus", "baseline": "sugiyama", "status": "error", "wall_seconds": 0.05119645898230374, "error_type": "GurobiError", "error_location": "env.pxi:112", "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}

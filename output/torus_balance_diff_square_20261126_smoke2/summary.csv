@@ -1,0 +1,4 @@
+nodes,family,trials,assignment_comparable,drawing_comparable,dummy_nodes_diff_median,dummy_nodes_decrease,dummy_nodes_same,dummy_nodes_increase,max_span_diff_median,max_span_decrease,max_span_same,max_span_increase,seconds_diff_median,seconds_decrease,seconds_same,seconds_increase,drawing_seconds_diff_median,drawing_seconds_decrease,drawing_seconds_same,drawing_seconds_increase,geometric_crossings_diff_median,geometric_crossings_decrease,geometric_crossings_same,geometric_crossings_increase
+20,random,1,1,1,1,0,0,1,0,0,1,0,0.011816917001851834,0,0,1,0.005168624993530102,0,0,1,-2,1,0,0
+20,scc_chain,1,1,1,2,0,0,1,0,0,1,0,0.004700958001194522,0,0,1,0.04444962601701263,0,0,1,-1,1,0,0
+20,watts_strogatz,1,1,1,0,0,1,0,0,0,1,0,0.017977292009163648,0,0,1,-0.0006498339935205877,1,0,0,0,0,1,0

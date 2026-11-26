@@ -1,0 +1,2 @@
+{"experiment": "scaling", "variant": "torus", "baseline": "torus", "status": "running"}
+{"experiment": "scaling", "variant": "torus", "baseline": "torus", "status": "error", "wall_seconds": 0.2594917919996078, "error_type": "GurobiError", "error_location": "solver.py:22", "solver_calls": 1, "solver_limited": false, "input_solver_limited": false, "solver": [{"name": "Torus_Minimize_Torus_Edges", "status": 1, "solutions": 0, "seconds": 0.25303600000188453, "candidate_layers": 1000}]}

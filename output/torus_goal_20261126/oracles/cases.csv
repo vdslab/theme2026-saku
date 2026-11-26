@@ -1,0 +1,6 @@
+case,family,status,worker_seconds,recorded_variants,workers
+proper-3-2-0.25-0,proper,ok,0.608525625000766,4,"{""oracles"": {""status"": ""ok"", ""worker_seconds"": 0.608525625000766}}"
+proper-3-2-0.65-0,proper,ok,0.6091052080009831,4,"{""oracles"": {""status"": ""ok"", ""worker_seconds"": 0.6091052080009831}}"
+dag-6-2-0,dag,ok,0.6187671660009073,2,"{""oracles"": {""status"": ""ok"", ""worker_seconds"": 0.6187671660009073}}"
+random-6-2-0,random,ok,0.6070302500011167,2,"{""oracles"": {""status"": ""ok"", ""worker_seconds"": 0.6070302500011167}}"
+cycle-6-2-0,cycle,ok,0.5603383330017095,2,"{""oracles"": {""status"": ""ok"", ""worker_seconds"": 0.5603383330017095}}"

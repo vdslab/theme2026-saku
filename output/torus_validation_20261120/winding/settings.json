@@ -1,0 +1,11 @@
+{
+  "group": "winding",
+  "solver_seconds": 1.25,
+  "wall_seconds": 10.0,
+  "local_license": true,
+  "jobs": 2,
+  "dot": "/opt/homebrew/bin/dot",
+  "revision": "78dc5c2419e6b9cdce388674ab3c17022e5d7058",
+  "source_sha256": "d64b9bc13efe2c9a77502cc714e0e06cb9349e0ed57fb6ef1c109958f5332b1d",
+  "dot_version": "dot - graphviz version 16.1.1 (20261108.1752)"
+}

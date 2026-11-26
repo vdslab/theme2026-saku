@@ -1,0 +1,4 @@
+family,attempted,pairs,geometric_crossings_median_delta,geometric_crossings_fewer,geometric_crossings_more,bends_median_delta,bends_fewer,bends_more,overlapping_edge_pairs_median_delta,overlapping_edge_pairs_fewer,overlapping_edge_pairs_more,length_per_frame_diagonal_median_delta,length_per_frame_diagonal_fewer,length_per_frame_diagonal_more,torus_reverse_edges_total,dot_reverse_fraction_median,torus_x_seam_edge_fraction_median,torus_either_seam_edge_fraction_median
+email_eu,6,6,108.5,0,6,-120.0,6,0,0.0,0,0,-0.2984568595200443,4,2,0,0.4664769133459835,0.4039473684210526,0.49731182795698925
+krackhardt,12,9,65,0,9,-112,9,0,0,4,0,0.6423103142217812,4,5,0,0.375,0.2571428571428571,0.38181818181818183
+sociopatterns,6,6,65.5,0,6,-105.5,6,0,0.0,1,0,-1.7131972823095172,5,1,0,0.4818796068796069,0.3965330444203684,0.458041958041958

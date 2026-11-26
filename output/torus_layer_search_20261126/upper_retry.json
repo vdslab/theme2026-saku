@@ -1,0 +1,14 @@
+{
+  "case": "watts_strogatz-100-2-701",
+  "layers": 100,
+  "time_limit": 10,
+  "threads": 1,
+  "solver_seed": 0,
+  "mip_gap": 0,
+  "license": "local",
+  "status": 2,
+  "solutions": 8,
+  "bound": 6.0,
+  "solver_seconds": 2.9727020263671875,
+  "wraps": 6
+}

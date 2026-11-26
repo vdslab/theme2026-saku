@@ -1,0 +1,5 @@
+{"case": "boundary-fixtures", "family": "fixture", "status": "ok", "worker_seconds": 0.7168613749963697, "recorded_variants": 12, "workers": "{\"drawing\": {\"status\": \"ok\", \"worker_seconds\": 0.7168613749963697}}"}
+{"case": "dag-10-2-0", "family": "dag", "status": "ok", "worker_seconds": 1.156456500000786, "recorded_variants": 3, "workers": "{\"drawing\": {\"status\": \"ok\", \"worker_seconds\": 1.156456500000786}}"}
+{"case": "random-10-2-0", "family": "random", "status": "ok", "worker_seconds": 1.0380388749981648, "recorded_variants": 3, "workers": "{\"drawing\": {\"status\": \"ok\", \"worker_seconds\": 1.0380388749981648}}"}
+{"case": "scc_chain-10-2-0", "family": "scc_chain", "status": "ok", "worker_seconds": 1.1496246659953613, "recorded_variants": 3, "workers": "{\"drawing\": {\"status\": \"ok\", \"worker_seconds\": 1.1496246659953613}}"}
+{"case": "watts_strogatz-10-2-0", "family": "watts_strogatz", "status": "ok", "worker_seconds": 1.156264041994291, "recorded_variants": 3, "workers": "{\"drawing\": {\"status\": \"ok\", \"worker_seconds\": 1.156264041994291}}"}

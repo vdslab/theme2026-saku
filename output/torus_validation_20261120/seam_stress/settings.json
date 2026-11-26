@@ -1,0 +1,11 @@
+{
+  "group": "seam_stress",
+  "solver_seconds": 1.0,
+  "wall_seconds": 8.0,
+  "local_license": true,
+  "jobs": 2,
+  "dot": "/opt/homebrew/bin/dot",
+  "revision": "78dc5c2419e6b9cdce388674ab3c17022e5d7058",
+  "source_sha256": "12148bf1bb259abfc477f142e9e072e33f3e3ad2c4dd83680ad1ef1833808675",
+  "dot_version": "dot - graphviz version 16.1.1 (20261108.1752)"
+}

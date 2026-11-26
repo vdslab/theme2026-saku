@@ -1,0 +1,6 @@
+case,family,status,worker_seconds,recorded_variants,workers
+boundary-fixtures,fixture,ok,16.476568334037438,11,"{""drawing"": {""status"": ""ok"", ""worker_seconds"": 16.476568334037438}}"
+dag-10-2-0,dag,ok,17.32920137513429,3,"{""drawing"": {""status"": ""ok"", ""worker_seconds"": 17.32920137513429}}"
+random-10-2-0,random,ok,21.962120458949357,3,"{""drawing"": {""status"": ""ok"", ""worker_seconds"": 21.962120458949357}}"
+scc_chain-10-2-0,scc_chain,ok,24.776608916930854,3,"{""drawing"": {""status"": ""ok"", ""worker_seconds"": 24.776608916930854}}"
+watts_strogatz-10-2-0,watts_strogatz,ok,26.991394042037427,3,"{""drawing"": {""status"": ""ok"", ""worker_seconds"": 26.991394042037427}}"

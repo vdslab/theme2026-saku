@@ -1,0 +1,10 @@
+{
+  "group": "square_diagnosis",
+  "solver_seconds": 4.0,
+  "wall_seconds": 15.0,
+  "local_license": true,
+  "jobs": 1,
+  "dot": "/opt/homebrew/bin/dot",
+  "source_sha256": "9f8afccafffbc53390fcc064f1ca307c8a8fdfa8a6ad40a9f8141ed45a383feb",
+  "dot_version": "dot - graphviz version 16.1.1 (20261108.1752)"
+}

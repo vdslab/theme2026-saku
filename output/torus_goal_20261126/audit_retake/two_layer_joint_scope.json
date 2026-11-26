@@ -1,0 +1,42 @@
+{
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      0
+    ]
+  ],
+  "horizontal_wrap": [
+    false,
+    true
+  ],
+  "variants": {
+    "before": {
+      "windings": [
+        1,
+        1
+      ],
+      "seams": 2,
+      "crossings": 0
+    },
+    "joint": {
+      "windings": [
+        2,
+        0
+      ],
+      "seams": 1,
+      "crossings": 0
+    },
+    "independent_strips": {
+      "windings": [
+        0,
+        0
+      ],
+      "seams": 0,
+      "crossings": 0
+    }
+  }
+}

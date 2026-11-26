@@ -1,0 +1,4 @@
+{"case": "watts_strogatz-1000-2-0", "variant": "torus_checks_1000", "checks": 1000, "embedding_sha256": "63269ad05005f385ae17302a84ae9a801d71e62a1a709d308efedac56b2b9c91", "geometric_crossings": 52368, "bends": 1680, "worker_counts": [2, 1]}
+{"case": "watts_strogatz-1000-2-0", "variant": "torus_checks_3000", "checks": 3000, "embedding_sha256": "74d3c226088f044b6bbddb799a2ae18bb13d4cd726dabc76c9bedce44aebac56", "geometric_crossings": 51909, "bends": 1680, "worker_counts": [2, 1]}
+{"case": "watts_strogatz-500-2-0", "variant": "torus_checks_1000", "checks": 1000, "embedding_sha256": "d339d0313d3a7263222a9e5de2a9a01cc280224c5a479333dd27d47756f9fc36", "geometric_crossings": 12412, "bends": 874, "worker_counts": [2, 1]}
+{"case": "watts_strogatz-500-2-0", "variant": "torus_checks_3000", "checks": 3000, "embedding_sha256": "876b60eb9dd5b3f837455925e6d4bdd90afc88d096a2f22c25ec1598ca111742", "geometric_crossings": 11575, "bends": 873, "worker_counts": [2, 1]}

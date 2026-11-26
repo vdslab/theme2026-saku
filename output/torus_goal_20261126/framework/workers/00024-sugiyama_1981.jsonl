@@ -1,0 +1,2 @@
+{"experiment": "framework", "variant": "sugiyama_1981", "baseline": "sugiyama_1981", "status": "running"}
+{"experiment": "framework", "variant": "sugiyama_1981", "baseline": "sugiyama_1981", "status": "error", "wall_seconds": 0.0036859169995295815, "error_type": "TypeError", "error_location": "geometry.py:190", "solver_calls": 0, "solver_limited": false, "input_solver_limited": false, "solver": []}

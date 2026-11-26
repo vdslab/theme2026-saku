@@ -1,0 +1,4 @@
+{"case": "fixed-ring-100-5-2", "blocks": 200, "blocks_by_layer_count": {"1": 200}, "candidates": 2000, "candidates_by_layer_count": {"1": 2000}}
+{"case": "fixed-ring-100-10-2", "blocks": 200, "blocks_by_layer_count": {"1": 200}, "candidates": 4000, "candidates_by_layer_count": {"1": 4000}}
+{"case": "fixed-ring-500-5-2", "blocks": 1000, "blocks_by_layer_count": {"1": 1000}, "candidates": 10000, "candidates_by_layer_count": {"1": 10000}}
+{"case": "fixed-ring-500-10-2", "blocks": 1000, "blocks_by_layer_count": {"1": 1000}, "candidates": 20000, "candidates_by_layer_count": {"1": 20000}}

@@ -1,0 +1,15 @@
+case,family,seed,cycle_scope,cyclic_node_fraction,edges,largest_scc_fraction,nodes,scc_count,experiment,variant,baseline,status,wall_seconds,embedding_crossings,solver_calls,solver_limited,input_solver_limited,inner_segment_crossings,seam_segments,winding_magnitude,angular_span_sum,angular_span_max,layers,rank_wrap_edges,matches_binary,binary_certified
+proper-3-2-0.25-0,proper,0,cyclic_multiple_scc,1.0,6,0.5,6,2,sifting_oracle,enumerate_zero,enumerate_zero,ok,3.9375001506414264e-05,0,0,False,False,,,,,,,,,
+proper-3-2-0.25-0,proper,0,cyclic_multiple_scc,1.0,6,0.5,6,2,sifting_oracle,sift_zero,enumerate_zero,ok,0.0007444580041919835,0,0,False,False,0,0,0,0.0,0.0,,,,
+proper-3-2-0.25-0,proper,0,cyclic_multiple_scc,1.0,6,0.5,6,2,seam_oracle,enumerate_gaps,enumerate_gaps,ok,3.158299659844488e-05,,0,False,False,,0,,,,,,,
+proper-3-2-0.25-0,proper,0,cyclic_multiple_scc,1.0,6,0.5,6,2,seam_oracle,dp,enumerate_gaps,ok,0.00010845900396816432,0,0,False,False,0,0,0,0.0,0.0,,,,
+proper-3-2-0.65-0,proper,0,strongly_connected,1.0,10,1.0,6,1,sifting_oracle,enumerate_zero,enumerate_zero,ok,7.462500070687383e-05,2,0,False,False,,,,,,,,,
+proper-3-2-0.65-0,proper,0,strongly_connected,1.0,10,1.0,6,1,sifting_oracle,sift_zero,enumerate_zero,ok,0.0019509999983711168,2,0,False,False,0,0,0,2.0,0.5,,,,
+proper-3-2-0.65-0,proper,0,strongly_connected,1.0,10,1.0,6,1,seam_oracle,enumerate_gaps,enumerate_gaps,ok,5.629099905490875e-05,,0,False,False,,2,,,,,,,
+proper-3-2-0.65-0,proper,0,strongly_connected,1.0,10,1.0,6,1,seam_oracle,dp,enumerate_gaps,ok,0.00016687499737599865,0,0,False,False,0,2,2,2.0,0.5,,,,
+dag-6-2-0,dag,0,acyclic,0.0,12,0.16666666666666666,6,6,search_oracle,binary,enumerate,ok,0.012932749996252824,,4,False,False,,,,,,5,0,,
+dag-6-2-0,dag,0,acyclic,0.0,12,0.16666666666666666,6,6,search_oracle,enumerate,enumerate,ok,0.013895957999920938,,6,False,False,,,,,,5,0,True,True
+random-6-2-0,random,0,cyclic_multiple_scc,0.8333333333333334,12,0.8333333333333334,6,2,search_oracle,binary,enumerate,ok,0.011575875003472902,,4,False,False,,,,,,3,3,,
+random-6-2-0,random,0,cyclic_multiple_scc,0.8333333333333334,12,0.8333333333333334,6,2,search_oracle,enumerate,enumerate,ok,0.018939749999844935,,6,False,False,,,,,,3,3,True,True
+cycle-6-2-0,cycle,0,strongly_connected,1.0,12,1.0,6,1,search_oracle,binary,enumerate,ok,0.011947750004765112,,4,False,False,,,,,,6,2,,
+cycle-6-2-0,cycle,0,strongly_connected,1.0,12,1.0,6,1,search_oracle,enumerate,enumerate,ok,0.014199958000972401,,6,False,False,,,,,,6,2,True,True

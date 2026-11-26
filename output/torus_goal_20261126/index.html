@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トーラス階層描画 — 実験結果</title>
+<style>
+:root{color-scheme:light;--ink:#142b31;--muted:#4c6266;--line:#cbd8d5;--paper:#f5f7f2;--white:#fff;--teal:#096b60;--rust:#a44730}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.8 system-ui,sans-serif}
+a{color:var(--teal);text-underline-offset:.2em}a:focus-visible{outline:3px solid currentColor;outline-offset:4px}
+.wrap{width:min(100% - 2.5rem,73rem);margin-inline:auto}
+header{background:#142e31;color:#fff;padding:3.5rem 0 2.65rem;border-bottom:5px solid #67b8a8}
+header a{color:#bcf0e5}.date{color:#bcdfd8;font-variant-numeric:tabular-nums;letter-spacing:.08em;margin:0}
+h1,h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;line-height:1.25}
+h1{margin:.4rem 0 1rem;font-size:clamp(2.35rem,6vw,4.6rem);letter-spacing:-.04em}
+.lead{max-width:42rem;font-size:clamp(1.05rem,2vw,1.23rem);margin:0 0 1.25rem}
+nav{border-bottom:1px solid var(--line);background:var(--white)}
+nav ul{display:flex;flex-wrap:wrap;gap:.5rem 1.65rem;list-style:none;margin:0;padding:.75rem 0}
+nav a{font-weight:650}
+main{padding-bottom:4rem}section{padding-top:2.4rem;scroll-margin-top:1rem}
+h2{font-size:clamp(1.7rem,3.5vw,2.5rem);margin:0 0 .9rem;border-top:1px solid var(--line);padding-top:1rem}
+h3{font-size:1.14rem;margin:1.2rem 0 .45rem}p{margin:.55rem 0 1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:1rem}
+.card{padding:1.1rem 1.2rem;background:var(--white);border:1px solid var(--line);border-top:3px solid var(--teal)}
+.card strong{font-size:2.2rem;line-height:1.1;display:block;font-variant-numeric:tabular-nums}
+.card p{margin:.45rem 0 0}
+.figure{margin:1rem 0;padding:1.05rem;background:var(--white);border:1px solid var(--line)}
+.figure img{display:block;width:100%;height:auto}
+figcaption,.note{font-size:.91rem;color:var(--muted);margin-top:.7rem}
+.bar{display:flex;height:.8rem;margin:.75rem 0 .45rem;overflow:hidden;border-radius:20px}
+.bar span:nth-child(1){background:var(--teal)}.bar span:nth-child(2){background:#9aaca9}.bar span:nth-child(3){background:var(--rust)}
+.table-wrap{overflow-x:auto;background:var(--white);border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+caption{text-align:left;font-weight:700;padding:.8rem 1rem}
+th,td{padding:.62rem .9rem;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+thead{background:#e8f0ec}.num{text-align:right;white-space:nowrap}
+pre{background:#142e31;color:#edf7f4;padding:1rem;overflow:auto;font: .88rem/1.55 ui-monospace,monospace}
+footer{border-top:1px solid var(--line);padding:1rem 0 2rem;color:var(--muted)}
+@media print{body,nav,.card,.figure,.table-wrap{background:white}header{background:white;color:var(--ink)}header a,.date{color:var(--ink)}nav{display:none}figure,tr{break-inside:avoid}main{padding-bottom:1rem}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="date"><time datetime="2026-11-26">2026年11月26日</time> · 計算機実験</p>
+    <h1>トーラス階層描画</h1>
+    <p class="lead">トーラスの周期性は一部の入力で交差を減らす。公開ネットワークではGraphviz dotの交差が少なく、トーラスの折れが少なかった。</p>
+    <a href="../../documents/torus_goal_20261126.md">詳細報告・全実験の再実行手順</a>
+  </div>
+</header>
+<nav aria-label="目次"><div class="wrap"><ul>
+  <li><a href="#comparison">全体比較</a></li><li><a href="#stages">工程の評価</a></li>
+  <li><a href="#structure">入力構造</a></li><li><a href="#scale">規模と限界</a></li>
+  <li><a href="#reproduce">再現手順</a></li>
+</ul></div></nav>
+<main class="wrap">
+<section id="comparison">
+<h2>全体比較</h2>
+<div class="grid">
+  <div class="card"><strong>48 / 48</strong><p>合成入力で既定トーラス・杉山型・放射型・dotが完走</p></div>
+  <div class="card"><strong>15 / 48</strong><p>合成入力でトーラスの幾何交差がdotより少ない</p></div>
+  <div class="card"><strong>21 / 24</strong><p>公開データ追試でトーラスが完走。dotは24件完走</p></div>
+</div>
+<figure class="figure">
+  <strong>合成48入力の幾何交差 · トーラス対dot</strong>
+  <div class="bar" aria-hidden="true"><span style="flex:15"></span><span style="flex:6"></span><span style="flex:27"></span></div>
+  <figcaption>トーラスが少ない 15件 · 同数 6件 · トーラスが多い 27件</figcaption>
+</figure>
+<div class="table-wrap" tabindex="0" role="region" aria-label="合成入力の比較表">
+<table><caption>同一の合成48入力での幾何交差</caption>
+<thead><tr><th scope="col">比較対象</th><th class="num" scope="col">トーラスが少ない</th><th class="num" scope="col">同数</th><th class="num" scope="col">トーラスが多い</th><th class="num" scope="col">差の中央値</th></tr></thead>
+<tbody><tr><th scope="row">杉山型</th><td class="num">22</td><td class="num">7</td><td class="num">19</td><td class="num">0</td></tr>
+<tr><th scope="row">放射型</th><td class="num">32</td><td class="num">3</td><td class="num">13</td><td class="num">−3</td></tr>
+<tr><th scope="row">Graphviz dot</th><td class="num">15</td><td class="num">6</td><td class="num">27</td><td class="num">+2</td></tr></tbody></table>
+</div>
+<p class="note">差はトーラスから比較対象を引いた値。合成入力は12・18・24頂点の4系列。</p>
+<p>公開追試で両方式が完走した21件では、全件でdotの交差が少なく、トーラスの折れが少なかった。トーラスの打ち切り3件は交差数を補完していない。近傍抽出には重なりがあるため、結果を元ネットワーク単位でも集計した。 <a href="framework/paired.csv">合成入力の対応集計</a> · <a href="../torus_holdout_20261126/run/by_network.csv">公開データの集計</a></p>
+</section>
+
+<section id="stages">
+<h2>工程の評価</h2>
+<p>循環階層割当 → 単位スパン化 → 層順と巻き数の決定 → 境界最適化 → 座標割当 → 描画</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="工程別の実験結果">
+<table><caption>条件を揃えた工程別の比較</caption>
+<thead><tr><th scope="col">工程</th><th scope="col">観測結果</th><th scope="col">根拠</th></tr></thead>
+<tbody>
+<tr><th scope="row">階層割当・単位スパン化</th><td>小規模の全列挙で階層探索を照合。16入力でダミー挿入後に単位スパン違反なし。</td><td><a href="oracles/results.csv">厳密照合</a> · <a href="subdivision/results.csv">単位スパン化</a></td></tr>
+<tr><th scope="row">global sifting</th><td>radialと同じ階層・後処理・座標方式で、幾何交差は30件中22件で減少、4件で同数、4件で増加。</td><td><a href="matched_split/paired.csv">対応比較</a></td></tr>
+<tr><th scope="row">層内方向の巻き数</th><td>後処理を外し、同じglobal siftingで巻き数の自由度だけを変えた。自由側は48件中44件で交差が減り、全件で境界を通る元辺が増加。</td><td><a href="../torus_winding_ablation_checked_20261126/rows.jsonl">全試行</a></td></tr>
+<tr><th scope="row">境界最適化・実行順</th><td>jointは合成12件中10件で従来処理より境界通過線分が少なく、2件で同数。joint後の回転は16件中14件で境界通過線分を増やした。</td><td><a href="joint_seam_synthetic.csv">境界比較</a> · <a href="crossing_order/paired.csv">順序比較</a></td></tr>
+<tr><th scope="row">座標割当・描画</th><td>通常BKに対し分割ありBKは16件中9件で折れが減少。分割なしBKは15完走中12件で減少し、1件は制約が循環した。描画領域の監査は144条件で成功。</td><td><a href="coordinates_blocks/results.csv">座標比較</a> · <a href="audit/drawing_domain.csv">描画監査</a></td></tr>
+</tbody></table></div>
+<h3>siftingの最適性への反例</h3>
+<figure class="figure"><a href="../torus_sifting_winding_oracle_20261126/counterexample.svg"><img src="../torus_sifting_winding_oracle_20261126/counterexample.png" loading="lazy" alt="同じ9頂点のグラフ。左のglobal siftingは幾何交差2件、右の全列挙で得た配置は0件。"></a>
+<figcaption>固定階層・ダミーなしの24入力中、既定siftingが巻き数−1〜1の列挙最適値に届かなかった1例。同じ座標方式で描き、境界最適化は適用していない。 <a href="../torus_sifting_winding_oracle_20261126/rows.jsonl">入力と最適解</a></figcaption></figure>
+<p>12頂点の長辺追試では、初期層順を3候補追加すると24件中15件で幾何交差が減った。折れと境界通過の非増加を求めても9件で減った。sifting時間の対応比の中央値は4.38倍。 <a href="../torus_sifting_winding_oracle_20261126/restarts_long_edge_holdout_timing.jsonl">候補別の結果と計測</a></p>
+</section>
+
+<section id="structure">
+<h2>入力構造による違い</h2>
+<p>入次数・出次数、無向骨格、SCCを揃えた混合弦の15入力では、弦の反転後にトーラスとdotの交差差が12件で悪化した。変化の中央値は+9だった。 <a href="figures/degree_control_random/orientation_summary.csv">方向を変えた対応集計</a></p>
+<figure class="figure"><a href="../torus_fixed_rank_width_geometry_20261126/width_tradeoffs.svg"><img src="../torus_fixed_rank_width_geometry_20261126/width_tradeoffs.png" loading="lazy" alt="層幅を増すとsifting時間が増加。交差の減少数と境界通過辺の増加数は層幅によって異なる。"></a>
+<figcaption>96頂点・192辺の3グラフで層割当を変更。層幅と同時に層数も変わる。層数と平均幅を揃えた別の5グラフでは、交互幅条件が全組で遅かった。 <a href="../torus_fixed_rank_width_geometry_20261126/width_pairs.csv">図の元データ</a> · <a href="../torus_fixed_rank_width_reverse_20261126/width_pairs.csv">固定層数での逆順再計測</a></figcaption></figure>
+</section>
+
+<section id="scale">
+<h2>規模・実行時間・適用範囲</h2>
+<p>既定パイプラインの単独実行では、12・18・24頂点の合成24入力でトーラスの時間中央値は0.190秒、ピークRSS中央値は93.5 MiBだった。90・120頂点の工程診断では、階層を得た28経路のうち16経路がsiftingで打ち切られた。工程診断には代替配分の経路も含まれる。 <a href="framework_memory/results.csv">単独実行の結果</a> · <a href="../torus_square_pipeline_traced_20261126/terminal_stages.csv">工程別の打ち切り</a></p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="500頂点の参考比較">
+<table><caption>代替階層を使った500頂点の参考結果 · Watts–Strogatzの1入力</caption>
+<thead><tr><th scope="col">条件</th><th class="num" scope="col">幾何交差</th><th class="num" scope="col">折れ</th><th class="num" scope="col">境界通過元辺</th></tr></thead>
+<tbody><tr><th scope="row">トーラス・siftingなし</th><td class="num">12,520</td><td class="num">869</td><td class="num">46</td></tr>
+<tr><th scope="row">トーラス・45秒予算</th><td class="num">9,854</td><td class="num">875</td><td class="num">46</td></tr>
+<tr><th scope="row">トーラス・上限5回完走</th><td class="num">3,441</td><td class="num">775</td><td class="num">62</td></tr>
+<tr><th scope="row">Graphviz dot</th><td class="num">2,080</td><td class="num">2,364</td><td class="num">0</td></tr></tbody>
+</table></div>
+<p class="note">トーラス3条件は実験用の代替階層に対する後段の評価。 <a href="../torus_incremental_large_20261126/rows.jsonl">5回上限の完走結果</a> · <a href="../torus_budget_sweep_20261126/budget_summary.csv">時間予算別集計</a></p>
+<p>既定モデルの大規模試行ではローカルライセンスのサイズ上限、WLSでは名前解決の失敗を記録した。求解可能な条件の時間切れと、座標制約の実行不能は別に記録した。読解・主観評価は今後の研究課題とした。 <a href="../torus_native_large_20261126/rows.jsonl">ライセンス制約の記録</a> · <a href="wls_probe/rows.jsonl">WLS接続の記録</a></p>
+</section>
+
+<section id="reproduce">
+<h2>データと再現手順</h2>
+<ul>
+<li><a href="framework/inputs.jsonl">合成全体比較の入力</a> · <a href="framework/results.csv">全体比較の生データ</a> · <a href="framework/settings.json">実行設定</a></li>
+<li><a href="../torus_holdout_20261126/run/inputs.jsonl">公開ネットワークの入力</a> · <a href="../torus_holdout_20261126/run/rows.jsonl">公開比較の全試行</a></li>
+<li><a href="../../documents/experiment_plan.md">実験計画</a> · <a href="../../documents/sugiyama_experiment_literature_review.md">関連研究</a> · <a href="../../documents/torus_goal_20261126.md">詳細報告とWLS復旧後の実行手順</a></li>
+<li><a href="../torus_winding_ablation_checked_20261126/pytest.log">回帰テストのログ（1,447件通過）</a></li>
+</ul>
+<h3>巻き数の対応比較を再実行</h3>
+<pre><code>PYTHONHASHSEED=0 ./theme2026-saku/bin/python experiments/run_torus_validation.py winding_ablation \
+  --previous output/torus_goal_20261126/framework --solver-seconds 4 --wall-seconds 20 \
+  --jobs 2 --output output/torus_winding_ablation_retake</code></pre>
+</section>
+</main>
+<footer><div class="wrap"><a href="../../documents/torus_goal_20261126.md">トーラス階層描画の実験監査</a></div></footer>
+</body>
+</html>

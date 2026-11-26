@@ -1,0 +1,17 @@
+case,family,seed,cycle_scope,cyclic_node_fraction,edges,largest_scc_fraction,nodes,scc_count,experiment,variant,baseline,status,wall_seconds,error_type,error_location,solver_calls,solver_limited,input_solver_limited
+dag-500-2-0,dag,0,acyclic,0.0,1000,0.002,500,500,scaling,torus,torus,error,0.08327287499560043,GurobiError,solver.py:22,1,False,False
+dag-500-4-0,dag,0,acyclic,0.0,2000,0.002,500,500,scaling,torus,torus,error,0.13992899999720976,GurobiError,solver.py:22,1,False,False
+dag-1000-2-0,dag,0,acyclic,0.0,2000,0.001,1000,1000,scaling,torus,torus,error,0.15218595800251933,GurobiError,solver.py:22,1,False,False
+dag-1000-4-0,dag,0,acyclic,0.0,4000,0.001,1000,1000,scaling,torus,torus,error,0.292868875003478,GurobiError,solver.py:22,1,False,False
+random-500-2-0,random,0,cyclic_multiple_scc,0.676,1000,0.676,500,163,scaling,torus,torus,error,0.06022566700266907,GurobiError,solver.py:22,1,False,False
+random-500-4-0,random,0,cyclic_multiple_scc,0.954,2000,0.954,500,24,scaling,torus,torus,error,0.11204079200251726,GurobiError,solver.py:22,1,False,False
+random-1000-2-0,random,0,cyclic_multiple_scc,0.641,2000,0.641,1000,360,scaling,torus,torus,error,0.1575480419996893,GurobiError,solver.py:22,1,False,False
+random-1000-4-0,random,0,cyclic_multiple_scc,0.97,4000,0.97,1000,31,scaling,torus,torus,error,0.2594917919996078,GurobiError,solver.py:22,1,False,False
+scc_chain-500-2-0,scc_chain,0,cyclic_multiple_scc,1.0,1000,0.1,500,10,scaling,torus,torus,error,0.060028957996109966,GurobiError,solver.py:22,1,False,False
+scc_chain-500-4-0,scc_chain,0,cyclic_multiple_scc,1.0,2000,0.1,500,10,scaling,torus,torus,error,0.11022479200619273,GurobiError,solver.py:22,1,False,False
+scc_chain-1000-2-0,scc_chain,0,cyclic_multiple_scc,1.0,2000,0.1,1000,10,scaling,torus,torus,error,0.11518141700071283,GurobiError,solver.py:22,1,False,False
+scc_chain-1000-4-0,scc_chain,0,cyclic_multiple_scc,1.0,4000,0.1,1000,10,scaling,torus,torus,error,0.21453141699748812,GurobiError,solver.py:22,1,False,False
+watts_strogatz-500-2-0,watts_strogatz,0,cyclic_multiple_scc,0.984,1000,0.984,500,9,scaling,torus,torus,error,0.06080770900007337,GurobiError,solver.py:22,1,False,False
+watts_strogatz-500-4-0,watts_strogatz,0,strongly_connected,1.0,2000,1.0,500,1,scaling,torus,torus,error,0.11119670799962478,GurobiError,solver.py:22,1,False,False
+watts_strogatz-1000-2-0,watts_strogatz,0,cyclic_multiple_scc,0.983,2000,0.983,1000,18,scaling,torus,torus,error,0.11515950000466546,GurobiError,solver.py:22,1,False,False
+watts_strogatz-1000-4-0,watts_strogatz,0,strongly_connected,1.0,4000,1.0,1000,1,scaling,torus,torus,error,0.22421758299606154,GurobiError,solver.py:22,1,False,False

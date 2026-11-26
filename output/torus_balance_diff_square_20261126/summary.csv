@@ -1,0 +1,16 @@
+nodes,family,trials,assignment_comparable,drawing_comparable,dummy_nodes_diff_median,dummy_nodes_decrease,dummy_nodes_same,dummy_nodes_increase,max_span_diff_median,max_span_decrease,max_span_same,max_span_increase,seconds_diff_median,seconds_decrease,seconds_same,seconds_increase,drawing_seconds_diff_median,drawing_seconds_decrease,drawing_seconds_same,drawing_seconds_increase,geometric_crossings_diff_median,geometric_crossings_decrease,geometric_crossings_same,geometric_crossings_increase,span_p95_comparable,span_p95_diff_median,span_p95_decrease,span_p95_same,span_p95_increase,span_square_sum_comparable,span_square_sum_diff_median,span_square_sum_decrease,span_square_sum_same,span_square_sum_increase
+20,random,5,5,5,0,0,4,1,0,0,5,0,0.010219125004368834,0,0,5,0.0029437070043059066,2,0,3,0,1,2,2,5,0,0,5,0,5,-5,4,1,0
+20,scc_chain,5,5,5,1,0,2,3,0,0,5,0,0.004143041995121166,0,0,5,-0.06941104201541748,3,0,2,13,1,1,3,5,-1,4,1,0,5,-19,4,1,0
+20,watts_strogatz,10,10,10,0.0,0,10,0,0.0,0,10,0,0.005697438013157807,0,0,10,-5.231198883848265e-05,7,0,3,0.0,0,10,0,10,0.0,0,10,0,10,0.0,0,10,0
+40,random,5,5,5,1,0,0,5,0,2,3,0,0.03231566699105315,0,0,5,0.030876415999955498,2,0,3,0,2,1,2,5,0,2,3,0,5,-17,5,0,0
+40,scc_chain,5,5,5,2,0,1,4,0,0,5,0,0.01061554200714454,1,0,4,0.0026592079957481474,1,0,4,6,2,0,3,5,0,2,3,0,5,-22,5,0,0
+40,watts_strogatz,10,10,10,0.0,0,7,3,0.0,2,8,0,0.01566393750545103,3,0,7,-0.0001561874960316345,6,0,4,0.0,1,8,1,10,0.0,2,8,0,10,0.0,3,7,0
+60,random,5,5,5,5,0,0,5,0,0,5,0,0.7035347089986317,0,0,5,0.6313660419982625,1,0,4,22,2,0,3,5,-1,3,2,0,5,-83,5,0,0
+60,scc_chain,5,5,5,6,0,0,5,0,1,4,0,2.007437167005264,0,0,5,0.6907825829985086,0,0,5,0,2,1,2,5,-1,4,1,0,5,-73,5,0,0
+60,watts_strogatz,10,10,10,0.0,0,6,4,0.0,1,9,0,0.9735751040134346,0,0,10,0.006776083500881214,3,0,7,0.0,0,6,4,10,0.0,3,6,1,10,-1.5,5,5,0
+80,random,5,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,0,,0,0,0,0,,0,0,0
+80,scc_chain,5,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,0,,0,0,0,0,,0,0,0
+80,watts_strogatz,10,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,0,,0,0,0,0,,0,0,0
+100,random,5,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,0,,0,0,0,0,,0,0,0
+100,scc_chain,5,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,0,,0,0,0,0,,0,0,0
+100,watts_strogatz,10,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,,0,0,0,0,,0,0,0,0,,0,0,0

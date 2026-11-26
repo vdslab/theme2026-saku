@@ -1,0 +1,3 @@
+{"width": 24, "segment_count": 52, "winding_entries": 8052, "repeats": 9, "calls_per_repeat": 40, "baseline_median_seconds": 0.0006209197999851312, "local_median_seconds": 0.000545992700062925, "integer_median_seconds": 0.00017454062508477365}
+{"width": 64, "segment_count": 132, "winding_entries": 8132, "repeats": 9, "calls_per_repeat": 40, "baseline_median_seconds": 0.0014806322998992983, "local_median_seconds": 0.0014226614501239964, "integer_median_seconds": 0.00045024062510492515}
+{"width": 128, "segment_count": 260, "winding_entries": 8260, "repeats": 9, "calls_per_repeat": 40, "baseline_median_seconds": 0.002847362500142481, "local_median_seconds": 0.002825667725119274, "integer_median_seconds": 0.0008903187499527121}

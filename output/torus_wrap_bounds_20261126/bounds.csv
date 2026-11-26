@@ -1,0 +1,17 @@
+case,family,nodes,edges,lower_status,lower_bound,initial_lower,initial_upper,upper_status,upper_bound,gap,layers_for_chosen_wraps,reference_wraps,reference_limited,square_status,rounds0_status,rounds5_status
+cycle-12-2-0,cycle,12,24,ok,5,5,6,ok,6,1,6,5,False,ok,ok,ok
+cycle-12-4-0,cycle,12,48,ok,13,13,14,ok,14,1,9,14,False,ok,ok,ok
+cycle-36-2-0,cycle,36,72,ok,7,7,11,ok,11,4,13,9,False,ok,ok,ok
+cycle-36-4-0,cycle,36,144,ok,18,18,39,ok,39,21,16,28,True,ok,ok,wall_timeout
+cycle-500-2-0,cycle,500,1000,ok,25,25,118,ok,118,93,62,,,ok,ok,wall_timeout
+cycle-500-4-0,cycle,500,2000,ok,70,70,450,ok,450,380,68,,,ok,wall_timeout,wall_timeout
+cycle-1000-2-0,cycle,1000,2000,ok,34,34,240,ok,240,206,90,,,ok,wall_timeout,wall_timeout
+cycle-1000-4-0,cycle,1000,4000,ok,95,95,881,ok,881,786,114,,,ok,wall_timeout,wall_timeout
+watts_strogatz-12-2-0,watts_strogatz,12,24,ok,3,3,3,ok,3,0,12,3,False,ok,ok,ok
+watts_strogatz-12-4-0,watts_strogatz,12,48,ok,8,8,12,ok,12,4,12,8,False,ok,ok,ok
+watts_strogatz-36-2-0,watts_strogatz,36,72,ok,2,2,2,ok,2,0,36,2,False,ok,ok,ok
+watts_strogatz-36-4-0,watts_strogatz,36,144,ok,8,8,10,ok,10,2,35,9,True,ok,ok,ok
+watts_strogatz-500-2-0,watts_strogatz,500,1000,ok,9,9,62,ok,62,53,127,,,ok,ok,wall_timeout
+watts_strogatz-500-4-0,watts_strogatz,500,2000,ok,30,30,315,ok,315,285,221,,,ok,wall_timeout,wall_timeout
+watts_strogatz-1000-2-0,watts_strogatz,1000,2000,ok,12,12,144,ok,144,132,173,,,ok,wall_timeout,wall_timeout
+watts_strogatz-1000-4-0,watts_strogatz,1000,4000,ok,46,46,692,ok,692,646,166,,,wall_timeout,,

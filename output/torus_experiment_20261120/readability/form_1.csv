@@ -1,0 +1,25 @@
+step,trial,condition,image,prompt
+1,40-distance-0-1,torus_context,images/40-distance-0-1-torus_context.png,A から B までの最短有向経路は何辺ですか
+2,20-direction-1-2,sugiyama,images/20-direction-1-2-sugiyama.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+3,20-distance-1-0,torus_base,images/20-distance-1-0-torus_base.png,A から B までの最短有向経路は何辺ですか
+4,20-distance-0-2,sugiyama,images/20-distance-0-2-sugiyama.png,A から B までの最短有向経路は何辺ですか
+5,20-direction-1-0,torus_base,images/20-direction-1-0-torus_base.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+6,20-distance-1-2,sugiyama,images/20-distance-1-2-sugiyama.png,A から B までの最短有向経路は何辺ですか
+7,40-direction-0-2,sugiyama,images/40-direction-0-2-sugiyama.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+8,20-direction-0-2,sugiyama,images/20-direction-0-2-sugiyama.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+9,20-direction-1-1,torus_context,images/20-direction-1-1-torus_context.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+10,40-distance-1-2,sugiyama,images/40-distance-1-2-sugiyama.png,A から B までの最短有向経路は何辺ですか
+11,40-direction-1-0,torus_base,images/40-direction-1-0-torus_base.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+12,40-distance-0-2,sugiyama,images/40-distance-0-2-sugiyama.png,A から B までの最短有向経路は何辺ですか
+13,20-distance-0-0,torus_base,images/20-distance-0-0-torus_base.png,A から B までの最短有向経路は何辺ですか
+14,40-direction-1-1,torus_context,images/40-direction-1-1-torus_context.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+15,40-direction-1-2,sugiyama,images/40-direction-1-2-sugiyama.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+16,20-direction-0-0,torus_base,images/20-direction-0-0-torus_base.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+17,40-distance-1-0,torus_base,images/40-distance-1-0-torus_base.png,A から B までの最短有向経路は何辺ですか
+18,20-direction-0-1,torus_context,images/20-direction-0-1-torus_context.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+19,20-distance-0-1,torus_context,images/20-distance-0-1-torus_context.png,A から B までの最短有向経路は何辺ですか
+20,20-distance-1-1,torus_context,images/20-distance-1-1-torus_context.png,A から B までの最短有向経路は何辺ですか
+21,40-direction-0-0,torus_base,images/40-direction-0-0-torus_base.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+22,40-direction-0-1,torus_context,images/40-direction-0-1-torus_context.png,A と B を結ぶ辺の向きはどちらですか（A_to_B / B_to_A）
+23,40-distance-0-0,torus_base,images/40-distance-0-0-torus_base.png,A から B までの最短有向経路は何辺ですか
+24,40-distance-1-1,torus_context,images/40-distance-1-1-torus_context.png,A から B までの最短有向経路は何辺ですか

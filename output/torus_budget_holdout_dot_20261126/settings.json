@@ -1,0 +1,13 @@
+{
+  "group": "budget_holdout_dot",
+  "solver_seconds": 1.5,
+  "wall_seconds": 45.0,
+  "local_license": true,
+  "jobs": 3,
+  "dot": "/opt/homebrew/bin/dot",
+  "source_sha256": "60538fa5c34d80f0c3555f55771e7ec5e83ae33e01a9f376e467d9537bf88ccf",
+  "case_ids": null,
+  "sifting_budgets": null,
+  "sifting_check_limits": null,
+  "dot_version": "dot - graphviz version 16.1.1 (20261108.1752)"
+}
