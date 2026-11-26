@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from itertools import product
 import csv
+import gzip
+from hashlib import sha256
 import json
 from pathlib import Path
 from random import Random
@@ -85,6 +87,88 @@ def scc_control_trials():
             yield Trial("scc_control",case,{"block":block,"orientation":orientation})
 
 
+def degree_control_trials():
+    for n, step in product((12, 16, 20), (2, 3, 4)):
+        seed = 1500 + n + step
+        labels = list(range(n))
+        Random(seed).shuffle(labels)
+        ring = [(u, (u + 1) % n) for u in range(n)]
+        chords = [(u, (u + step) % n) for u in range(n)]
+        block = f"regular-ring-{n}-{step}"
+        for orientation, extra in (
+            ("coherent", chords),
+            ("counter_chords", [(v, u) for u, v in chords]),
+        ):
+            edges = tuple(sorted((labels[u], labels[v]) for u, v in ring + extra))
+            graph = Graph(tuple(range(n)), edges)
+            case = Case(f"{block}-{orientation}", "regular_ring", seed, graph)
+            yield Trial("degree_control", case, {"block": block, "orientation": orientation,
+                                                  "chord_step": step})
+
+
+def degree_control_random_trials():
+    for n, seed in product((12, 16, 20), range(1600, 1605)):
+        rng = Random(seed)
+        labels = rng.sample(range(n), n)
+        successors = [(u + 3) % n for u in range(n)]
+        changed = set()
+        for u in rng.sample(range(n), n):
+            v = (u + 1) % n
+            if u not in changed and v not in changed and rng.random() < .65:
+                successors[u], successors[v] = successors[v], successors[u]
+                changed.update((u, v))
+        ring = [(u, (u + 1) % n) for u in range(n)]
+        chords = list(enumerate(successors))
+        block = f"random-regular-ring-{n}-{seed}"
+        for orientation, extra in (
+            ("coherent", chords),
+            ("counter_chords", [(v, u) for u, v in chords]),
+        ):
+            edges = tuple(sorted((labels[u], labels[v]) for u, v in ring + extra))
+            graph = Graph(tuple(range(n)), edges)
+            case = Case(f"{block}-{orientation}", "random_regular_ring", seed, graph)
+            yield Trial("degree_control_random", case, {"block": block, "orientation": orientation})
+
+
+def holdout_trials(directory):
+    sources = (
+        ("krackhardt", "advice", "krackhardt_advice.csv",
+         "https://github.com/JeffreyAlanSmith/Integrated_Network_Science/blob/master/data/krackhardt_advice.csv"),
+        ("krackhardt", "friendship", "krackhardt_friendship.csv",
+         "https://github.com/JeffreyAlanSmith/Integrated_Network_Science/blob/master/data/krackhardt_friendship.csv"),
+        ("sociopatterns", "friendship", "highschool2013.gz",
+         "https://github.com/SocioPatterns/sociopatterns.github.io/blob/main/assets/data/HighSchool2013_friendship_network.csv.gz"),
+        ("email_eu", "email", "email-Eu-core-official-count.txt",
+         "https://github.com/jinhangjiang/Datasets/blob/main/Network%20Data/emailEUcore/email-Eu-core.txt"),
+    )
+    for family, relation, filename, source in sources:
+        raw = (directory / filename).read_bytes()
+        if filename.endswith(".csv"):
+            arcs = [(int(u), int(v)) for u, v, tie in list(csv.reader(raw.decode().splitlines()))[1:]
+                    if int(tie)]
+        else:
+            content = gzip.decompress(raw) if filename.endswith(".gz") else raw
+            arcs = [tuple(map(int, line.split())) for line in content.decode().splitlines() if line.strip()]
+        graph = nx.DiGraph((u, v) for u, v in arcs if u != v)
+        weak = graph.to_undirected()
+        component = min(nx.connected_components(weak), key=lambda nodes: (-len(nodes), min(nodes)))
+        centers = Random(1967).sample(sorted(component), 3)
+        for i, center in enumerate(centers):
+            bfs = list(nx.bfs_tree(weak, center, sort_neighbors=sorted))
+            for size in (12, 16):
+                if len(bfs) < size:
+                    raise ValueError(f"{filename} has insufficient connected vertices")
+                sample = graph.subgraph(bfs[:size])
+                label = {u: index for index, u in enumerate(sorted(sample))}
+                edges = tuple(sorted((label[u], label[v]) for u, v in sample.edges()))
+                case = Case(f"{family}-{relation}-{i}-{size}", family, 1967,
+                            Graph(tuple(range(size)), edges), sha256(raw).hexdigest(), source)
+                yield Trial("public_holdout", case, {
+                    "relation": relation, "center": center, "sample_nodes": sorted(sample),
+                    "source_nodes": graph.number_of_nodes(), "source_edges": graph.number_of_edges(),
+                })
+
+
 def public_trials(directory):
     with ZipFile(directory / "sampson.zip") as archive:
         for period in range(1, 4):
@@ -153,10 +237,23 @@ def stress_subdivision():
 
 
 def trials(group, previous, public):
-    if group == "topology":
+    if group == "winding_ablation":
+        for row in read_jsonl(previous / "inputs.jsonl"):
+            yield Trial(group, previous_case(row))
+    elif group == "topology":
         yield from topology_trials()
     elif group == "scc_control":
         yield from scc_control_trials()
+    elif group == "degree_control":
+        yield from degree_control_trials()
+    elif group == "degree_control_random":
+        yield from degree_control_random_trials()
+    elif group == "public_restart_holdout":
+        for item in holdout_trials(public):
+            if len(item.case.graph.nodes) == 12:
+                yield Trial(group, item.case, item.extra)
+    elif group == "public_holdout":
+        yield from holdout_trials(public)
     elif group == "public":
         yield from public_trials(public)
     elif group == "public_retry":
@@ -180,6 +277,101 @@ def trials(group, previous, public):
             edges=tuple(sorted(rng.sample(possible,8)))
             case=Case(f"stress-{i:02}","artificial_long_edges",1190+i,Graph(tuple(range(len(ranks))),edges))
             yield Trial(group,case,{"specified_ranks":ranks})
+    elif group == "fixed_rank_width":
+        lanes, period = 4, 24
+        nodes = tuple(range(lanes * period))
+        for seed in (941, 942, 943):
+            rng = Random(seed)
+            edges = []
+            for step in range(period):
+                destinations = list(range(lanes))
+                rng.shuffle(destinations)
+                for lane in range(lanes):
+                    successor = ((step + 1) % period) * lanes
+                    edges.extend(
+                        (step * lanes + lane, successor + destinations[(lane + offset) % lanes])
+                        for offset in (0, 1)
+                    )
+            graph = Graph(nodes, tuple(edges))
+            for layers in (4, 8, 12, 24):
+                case = Case(f"fixed-width-{seed}-{layers}", "same_graph_width", seed, graph)
+                yield Trial(group, case, {
+                    "layer_width": len(nodes) // layers,
+                    "specified_ranks": [u // lanes % layers for u in nodes],
+                })
+    elif group == "fixed_rank_width_variation":
+        layers = 8
+        for seed in (951, 952, 953, 954, 955):
+            rng = Random(seed)
+            partitions = []
+            edges = []
+            next_node = 0
+            for _ in range(2):
+                buckets = []
+                for width in (4, 12) * (layers // 2):
+                    buckets.append(list(range(next_node, next_node + width)))
+                    next_node += width
+                partitions.append(buckets)
+                for index, current in enumerate(buckets):
+                    following = buckets[(index + 1) % layers]
+                    sources, targets = current.copy(), following.copy()
+                    rng.shuffle(sources)
+                    rng.shuffle(targets)
+                    for i in range(12):
+                        u, v = sources[i % len(sources)], targets[i % len(targets)]
+                        edges.append((u, v))
+                        if len(sources) == 4:
+                            edges.append((sources[(i + 1) % 4], v))
+                        else:
+                            edges.append((u, targets[(i + 1) % 4]))
+            nodes = tuple(range(next_node))
+            graph = Graph(nodes, tuple(edges))
+            for condition, shift in (("alternating", 0), ("uniform", 1)):
+                ranks = [0] * len(nodes)
+                for offset, buckets in zip((0, shift), partitions, strict=True):
+                    for layer, bucket in enumerate(buckets):
+                        for node in bucket:
+                            ranks[node] = (layer + offset) % layers
+                case = Case(f"width-variation-{seed}-{condition}", "same_graph_width", seed, graph)
+                yield Trial(group, case, {
+                    "layer_width": len(nodes) // layers,
+                    "width_condition": condition,
+                    "specified_ranks": ranks,
+                })
+    elif group in ("fixed_rank_scaling", "fixed_rank_rounds", "fixed_rank_sparse"):
+        spans = (1, 2) if group == "fixed_rank_scaling" else (2,)
+        for size, width, skip in product((100, 500, 1000), (5, 10), spans):
+            nodes = tuple(range(size))
+            arcs = tuple(edge for u in nodes for edge in (
+                (u, (u + width) % size),
+                (u, ((u // width + skip) * width + (u + 1) % width) % size),
+            ))
+            graph = Graph(nodes, arcs)
+            case = Case(f"fixed-ring-{size}-{width}-{skip}", "fixed_ring", 0, graph)
+            yield Trial(group, case, {"layer_width": width, "second_edge_span": skip})
+    elif group in ("dag_large", "scc_large", "scc_compact", "dag_square_cut", "scc_square_cut", "scc_square_scaled"):
+        family = "dag" if group in ("dag_large", "dag_square_cut") else "scc_chain"
+        for size, density in product((12, 36, 500, 1000), (2, 4)):
+            yield Trial(group, generate(family, size, density, 0))
+    elif group in ("budget_scoring_holdout", "budget_holdout_dot"):
+        for family, size, seed in product(("cycle", "watts_strogatz"), (90, 120), (811, 812, 813)):
+            yield Trial(group, generate(family, size, 2, seed))
+    elif group in ("large_geometry", "large_local_winding", "large_integer_scoring", "large_vector_scoring", "large_cached_scoring", "large_incremental_scoring", "large_delta_scoring", "large_budgeted_scoring", "large_graphviz"):
+        for family, size in product(("cycle", "watts_strogatz"), (500, 1000)):
+            yield Trial(group, generate(family, size, 2, 0))
+    elif group in ("wrap_bounds", "wrap_bounds_refine", "wrap_bounds_short_cycles"):
+        for family, size, density in product(("cycle", "watts_strogatz"), (12, 36, 500, 1000), (2, 4)):
+            yield Trial(group, generate(family, size, density, 0))
+    elif group == "square_diagnosis":
+        for family, size, density in (("dag", 90, 2), ("dag", 90, 4),
+                                      ("watts_strogatz", 90, 4), ("watts_strogatz", 120, 2)):
+            yield Trial(group, generate(family, size, density, 323))
+    elif group in ("square_holdout", "square_pipeline"):
+        for family, size, density, seed in product(("dag", "watts_strogatz"), (90, 120), (2, 4), (322, 323)):
+            yield Trial(group, generate(family, size, density, seed))
+    elif group == "square_scaling":
+        for family, size in product(("dag", "watts_strogatz"), (12, 18, 36, 60, 90, 120)):
+            yield Trial(group, generate(family, size, 2, 321))
     elif group == "scaling":
         for family, size in product(("dag", "watts_strogatz"), (36, 60, 90, 120)):
             yield Trial(group, generate(family, size, 2, 321))

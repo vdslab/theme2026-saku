@@ -56,6 +56,12 @@ def torus(graph, config=None, *, scaling=False):
     result, metrics = measured_torus(graph, config)
     if result is None:
         return {**metrics, "status": "no_solution"}, None
+    # The pipeline includes both attempts when it falls back to the legacy cut.
+    metrics.update(
+        reduce_crossings_seconds=result.crossing_time,
+        assign_coordinates_seconds=result.coordinate_time,
+        seam_method_used=result.seam_method_used,
+    )
     metrics.update(assignment_metrics(graph, result.assignment, result.search.layer_count,
                                       result.search.torus_count))
     paths, subs = subdivision_metrics(graph, result.subdivided)
@@ -135,7 +141,7 @@ GRAPHVIZ_OPTIONS = {
 }
 
 
-def graphviz(graph, executable, timeout, *, engine="dot"):
+def graphviz(graph, executable, timeout, *, engine="dot", measure_geometry=True):
     flags = (f"-K{engine}", "-Gsplines=polyline", *GRAPHVIZ_OPTIONS[engine], "-Tjson")
     ids = {node: f"n{index}" for index, node in enumerate(graph.nodes)}
     labels = {label: node for node, label in ids.items()}
@@ -188,9 +194,11 @@ def graphviz(graph, executable, timeout, *, engine="dot"):
     direction = {}
     if engine == "dot":
         direction = {"reverse_direction_edges": reverse, "same_rank_edges": same_rank}
-    return {"layout_seconds": elapsed, "tool": "graphviz", "engine": engine,
-            "tool_options": " ".join(flags), **direction,
-            **completed_metrics(routes)}, (routes, None)
+    metrics = {"layout_seconds": elapsed, "tool": "graphviz", "engine": engine,
+               "tool_options": " ".join(flags), **direction}
+    if measure_geometry:
+        metrics.update(completed_metrics(routes))
+    return metrics, (routes, None)
 
 
 def elk_layered(graph, node_executable, package_dir, timeout):
@@ -263,13 +271,26 @@ def framework_study(graph, run, args):
         evaluate = lambda: elk_layered(graph, args.node, args.elkjs, args.comparison_seconds)
     else:
         evaluate = variants[args.variant]
-    run("framework", args.variant, args.baseline, evaluate)
+    def with_memory():
+        metrics, layout = evaluate()
+        # Each framework variant gets a fresh worker. External tools run in its child.
+        return {
+            **metrics,
+            "peak_worker_mib": peak_mib(resource.RUSAGE_SELF),
+            "peak_child_mib": peak_mib(resource.RUSAGE_CHILDREN),
+        }, layout
+
+    run("framework", args.variant, args.baseline, with_memory)
+
+
+def peak_mib(who):
+    rss = resource.getrusage(who).ru_maxrss
+    return rss / (1024**2 if sys.platform == "darwin" else 1024)
 
 
 def scaling_study(graph, run):
     def evaluate():
         metrics, layout = torus(graph, scaling=True)
-        rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        metrics["peak_process_mib"] = rss / (1024**2 if sys.platform == "darwin" else 1024)
+        metrics["peak_process_mib"] = peak_mib(resource.RUSAGE_SELF)
         return metrics, layout
     run("scaling", "torus", "torus", evaluate)

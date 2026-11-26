@@ -20,8 +20,9 @@ from run_torus_study import ROOT, append, write_csv
 
 sys.path.insert(0, str(ROOT / "src"))
 
-GROUPS = ("topology", "scc_control", "public", "public_retry", "budget", "ranks", "winding", "sifting", "seams",
-          "seam_stress", "coordinates", "coordinate_audit", "scaling", "subdivision", "geometry")
+ORIENTATION_GROUPS = ("topology", "scc_control", "degree_control", "degree_control_random")
+GROUPS = (*ORIENTATION_GROUPS, "public", "public_holdout", "public_restart_holdout", "public_retry", "budget", "ranks", "winding", "winding_ablation", "sifting", "seams",
+          "seam_stress", "coordinates", "coordinate_audit", "scaling", "square_scaling", "square_holdout", "square_pipeline", "square_diagnosis", "fixed_rank_scaling", "fixed_rank_rounds", "fixed_rank_sparse", "fixed_rank_width", "fixed_rank_width_variation", "dag_large", "scc_large", "scc_compact", "dag_square_cut", "scc_square_cut", "scc_square_scaled", "wrap_bounds", "wrap_bounds_refine", "wrap_bounds_short_cycles", "large_geometry", "large_local_winding", "large_integer_scoring", "large_vector_scoring", "large_cached_scoring", "large_incremental_scoring", "large_delta_scoring", "large_budgeted_scoring", "budget_scoring_holdout", "budget_holdout_dot", "large_graphviz", "subdivision", "geometry")
 
 
 class BudgetExpired(TimeoutError):
@@ -88,7 +89,19 @@ def perform(arg):
 
     info = trial.record()
     run = Measurements(info, argparse.Namespace(**settings))
-    function = "topology" if trial.group == "scc_control" else trial.group
+    function = "topology" if trial.group in (*ORIENTATION_GROUPS, "public_holdout") else trial.group
+    if trial.group in ("square_holdout", "square_pipeline", "square_diagnosis"):
+        function = "square_scaling"
+    elif trial.group in ("fixed_rank_rounds", "fixed_rank_sparse", "fixed_rank_width", "fixed_rank_width_variation"):
+        function = "fixed_rank_scaling"
+    elif trial.group in ("scc_compact", "scc_square_cut", "scc_square_scaled"):
+        function = "scc_large"
+    elif trial.group == "dag_square_cut":
+        function = "dag_large"
+    elif trial.group in ("wrap_bounds_refine", "wrap_bounds_short_cycles", "large_geometry", "large_local_winding", "large_integer_scoring", "large_vector_scoring", "large_cached_scoring", "large_incremental_scoring", "large_delta_scoring", "large_budgeted_scoring", "budget_scoring_holdout"):
+        function = "wrap_bounds"
+    elif trial.group == "budget_holdout_dot":
+        function = "large_graphviz"
     getattr(validation_stages, function)(trial, run)
     return info, run.rows
 
@@ -124,19 +137,40 @@ def main():
     parser.add_argument("--wls", action="store_true")
     parser.add_argument("--dot", default="dot")
     parser.add_argument("--limit", type=int, help="Stop after the first cases for smoke tests")
+    parser.add_argument("--case-id", action="append", help="Run only an exact input ID (repeatable)")
+    parser.add_argument("--reverse-order", action="store_true", help="Execute the selected design in reverse order")
+    parser.add_argument("--sifting-budgets", nargs="+", type=int,
+                        help="Seconds per sifting call for large_budgeted_scoring (0 uses initialization only)")
+    parser.add_argument("--sifting-check-limits", nargs="+", type=int,
+                        help="Deterministic callback limits for large_budgeted_scoring")
     args = parser.parse_args()
+    if args.sifting_check_limits is not None and (
+        args.group != "large_budgeted_scoring" or args.sifting_budgets is not None
+        or any(count <= 0 for count in args.sifting_check_limits)
+        or len(set(args.sifting_check_limits)) != len(args.sifting_check_limits)
+    ):
+        parser.error("sifting check limits must be distinct positive integers and cannot be mixed with time budgets")
+
+    if args.sifting_budgets is not None and (
+        args.group != "large_budgeted_scoring"
+        or any(seconds < 0 or seconds >= args.wall_seconds for seconds in args.sifting_budgets)
+        or len(set(args.sifting_budgets)) != len(args.sifting_budgets)
+    ):
+        parser.error("sifting budgets must be distinct nonnegative seconds below the stage wall limit")
+
     if any(not math.isfinite(x) or x <= 0 for x in (args.solver_seconds,args.wall_seconds)) or args.jobs < 1:
         parser.error("positive finite time bounds and positive job count required")
     os.environ.setdefault("MPLBACKEND", "Agg")
     os.environ.setdefault("MPLCONFIGDIR", str(Path("/tmp") / "torus-study-mpl"))
     args.output.mkdir(parents=True)
-    revision = subprocess.run(["git","rev-parse","HEAD"], cwd=ROOT, capture_output=True,
-                              text=True, check=True).stdout.strip()
     from run_torus_study import source_fingerprint
 
     settings = {"group":args.group, "solver_seconds":args.solver_seconds, "wall_seconds":args.wall_seconds,
                 "local_license":not args.wls, "jobs":args.jobs, "dot":shutil.which(args.dot),
-                "revision":revision, "source_sha256":source_fingerprint()}
+                "source_sha256":source_fingerprint(), "case_ids": args.case_id,
+                "reverse_order": args.reverse_order,
+                "sifting_budgets": args.sifting_budgets,
+                "sifting_check_limits": args.sifting_check_limits}
     if settings["dot"]:
         settings["dot_version"] = subprocess.run([settings["dot"],"-V"], capture_output=True,
                                                   text=True, check=True, timeout=5).stderr.strip()
@@ -144,13 +178,20 @@ def main():
     if args.group == "wls_probe":
         append(args.output/"rows.jsonl", wls_probe())
         return
-    if args.group in ("topology","scc_control","budget","public") and not settings["dot"]:
+    if args.group in (*ORIENTATION_GROUPS, "budget", "public", "public_holdout", "large_geometry", "large_local_winding", "large_integer_scoring", "large_vector_scoring", "large_cached_scoring", "large_incremental_scoring", "large_delta_scoring", "large_budgeted_scoring", "budget_scoring_holdout", "budget_holdout_dot", "large_graphviz") and not settings["dot"]:
         parser.error("dot is required")
     from torus_study.validation_inputs import trials
 
     design = list(trials(args.group, args.previous, args.public))
+    if args.case_id:
+        missing = set(args.case_id) - {trial.case.id for trial in design}
+        if missing:
+            parser.error(f"unknown case IDs: {', '.join(sorted(missing))}")
+        design = [trial for trial in design if trial.case.id in args.case_id]
     if args.limit is not None:
         design = design[:args.limit]
+    if args.reverse_order:
+        design.reverse()
     for trial in design:
         append(args.output/"inputs.jsonl", trial.record())
     results = []

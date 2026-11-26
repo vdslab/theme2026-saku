@@ -400,8 +400,6 @@ def main():
     args.output.mkdir(parents=True)
     (args.output / "workers").mkdir()
     write_csv(args.output / "benchmark_audit.csv", audit)
-    revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
-                              text=True, check=False).stdout.strip()
     dot_version = None
     if args.dot:
         dot_version = subprocess.run([args.dot, "-V"], capture_output=True, text=True,
@@ -414,7 +412,7 @@ def main():
         ).stderr.strip()
     settings = {**vars(args), "output": str(args.output), "suite_version": VERSION,
                 "graphviz_version": graphviz_version,
-                "revision": revision, "platform": platform.platform(), "dot_version": dot_version,
+                "platform": platform.platform(), "dot_version": dot_version,
                 "source_sha256": source_fingerprint(),
                 "python": platform.python_version(),
                 "packages": {p: version(p) for p in ("networkx", "gurobipy", "matplotlib", "pillow")}}

@@ -60,13 +60,15 @@ def inner_crossings(graph, crossing):
     return count
 
 
-def evaluate(name, family, graph, *, repetitions=3, matched_postprocessing=False):
+def evaluate(name, family, graph, *, repetitions=3, matched_postprocessing=False,
+             coordinate_method="brandes_koepf_blocks_unsplit"):
     settings = SimpleNamespace(local_license=True, solver_seconds=3.0)
     solver_trace = []
     with record_solver(settings, solver_trace):
         assigned = assign_layers(graph)
     row = {"case": name, "family": family, "nodes": len(graph.nodes), "edges": len(graph.edges),
-           "solver_limited": any(item["status"] not in (2, 3) for item in solver_trace)}
+           "solver_limited": any(item["status"] not in (2, 3) for item in solver_trace),
+           "coordinate_method": coordinate_method}
     if assigned is None:
         return [{**row, "status": "no_assignment"}], {}
     search, assignment = assigned
@@ -100,7 +102,19 @@ def evaluate(name, family, graph, *, repetitions=3, matched_postprocessing=False
             raise AssertionError(f"{name}: global sifting returned {conflict_count} type-2 conflicts")
         count = count_crossings(divided, crossing)
         boundary = boundary_metrics(divided, crossing.winding_numbers)
-        coordinates = assign_coordinates(divided, crossing)
+        embedding_row = {
+            **row, "layers": len(divided.layers), "dummy_nodes": len(divided.dummy_nodes),
+            "method": method, "seconds": elapsed, "repetitions": repetitions,
+            "matched_postprocessing": matched_postprocessing,
+            "crossings": count, "type2": conflict_count,
+            "y_seam_segments": boundary["y_seam_segments"],
+            "y_seam_events": boundary["y_seam_events"],
+        }
+        try:
+            coordinates = assign_coordinates(divided, crossing, method=coordinate_method)
+        except ValueError as error:
+            outcomes.append({**embedding_row, "status": "coordinate_error", "error": str(error)})
+            continue
         validation = coordinate_metrics(divided, crossing, coordinates)
         assert not any(value for key, value in validation.items() if key.endswith("violations"))
         routes, bounds = torus_routes(paths, divided, crossing, coordinates)
@@ -110,16 +124,10 @@ def evaluate(name, family, graph, *, repetitions=3, matched_postprocessing=False
         selected_crossings = (crossing_metrics(selected, bounds)["geometric_crossings"]
                               if len(selected) == 2 else None)
         outcomes.append({
-            **row, "status": "ok", "layers": len(divided.layers),
-            "dummy_nodes": len(divided.dummy_nodes), "method": method,
-            "seconds": elapsed,
-            "repetitions": repetitions, "matched_postprocessing": matched_postprocessing,
-            "crossings": count, "type2": conflict_count,
+            **embedding_row, "status": "ok",
             "geometric_crossings": drawn["geometric_crossings"],
             "bends": drawn["bends"], "over_two_bends": sum(n > 2 for n in bends.values()),
             "total_edge_length": drawn["total_edge_length"],
-            "y_seam_segments": boundary["y_seam_segments"],
-            "y_seam_events": boundary["y_seam_events"],
             "edge_6_8_bends": bends.get((6, 8)), "edge_6_11_bends": bends.get((6, 11)),
             "edge_6_8_vs_6_11_crossings": selected_crossings,
         })
@@ -245,6 +253,9 @@ def main():
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--matched-postprocessing", action="store_true",
                         help="Disable Algo2 and UNWIND for both methods.")
+    parser.add_argument("--coordinate-method",
+                        choices=("brandes_koepf_blocks_unsplit", "brandes_koepf_blocks"),
+                        default="brandes_koepf_blocks_unsplit")
     args = parser.parse_args()
     if args.repetitions < 1:
         parser.error("--repetitions must be at least 1")
@@ -254,14 +265,16 @@ def main():
     for name, family, graph in cases():
         try:
             rows, drawings = evaluate(name, family, graph, repetitions=args.repetitions,
-                                      matched_postprocessing=args.matched_postprocessing)
+                                      matched_postprocessing=args.matched_postprocessing,
+                                      coordinate_method=args.coordinate_method)
         except ValueError as error:
             rows = [{"case": name, "family": family, "nodes": len(graph.nodes),
-                     "edges": len(graph.edges), "status": "failed", "error": str(error)}]
+                     "edges": len(graph.edges), "status": "failed", "error": str(error),
+                     "coordinate_method": args.coordinate_method}]
             drawings = {}
         all_rows.extend(rows)
         write_csv(args.output, "measurements.csv", all_rows)
-        if drawings:
+        if len(drawings) == 2:
             examples[name] = rows, drawings
             if name == "ws-30-42-ring":
                 save_witness(args.output, graph, drawings)

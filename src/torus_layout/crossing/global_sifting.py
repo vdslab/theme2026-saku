@@ -1,6 +1,7 @@
 """Block sifting on cyclic layers, adapted from Bachmaier et al. (2011), §5.4."""
 
 from collections import defaultdict
+from collections.abc import Callable, Iterator
 from itertools import chain, combinations, product
 
 from ..models import Edge, Layers, Node, SubdividedGraph, Winding
@@ -11,12 +12,23 @@ from .lib.embedding import edges_by_directed_strip, map_node_layers
 
 def sift_blocks(
     graph: SubdividedGraph, initial_order: Layers, layers: list[int], rounds: int,
+    *, sparse_candidates: bool = False, local_winding: bool = False, integer_scoring: bool = False,
+    should_stop: Callable[[], bool] | None = None,
+    cache_strip_scores: bool = False, incremental_orders: bool = False,
+    incremental_scores: bool = False,
+    alternate_visits: bool = False, early_exit: bool = True,
+    on_round_start: Callable[[tuple[int, ...], Layers, Winding], None] | None = None,
+    on_round_end: Callable[[Layers, Winding], None] | None = None,
+    on_candidate: Callable[[], None] | None = None,
 ) -> tuple[Layers, Winding]:
     """Sift a shared circular ordering of original vertices and dummy chains.
 
     Internal segments use zero vertical winding at the shared cut. For each
     trial block position, enumerate the partings of its incident outer edges
     within each affected strip; all other windings remain fixed.
+    A stop request returns the last committed block order and windings.
+    Round observers receive the live embedding and must treat it as read-only.
+    A candidate observer counts trial positions scored after existing skips.
     """
     edges = list(graph.graph.edges)
     winding = dict.fromkeys(edges, 0)
@@ -49,57 +61,157 @@ def sift_blocks(
             for node in edge:
                 by_block[node_block[node]][pair].add(edge)
 
-    for _ in range(rounds):
+    for round_index in range(rounds):
+        visits = tuple(reversed(sequence) if alternate_visits and round_index % 2 else sequence)
+        if on_round_start is not None:
+            on_round_start(visits, order, winding)
         improved = False
-        for block in tuple(sequence):
+        for block in visits:
+            if should_stop is not None and should_stop():
+                return order, winding
             positions = block_layers[block]
             affected = by_block.get(block)
             if not affected:
                 continue
-            best_score = sum(_strip_score(order, winding, pair, strips[pair], set(), moving=moving)[0]
+            best_score = sum(_strip_score(order, winding, pair, strips[pair], set(), moving=moving,
+                                          integer_scoring=integer_scoring)[0]
                              for pair, moving in affected.items())
             if best_score == 0:
                 continue
             best = None
             remaining = [member for member in sequence if member != block]
             variable = {pair: moving & outer for pair, moving in affected.items()}
-            visited = set()
-            for index in range(len(sequence)):
-                candidate = remaining[:index] + [block] + remaining[index:]
-                rank = {member: i for i, member in enumerate(candidate)}
-                orders = {layer: sorted(order[layer], key=lambda node: rank[node_block[node]])
-                          for layer in positions}
-                signature = tuple(tuple(nodes) for nodes in orders.values())
-                if signature in visited:
-                    continue
-                visited.add(signature)
+            strip_cache: dict[tuple[tuple[int, int], int, int], tuple[int, Winding]] = {}
+            score_cache: dict[tuple[int, int], tuple[int, Winding]] = {}
+            previous_orders: Layers = {}
+            running_score = 0
+            for index, orders in _trial_orders(
+                order, positions, block, remaining, node_block, sparse_candidates, incremental_orders,
+            ):
+                if should_stop is not None and should_stop():
+                    return order, winding
+                if on_candidate is not None:
+                    on_candidate()
                 trial = order | orders
                 score, offsets = 0, {}
-                for pair, moving in affected.items():
-                    cost, selected = _strip_score(
-                        trial, winding, pair, strips[pair], variable[pair],
-                        outgoing=pair[0] in positions, moving=moving,
-                    )
-                    score += cost
-                    offsets.update(selected)
+                if incremental_scores:
+                    touched = {layer for layer, nodes in orders.items()
+                               if nodes is not previous_orders.get(layer)}
+                    previous_orders = orders
+                    pairs = (pair for pair in affected
+                             if pair not in score_cache or pair[0] in touched or pair[1] in touched)
+                else:
+                    pairs = iter(affected)
+                for pair in pairs:
+                    moving = affected[pair]
+                    cached = None
+                    if cache_strip_scores:
+                        left, right = pair
+                        key = (pair, trial[left].index(positions[left]) if left in positions else -1,
+                               trial[right].index(positions[right]) if right in positions else -1)
+                        cached = strip_cache.get(key)
+                    if cached is None:
+                        cached = _strip_score(
+                            trial, winding, pair, strips[pair], variable[pair],
+                            outgoing=pair[0] in positions, moving=moving, local_winding=local_winding,
+                            integer_scoring=integer_scoring,
+                        )
+                        # Orders of stationary vertices and their windings are
+                        # invariant until this block move is committed.
+                        if cache_strip_scores:
+                            strip_cache[key] = cached
+                    cost, selected = cached
+                    if incremental_scores:
+                        running_score += cost - score_cache.get(pair, (0, {}))[0]
+                        score_cache[pair] = cached
+                    else:
+                        score += cost
+                        offsets.update(selected)
+                if incremental_scores:
+                    score = running_score
                 if score < best_score:
-                    best_score, best = score, (candidate, orders, offsets)
+                    if incremental_scores:
+                        offsets = {edge: value for pair in affected
+                                   for edge, value in score_cache[pair][1].items()}
+                    best_score, best = score, (index, orders, offsets)
                     if score == 0:
                         break
             if best is not None:
-                sequence, orders, offsets = best
+                index, orders, offsets = best
+                sequence = remaining[:index] + [block] + remaining[index:]
                 order.update(orders)
                 winding.update(offsets)
                 improved = True
-        if not improved:
+        if on_round_end is not None:
+            on_round_end(order, winding)
+        if early_exit and not improved:
             break
     return order, winding
+
+
+def _trial_orders(
+    order: Layers, positions: dict[int, Node], block: int, remaining: list[int],
+    node_block: dict[Node, int], sparse: bool, incremental: bool = False,
+) -> Iterator[tuple[int, Layers]]:
+    if sparse:
+        rank = {member: i for i, member in enumerate(remaining)}
+        local_others = {layer: [node for node in order[layer] if node != moving]
+                        for layer, moving in positions.items()}
+        if incremental:
+            changes: dict[int, list[int]] = defaultdict(list)
+            for layer, nodes in local_others.items():
+                for node in nodes:
+                    changes[rank[node_block[node]] + 1].append(layer)
+            offsets = dict.fromkeys(positions, 0)
+            orders = {layer: [positions[layer], *nodes] for layer, nodes in local_others.items()}
+            yield 0, orders.copy()
+            for index, touched in sorted(changes.items()):
+                for layer in touched:
+                    offset = offsets[layer]
+                    nodes = orders[layer]
+                    orders[layer] = nodes[:offset] + [nodes[offset + 1], nodes[offset]] + nodes[offset + 2:]
+                    offsets[layer] += 1
+                yield index, orders.copy()
+            return
+        boundaries = {rank[node_block[node]] + 1 for nodes in local_others.values() for node in nodes}
+        # Only passing a block present in a touched layer changes its local order.
+        # The first index in each interval preserves the original tie-breaking.
+        for index in (0, *sorted(boundaries)):
+            orders = {}
+            for layer, nodes in local_others.items():
+                before = sum(rank[node_block[node]] < index for node in nodes)
+                orders[layer] = nodes[:before] + [positions[layer]] + nodes[before:]
+            yield index, orders
+        return
+
+    visited = set()
+    for index in range(len(remaining) + 1):
+        candidate = remaining[:index] + [block] + remaining[index:]
+        rank = {member: i for i, member in enumerate(candidate)}
+        orders = {layer: sorted(order[layer], key=lambda node: rank[node_block[node]])
+                  for layer in positions}
+        signature = tuple(tuple(nodes) for nodes in orders.values())
+        if signature in visited:
+            continue
+        visited.add(signature)
+        yield index, orders
+
+
+def _integer_pair_terms(
+    a: tuple[int, int, int], b: tuple[int, int, int],
+) -> tuple[int, int]:
+    x = (b[0] > a[0]) - (b[0] < a[0])
+    y = (b[1] > a[1]) - (b[1] < a[1])
+    return y - x, abs(x) + abs(y) - 2
 
 
 def _strip_score(
     order: Layers, winding: Winding, pair: tuple[int, int],
     segments: list[Edge], variable: set[Edge], *,
     outgoing: bool = False, moving: set[Edge] | None = None,
+    local_winding: bool = False, integer_scoring: bool = False,
+    bulk_costs: Callable[[list[list[Edge]], list[Edge], dict[Node, int],
+                          dict[Node, int], Winding, int], dict[int, list[int]]] | None = None,
 ) -> tuple[int, Winding]:
     start, end = pair_positions(order, *pair)
     fixed = [edge for edge in segments if edge not in variable]
@@ -107,8 +219,19 @@ def _strip_score(
         moving = set(segments)
     changed = [edge for edge in fixed if edge in moving]
     stable = [edge for edge in fixed if edge not in moving]
+    if integer_scoring:
+        indexed = {edge: (start[edge[0]], end[edge[1]], winding.get(edge, 0)) for edge in segments}
+
+        def count(a: Edge, b: Edge) -> int:
+            left, right = indexed[a], indexed[b]
+            shift, correction = _integer_pair_terms(left, right)
+            return max(0, (abs(2 * (right[2] - left[2]) + shift) + correction) // 2)
+    else:
+        def count(a: Edge, b: Edge) -> int:
+            return crossings_between_edges(a, b, start, end, winding)
+
     # Two edges disjoint from the block keep their relative endpoint order.
-    score = sum(crossings_between_edges(a, b, start, end, winding)
+    score = sum(count(a, b)
                 for a, b in chain(combinations(changed, 2), product(changed, stable)))
     if not variable:
         return score, {}
@@ -123,19 +246,39 @@ def _strip_score(
         if edge in variable:
             groups[axis[edge[1 if outgoing else 0]]].append(edge)
     ordered = [group for _, group in sorted(groups.items())]
-    costs = {}
-    for value in (-1, 0, 1):
-        tentative = winding | dict.fromkeys(variable, sign * value)
-        costs[value] = [
-            sum(crossings_between_edges(edge, other, start, end, tentative)
-                for edge in group for other in fixed)
-            for group in ordered
-        ]
+    costs = {-1: [], 0: [], 1: []}
+    if bulk_costs is not None:
+        costs = bulk_costs(ordered, fixed, start, end, winding, sign)
+    elif integer_scoring:
+        for group in ordered:
+            low = middle = high = 0
+            for edge in group:
+                left = indexed[edge]
+                for other in fixed:
+                    right = indexed[other]
+                    shift, correction = _integer_pair_terms(left, right)
+                    center = 2 * right[2] + shift
+                    low += max(0, (abs(center + 2 * sign) + correction) // 2)
+                    middle += max(0, (abs(center) + correction) // 2)
+                    high += max(0, (abs(center - 2 * sign) + correction) // 2)
+            costs[-1].append(low)
+            costs[0].append(middle)
+            costs[1].append(high)
+    else:
+        # Candidate scoring reads only variable and fixed edges in this strip.
+        base = {edge: winding.get(edge, 0) for edge in fixed} if local_winding else winding
+        for value in (-1, 0, 1):
+            tentative = base | dict.fromkeys(variable, sign * value)
+            costs[value] = [
+                sum(crossings_between_edges(edge, other, start, end, tentative)
+                    for edge in group for other in fixed)
+                for group in ordered
+            ]
 
     # Within a parting, the variable edges share their moved endpoint and
     # never cross one another. Scan the split by updating its fixed-edge cost.
     moving_outer = [edge for edge in segments if edge in variable]
-    original = sum(crossings_between_edges(a, b, start, end, winding)
+    original = sum(count(a, b)
                    for a, b in chain(combinations(moving_outer, 2), product(moving_outer, fixed)))
     best = (original, sum(abs(winding[edge]) for edge in moving_outer))
     chosen = (0, 0)

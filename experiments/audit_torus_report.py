@@ -1,4 +1,4 @@
-"""Reproduce the two implementation checks referenced by the consolidated report."""
+"""Audit crossings, seam optimization scope, and rendering domains."""
 
 from argparse import ArgumentParser
 import csv
@@ -9,7 +9,9 @@ from unittest.mock import patch
 from run_torus_study import ROOT, source_fingerprint
 from torus_layout.coordinates import api
 from torus_layout.coordinates.periodic import drawing_period
-from torus_layout.crossing import count_crossings, reduce_crossings
+from torus_layout.crossing import (
+    count_crossings, count_seam_segments, optimize_joint_seam, reduce_crossings,
+)
 from torus_layout.crossing.lib.crossings import pair_crossings
 from torus_layout.crossing.lib.embedding import oriented_pair_embedding
 from torus_layout.drawing.preparation import prepare_drawing
@@ -39,6 +41,30 @@ def two_layer_crossing():
         "local_crossings": pair_crossings(order, winding, 0, 1, oriented),
         "embedding_crossings": count_crossings(sub, embedding),
         "geometric_crossings": crossing_metrics(routes, bounds)["geometric_crossings"],
+    }
+
+
+def two_layer_joint_scope():
+    order = {0: [0], 1: [1]}
+    edges = ((0, 1), (1, 0))
+    graph = SubdividedGraph(
+        Graph((0, 1), edges), order, {edges[0]: False, edges[1]: True},
+        dict.fromkeys(edges, 1), (0, 1),
+    )
+    before = CrossingResult(order, dict.fromkeys(edges, 1))
+    joint = optimize_joint_seam(graph, before)
+    if joint is None:
+        raise AssertionError("joint seam optimization must be feasible without dummy nodes")
+    independent = CrossingResult(order, dict.fromkeys(edges, 0))
+    return {
+        "edges": edges,
+        "horizontal_wrap": [False, True],
+        "variants": {
+            name: {"windings": [result.winding_numbers[edge] for edge in edges],
+                   "seams": count_seam_segments(graph, result),
+                   "crossings": count_crossings(graph, result)}
+            for name, result in (("before", before), ("joint", joint), ("independent_strips", independent))
+        },
     }
 
 
@@ -85,6 +111,7 @@ def main():
         writer.writerows(rows)
     records = {
         "two_layer_crossing.json": two_layer_crossing(),
+        "two_layer_joint_scope.json": two_layer_joint_scope(),
         "settings.json": {
             "source_sha256": source_fingerprint(),
             "coordinate_domain_input": str(args.inputs.relative_to(ROOT) if args.inputs.is_relative_to(ROOT)

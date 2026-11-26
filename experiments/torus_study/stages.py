@@ -18,7 +18,9 @@ from torus_layout.coordinates import api as coordinate_api
 from torus_layout.coordinates import brandes_koepf as bk
 from torus_layout.coordinates.periodic import drawing_period
 from old_torus_layout.coordinate_assignment.brandes_koepf import _smooth_torus_edges
-from torus_layout.crossing import count_crossings, count_seam_segments, optimize_seam, reduce_crossings
+from torus_layout.crossing import (
+    count_crossings, count_seam_segments, optimize_joint_seam, optimize_seam, reduce_crossings,
+)
 from torus_layout.crossing.lib.crossings import count_all_crossings
 from torus_layout.crossing.initialization import initial_orders
 from torus_layout.crossing.lib.embedding import (
@@ -444,6 +446,39 @@ def crossing_study(graph, run):
 
         run("crossing_step", name, "unwind_0_dp_0", end_to_end)
 
+    def global_start():
+        return {}, reduce_crossings(sub, unwind=False, optimize_seams=False, algo2=False)
+
+    global_embedding = run("rotation_joint_order", "setup", "setup", global_start)
+    if global_embedding is None:
+        return
+    dummy_nodes = sub.dummy_nodes
+
+    def joint(embedding):
+        result = optimize_joint_seam(sub, embedding)
+        if result is None:
+            raise ValueError("joint seam constraints are infeasible")
+        return result
+
+    for name, transform in (
+        ("joint_only", lambda: joint(global_embedding)),
+        ("rotation_then_joint", lambda: joint(rotate(sub, global_embedding, False))),
+        ("joint_then_rotation", lambda: rotate(sub, joint(global_embedding), False)),
+    ):
+        def measure():
+            embedding, elapsed = attempt_time(transform)
+            coordinates = assign_coordinates(sub, embedding, method="brandes_koepf_blocks")
+            routes, bounds = torus_routes(paths, sub, embedding, coordinates)
+            internal = sum(
+                u in dummy_nodes and v in dummy_nodes and
+                embedding.winding_numbers.get((u, v), 0) != 0
+                for u, v in sub.graph.edges
+            )
+            return {"algorithm_seconds": elapsed, "internal_seam_segments": internal,
+                    **crossing_metrics(sub, embedding), **route_metrics(routes, bounds)}, None
+
+        run("rotation_joint_order", name, "joint_only", measure)
+
 
 def uniform_coordinates(sub, crossing, iterations):
     period = drawing_period(crossing.order, 1.0)
@@ -526,6 +561,10 @@ def coordinate_study(graph, run):
         ("uniform_smooth", lambda: uniform_coordinates(sub, crossing, 4)),
         ("bk_no_smooth", lambda: assign_coordinates(
             sub, crossing, method="brandes_koepf")),
+        ("bk_blocks", lambda: assign_coordinates(
+            sub, crossing, method="brandes_koepf_blocks")),
+        ("bk_blocks_unsplit", lambda: assign_coordinates(
+            sub, crossing, method="brandes_koepf_blocks_unsplit")),
         ("bk", lambda: historical_bk(sub, crossing, 4)),
         ("bk_smooth_10", lambda: historical_bk(sub, crossing, 10)),
         ("qp", lambda: assign_coordinates(sub, crossing, method="torus_qp")),
