@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/Users/mitch/develop/vdslab/theme2026-saku/experiments/run_torus_validation.py", line 203, in <module>
+  File "/Users/mitch/develop/vdslab/theme2026-saku/experiments/run_torus_validation.py", line 193, in main
+    results = []
+    
+  File "/Users/mitch/.pyenv/versions/3.13.0/lib/python3.13/concurrent/futures/process.py", line 623, in _chain_from_iterable_of_lists
+    for element in iterable:
+                   ^^^^^^^^
+  File "/Users/mitch/.pyenv/versions/3.13.0/lib/python3.13/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/mitch/.pyenv/versions/3.13.0/lib/python3.13/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ~~~~~~~~~~^^^^^^^^^
+  File "/Users/mitch/.pyenv/versions/3.13.0/lib/python3.13/concurrent/futures/_base.py", line 451, in result
+    self._condition.wait(timeout)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mitch/.pyenv/versions/3.13.0/lib/python3.13/threading.py", line 359, in wait
+    waiter.acquire()
+    ~~~~~~~~~~~~~~^^
+KeyboardInterrupt

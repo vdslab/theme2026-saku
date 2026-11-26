@@ -1,0 +1,12 @@
+budget_holdout_dot 1/12 cycle-90-2-811 {'ok': 2}
+budget_holdout_dot 2/12 cycle-90-2-812 {'ok': 2}
+budget_holdout_dot 3/12 cycle-90-2-813 {'ok': 2}
+budget_holdout_dot 4/12 cycle-120-2-811 {'ok': 2}
+budget_holdout_dot 5/12 cycle-120-2-812 {'ok': 2}
+budget_holdout_dot 6/12 cycle-120-2-813 {'ok': 2}
+budget_holdout_dot 7/12 watts_strogatz-90-2-811 {'ok': 2}
+budget_holdout_dot 8/12 watts_strogatz-90-2-812 {'ok': 2}
+budget_holdout_dot 9/12 watts_strogatz-90-2-813 {'ok': 2}
+budget_holdout_dot 10/12 watts_strogatz-120-2-811 {'ok': 2}
+budget_holdout_dot 11/12 watts_strogatz-120-2-812 {'ok': 2}
+budget_holdout_dot 12/12 watts_strogatz-120-2-813 {'ok': 2}

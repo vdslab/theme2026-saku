@@ -1,0 +1,16 @@
+wrap_bounds_short_cycles 1/16 cycle-12-2-0 {'ok': 4}
+wrap_bounds_short_cycles 2/16 cycle-12-4-0 {'ok': 4}
+wrap_bounds_short_cycles 3/16 cycle-36-2-0 {'ok': 4}
+wrap_bounds_short_cycles 4/16 cycle-36-4-0 {'ok': 4}
+wrap_bounds_short_cycles 5/16 cycle-500-2-0 {'ok': 4}
+wrap_bounds_short_cycles 6/16 cycle-500-4-0 {'ok': 4}
+wrap_bounds_short_cycles 7/16 cycle-1000-2-0 {'ok': 4}
+wrap_bounds_short_cycles 8/16 cycle-1000-4-0 {'ok': 4}
+wrap_bounds_short_cycles 9/16 watts_strogatz-12-2-0 {'ok': 4}
+wrap_bounds_short_cycles 10/16 watts_strogatz-12-4-0 {'ok': 4}
+wrap_bounds_short_cycles 11/16 watts_strogatz-36-2-0 {'ok': 4}
+wrap_bounds_short_cycles 12/16 watts_strogatz-36-4-0 {'ok': 4}
+wrap_bounds_short_cycles 13/16 watts_strogatz-500-2-0 {'ok': 4}
+wrap_bounds_short_cycles 14/16 watts_strogatz-500-4-0 {'ok': 4}
+wrap_bounds_short_cycles 15/16 watts_strogatz-1000-2-0 {'ok': 4}
+wrap_bounds_short_cycles 16/16 watts_strogatz-1000-4-0 {'ok': 4}

@@ -1,0 +1,486 @@
+2/100 random-20-2-1
+  fixed alternating: 16 crossings, 0.211s
+  fixed forward: 16 crossings, 0.212s
+  early alternating: 16 crossings, 0.093s
+  early forward: 16 crossings, 0.094s
+  preparation=ok
+3/100 random-20-2-2
+  fixed forward: 44 crossings, 0.418s
+  fixed alternating: 44 crossings, 0.455s
+  early forward: 44 crossings, 0.252s
+  early alternating: 44 crossings, 0.258s
+  preparation=ok
+4/100 random-20-2-3
+  fixed alternating: 22 crossings, 0.322s
+  fixed forward: 22 crossings, 0.288s
+  early alternating: 22 crossings, 0.419s
+  early forward: 22 crossings, 0.290s
+  preparation=ok
+5/100 random-20-2-4
+  fixed forward: 24 crossings, 0.327s
+  fixed alternating: 24 crossings, 0.333s
+  early forward: 24 crossings, 0.259s
+  early alternating: 24 crossings, 0.281s
+  preparation=ok
+6/100 scc_chain-20-2-0
+  fixed alternating: 35 crossings, 0.452s
+  fixed forward: 35 crossings, 0.532s
+  early alternating: 35 crossings, 0.372s
+  early forward: 35 crossings, 0.273s
+  preparation=ok
+7/100 scc_chain-20-2-1
+  fixed forward: 39 crossings, 0.411s
+  fixed alternating: 39 crossings, 0.431s
+  early forward: 39 crossings, 0.333s
+  early alternating: 39 crossings, 0.248s
+  preparation=ok
+8/100 scc_chain-20-2-2
+  fixed alternating: 33 crossings, 0.483s
+  fixed forward: 33 crossings, 0.492s
+  early alternating: 33 crossings, 0.386s
+  early forward: 33 crossings, 0.383s
+  preparation=ok
+9/100 scc_chain-20-2-3
+  fixed forward: 42 crossings, 0.468s
+  fixed alternating: 36 crossings, 0.472s
+  early forward: 42 crossings, 0.282s
+  early alternating: 36 crossings, 0.378s
+  preparation=ok
+10/100 scc_chain-20-2-4
+  fixed alternating: 46 crossings, 0.460s
+  fixed forward: 35 crossings, 0.450s
+  early alternating: 46 crossings, 0.360s
+  early forward: 35 crossings, 0.445s
+  preparation=ok
+11/100 watts_strogatz-20-2-0
+  fixed forward: 23 crossings, 0.282s
+  fixed alternating: 23 crossings, 0.303s
+  early forward: 23 crossings, 0.285s
+  early alternating: 23 crossings, 0.181s
+  preparation=ok
+12/100 watts_strogatz-20-2-1
+  fixed alternating: 27 crossings, 0.382s
+  fixed forward: 27 crossings, 0.382s
+  early alternating: 27 crossings, 0.230s
+  early forward: 27 crossings, 0.234s
+  preparation=ok
+13/100 watts_strogatz-20-2-2
+  fixed forward: 19 crossings, 0.392s
+  fixed alternating: 27 crossings, 0.462s
+  early forward: 19 crossings, 0.392s
+  early alternating: 27 crossings, 0.269s
+  preparation=ok
+14/100 watts_strogatz-20-2-3
+  fixed alternating: 26 crossings, 0.493s
+  fixed forward: 26 crossings, 0.510s
+  early alternating: 26 crossings, 0.295s
+  early forward: 26 crossings, 0.292s
+  preparation=ok
+15/100 watts_strogatz-20-2-4
+  fixed forward: 19 crossings, 0.192s
+  fixed alternating: 19 crossings, 0.176s
+  early forward: 19 crossings, 0.106s
+  early alternating: 19 crossings, 0.109s
+  preparation=ok
+16/100 watts_strogatz-20-2-5
+  fixed alternating: 27 crossings, 0.479s
+  fixed forward: 29 crossings, 0.474s
+  early alternating: 27 crossings, 0.471s
+  early forward: 29 crossings, 0.367s
+  preparation=ok
+17/100 watts_strogatz-20-2-6
+  fixed forward: 28 crossings, 0.319s
+  fixed alternating: 28 crossings, 0.329s
+  early forward: 28 crossings, 0.187s
+  early alternating: 28 crossings, 0.261s
+  preparation=ok
+18/100 watts_strogatz-20-2-7
+  fixed alternating: 41 crossings, 0.392s
+  fixed forward: 41 crossings, 0.388s
+  early alternating: 41 crossings, 0.241s
+  early forward: 41 crossings, 0.238s
+  preparation=ok
+19/100 watts_strogatz-20-2-8
+  fixed forward: 26 crossings, 0.360s
+  fixed alternating: 26 crossings, 0.356s
+  early forward: 26 crossings, 0.371s
+  early alternating: 26 crossings, 0.354s
+  preparation=ok
+20/100 watts_strogatz-20-2-9
+  fixed alternating: 18 crossings, 0.298s
+  fixed forward: 15 crossings, 0.286s
+  early alternating: 18 crossings, 0.294s
+  early forward: 15 crossings, 0.282s
+  preparation=ok
+21/100 random-40-2-0
+  fixed forward: 98 crossings, 2.306s
+  fixed alternating: 98 crossings, 2.281s
+  early forward: 98 crossings, 2.315s
+  early alternating: 98 crossings, 2.264s
+  preparation=ok
+22/100 random-40-2-1
+  fixed alternating: 130 crossings, 2.953s
+  fixed forward: 123 crossings, 3.197s
+  early alternating: 130 crossings, 3.018s
+  early forward: 123 crossings, 3.114s
+  preparation=ok
+23/100 random-40-2-2
+  fixed forward: 142 crossings, 3.034s
+  fixed alternating: 142 crossings, 3.002s
+  early forward: 142 crossings, 3.018s
+  early alternating: 142 crossings, 3.013s
+  preparation=ok
+24/100 random-40-2-3
+  fixed alternating: 108 crossings, 2.185s
+  fixed forward: 118 crossings, 2.167s
+  early alternating: 108 crossings, 2.209s
+  early forward: 118 crossings, 1.762s
+  preparation=ok
+25/100 random-40-2-4
+  fixed forward: 130 crossings, 2.773s
+  fixed alternating: 138 crossings, 2.674s
+  early forward: 130 crossings, 2.104s
+  early alternating: 138 crossings, 1.611s
+  preparation=ok
+26/100 scc_chain-40-2-0
+  fixed alternating: 115 crossings, 2.928s
+  fixed forward: 116 crossings, 2.876s
+  early alternating: 115 crossings, 2.892s
+  early forward: 116 crossings, 2.295s
+  preparation=ok
+27/100 scc_chain-40-2-1
+  fixed forward: 139 crossings, 2.898s
+  fixed alternating: 112 crossings, 2.937s
+  early forward: 139 crossings, 2.365s
+  early alternating: 112 crossings, 2.891s
+  preparation=ok
+28/100 scc_chain-40-2-2
+  fixed alternating: 113 crossings, 2.178s
+  fixed forward: 119 crossings, 2.150s
+  early alternating: 113 crossings, 2.151s
+  early forward: 119 crossings, 2.183s
+  preparation=ok
+29/100 scc_chain-40-2-3
+  fixed forward: 144 crossings, 2.780s
+  fixed alternating: 149 crossings, 2.740s
+  early forward: 144 crossings, 2.356s
+  early alternating: 149 crossings, 2.888s
+  preparation=ok
+30/100 scc_chain-40-2-4
+  fixed alternating: 140 crossings, 2.960s
+  fixed forward: 147 crossings, 2.947s
+  early alternating: 140 crossings, 2.961s
+  early forward: 147 crossings, 2.899s
+  preparation=ok
+31/100 watts_strogatz-40-2-0
+  fixed forward: 110 crossings, 2.640s
+  fixed alternating: 107 crossings, 2.695s
+  early forward: 110 crossings, 2.110s
+  early alternating: 107 crossings, 1.973s
+  preparation=ok
+32/100 watts_strogatz-40-2-1
+  fixed alternating: 97 crossings, 2.156s
+  fixed forward: 98 crossings, 2.089s
+  early alternating: 97 crossings, 1.658s
+  early forward: 98 crossings, 2.105s
+  preparation=ok
+33/100 watts_strogatz-40-2-2
+  fixed forward: 118 crossings, 3.330s
+  fixed alternating: 119 crossings, 3.289s
+  early forward: 118 crossings, 3.282s
+  early alternating: 119 crossings, 3.281s
+  preparation=ok
+34/100 watts_strogatz-40-2-3
+  fixed alternating: 103 crossings, 3.165s
+  fixed forward: 92 crossings, 2.847s
+  early alternating: 103 crossings, 2.850s
+  early forward: 92 crossings, 2.759s
+  preparation=ok
+35/100 watts_strogatz-40-2-4
+  fixed forward: 154 crossings, 3.312s
+  fixed alternating: 147 crossings, 3.349s
+  early forward: 154 crossings, 2.668s
+  early alternating: 147 crossings, 2.652s
+  preparation=ok
+36/100 watts_strogatz-40-2-5
+  fixed alternating: 104 crossings, 2.497s
+  fixed forward: 106 crossings, 2.545s
+  early alternating: 104 crossings, 2.521s
+  early forward: 106 crossings, 2.539s
+  preparation=ok
+37/100 watts_strogatz-40-2-6
+  fixed forward: 81 crossings, 1.488s
+  fixed alternating: 86 crossings, 1.517s
+  early forward: 81 crossings, 1.467s
+  early alternating: 86 crossings, 1.493s
+  preparation=ok
+38/100 watts_strogatz-40-2-7
+  fixed alternating: 105 crossings, 2.575s
+  fixed forward: 106 crossings, 2.460s
+  early alternating: 105 crossings, 2.650s
+  early forward: 106 crossings, 2.367s
+  preparation=ok
+39/100 watts_strogatz-40-2-8
+  fixed forward: 110 crossings, 2.365s
+  fixed alternating: 98 crossings, 2.497s
+  early forward: 110 crossings, 2.316s
+  early alternating: 98 crossings, 2.352s
+  preparation=ok
+40/100 watts_strogatz-40-2-9
+  fixed alternating: 110 crossings, 2.632s
+  fixed forward: 110 crossings, 2.610s
+  early alternating: 110 crossings, 2.766s
+  early forward: 110 crossings, 2.601s
+  preparation=ok
+41/100 random-60-2-0
+  fixed forward: 346 crossings, 9.579s
+  fixed alternating: 336 crossings, 10.010s
+  early forward: 346 crossings, 9.326s
+  early alternating: 336 crossings, 9.707s
+  preparation=ok
+42/100 random-60-2-1
+  fixed alternating: 295 crossings, 7.922s
+  fixed forward: 291 crossings, 7.810s
+  early alternating: 295 crossings, 7.807s
+  early forward: 291 crossings, 7.962s
+  preparation=ok
+43/100 random-60-2-2
+Traceback (most recent call last):
+  File "/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_global_block_order.py", line 345, in <module>
+    manager = (ProcessPoolExecutor(max_workers=args.trace_workers)
+    ^
+  File "/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_global_block_order.py", line 328, in run
+    for index, case in enumerate(cases):
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_global_block_order.py", line 276, in evaluate
+    measured_runs.append((mode, method, options, seconds, measured))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    print(f"  {mode} {method}: {seconds:.3f}s"
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          + (" (timeout)" if measured is None else ""), flush=True)
+    
+  File "/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_global_block_order.py", line 185, in traced_sift
+    started = perf_counter()
+                     ^^^^^^^
+    stop = None if seconds is None else lambda: perf_counter() - started >= seconds
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mitch/develop/vdslab/theme2026-saku/src/torus_layout/crossing/global_sifting.py", line 114, in sift_blocks
+    cached = _strip_score(
+        trial, winding, pair, strips[pair], variable[pair],
+        outgoing=pair[0] in positions, moving=moving, local_winding=local_winding,
+        integer_scoring=integer_scoring,
+    )
+  File "/Users/mitch/develop/vdslab/theme2026-saku/src/torus_layout/crossing/global_sifting.py", line 273, in _strip_score
+    sum(crossings_between_edges(edge, other, start, end, tentative)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        for edge in group for other in fixed)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mitch/develop/vdslab/theme2026-saku/src/torus_layout/crossing/global_sifting.py", line 273, in <genexpr>
+    sum(crossings_between_edges(edge, other, start, end, tentative)
+        ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mitch/develop/vdslab/theme2026-saku/src/torus_layout/crossing/lib/crossings.py", line 232, in crossings_between_edges
+    a = _sign(pi_fixed[fixed2] - pi_fixed[fixed1])
+  File "/Users/mitch/develop/vdslab/theme2026-saku/src/torus_layout/crossing/lib/crossings.py", line 229, in <lambda>
+    _sign: Callable[[int], int] = lambda value: (
+    
+KeyboardInterrupt
+43/100 random-60-2-2
+  fixed forward: 8.718s
+  fixed alternating: 8.636s
+  early forward: 8.707s
+  early alternating: 8.632s
+  preparation=ok
+44/100 random-60-2-3
+  fixed alternating: 9.120s
+  fixed forward: 9.041s
+  early alternating: 9.267s
+  early forward: 9.265s
+  preparation=ok
+45/100 random-60-2-4
+  fixed forward: 10.892s
+  fixed alternating: 10.986s
+  early forward: 8.953s
+  early alternating: 11.180s
+  preparation=ok
+46/100 scc_chain-60-2-0
+  fixed alternating: 9.253s
+  fixed forward: 9.526s
+  early alternating: 9.386s
+  early forward: 9.359s
+  preparation=ok
+47/100 scc_chain-60-2-1
+  fixed forward: 8.509s
+  fixed alternating: 8.390s
+  early forward: 6.772s
+  early alternating: 8.835s
+  preparation=ok
+48/100 scc_chain-60-2-2
+最適化失敗: 時間切れ（実行可能解なし） (status=9)
+  preparation=layer_timeout
+49/100 scc_chain-60-2-3
+最適化失敗: 時間切れ（実行可能解なし） (status=9)
+  preparation=layer_timeout
+50/100 scc_chain-60-2-4
+最適化失敗: 時間切れ（実行可能解なし） (status=9)
+  preparation=layer_timeout
+51/100 watts_strogatz-60-2-0
+  fixed forward: 7.826s
+  fixed alternating: 7.977s
+  early forward: 7.874s
+  early alternating: 6.383s
+  preparation=ok
+52/100 watts_strogatz-60-2-1
+  fixed alternating: 9.073s
+  fixed forward: 8.898s
+  early alternating: 9.582s
+  early forward: 9.651s
+  preparation=ok
+53/100 watts_strogatz-60-2-2
+  fixed forward: 11.951s
+  fixed alternating: 11.758s
+  early forward: 11.687s
+  early alternating: 11.775s
+  preparation=ok
+54/100 watts_strogatz-60-2-3
+  fixed alternating: 7.099s
+  fixed forward: 7.288s
+  early alternating: 7.020s
+  early forward: 6.886s
+  preparation=ok
+55/100 watts_strogatz-60-2-4
+  fixed forward: 9.518s
+  fixed alternating: 10.061s
+  early forward: 7.791s
+  early alternating: 9.654s
+  preparation=ok
+56/100 watts_strogatz-60-2-5
+  fixed alternating: 8.899s
+  fixed forward: 8.768s
+  early alternating: 9.013s
+  early forward: 8.995s
+  preparation=ok
+57/100 watts_strogatz-60-2-6
+  fixed forward: 9.190s
+  fixed alternating: 9.258s
+  early forward: 9.165s
+  early alternating: 9.210s
+  preparation=ok
+58/100 watts_strogatz-60-2-7
+最適化失敗: 時間切れ（実行可能解なし） (status=9)
+  preparation=layer_timeout
+59/100 watts_strogatz-60-2-8
+  fixed forward: 8.901s
+  fixed alternating: 9.020s
+  early forward: 8.921s
+  early alternating: 8.800s
+  preparation=ok
+60/100 watts_strogatz-60-2-9
+  fixed alternating: 9.453s
+  fixed forward: 9.492s
+  early alternating: 9.344s
+  early forward: 9.367s
+  preparation=ok
+61/100 random-80-2-0
+  preparation=license_limit
+62/100 random-80-2-1
+  preparation=license_limit
+63/100 random-80-2-2
+  preparation=license_limit
+64/100 random-80-2-3
+  preparation=license_limit
+65/100 random-80-2-4
+  preparation=license_limit
+66/100 scc_chain-80-2-0
+  preparation=license_limit
+67/100 scc_chain-80-2-1
+  preparation=license_limit
+68/100 scc_chain-80-2-2
+  preparation=license_limit
+69/100 scc_chain-80-2-3
+  preparation=license_limit
+70/100 scc_chain-80-2-4
+  preparation=license_limit
+71/100 watts_strogatz-80-2-0
+  preparation=license_limit
+72/100 watts_strogatz-80-2-1
+  preparation=license_limit
+73/100 watts_strogatz-80-2-2
+  preparation=license_limit
+74/100 watts_strogatz-80-2-3
+  preparation=license_limit
+75/100 watts_strogatz-80-2-4
+  preparation=license_limit
+76/100 watts_strogatz-80-2-5
+  preparation=license_limit
+77/100 watts_strogatz-80-2-6
+  preparation=license_limit
+78/100 watts_strogatz-80-2-7
+  preparation=license_limit
+79/100 watts_strogatz-80-2-8
+  preparation=license_limit
+80/100 watts_strogatz-80-2-9
+  preparation=license_limit
+81/100 random-100-2-0
+  preparation=license_limit
+82/100 random-100-2-1
+  preparation=license_limit
+83/100 random-100-2-2
+  preparation=license_limit
+84/100 random-100-2-3
+  preparation=license_limit
+85/100 random-100-2-4
+  preparation=license_limit
+86/100 scc_chain-100-2-0
+  preparation=license_limit
+87/100 scc_chain-100-2-1
+  preparation=license_limit
+88/100 scc_chain-100-2-2
+  preparation=license_limit
+89/100 scc_chain-100-2-3
+  preparation=license_limit
+90/100 scc_chain-100-2-4
+  preparation=license_limit
+91/100 watts_strogatz-100-2-0
+  preparation=license_limit
+92/100 watts_strogatz-100-2-1
+  preparation=license_limit
+93/100 watts_strogatz-100-2-2
+  preparation=license_limit
+94/100 watts_strogatz-100-2-3
+  preparation=license_limit
+95/100 watts_strogatz-100-2-4
+  preparation=license_limit
+96/100 watts_strogatz-100-2-5
+  preparation=license_limit
+97/100 watts_strogatz-100-2-6
+  preparation=license_limit
+98/100 watts_strogatz-100-2-7
+  preparation=license_limit
+99/100 watts_strogatz-100-2-8
+  preparation=license_limit
+100/100 watts_strogatz-100-2-9
+  preparation=license_limit
+48/100 scc_chain-60-2-2
+  fixed alternating: 10.385s
+  fixed forward: 10.328s
+  early alternating: 10.422s
+  early forward: 10.100s
+  preparation=ok
+49/100 scc_chain-60-2-3
+  fixed forward: 8.732s
+  fixed alternating: 8.903s
+  early forward: 9.009s
+  early alternating: 8.786s
+  preparation=ok
+50/100 scc_chain-60-2-4
+  fixed alternating: 7.540s
+  fixed forward: 7.206s
+  early alternating: 7.053s
+  early forward: 7.090s
+  preparation=ok
+58/100 watts_strogatz-60-2-7
+  fixed alternating: 8.267s
+  fixed forward: 8.045s
+  early alternating: 8.013s
+  early forward: 8.058s
+  preparation=ok

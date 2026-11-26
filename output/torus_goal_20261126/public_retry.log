@@ -1,0 +1,4 @@
+public_retry 1/4 UKfaculty-induced-0 {'ok': 2}
+public_retry 2/4 UKfaculty-induced-1 {'ok': 2}
+public_retry 3/4 macaque-induced-0 {'ok': 2}
+public_retry 4/4 macaque-induced-2 {'ok': 2}

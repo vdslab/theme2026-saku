@@ -1,0 +1,16 @@
+public_restart_holdout 1/12 krackhardt-advice-0-12 {'ok': 2, 'wall_timeout': 1}
+public_restart_holdout 2/12 krackhardt-advice-1-12 {'ok': 2, 'wall_timeout': 1}
+public_restart_holdout 3/12 krackhardt-advice-2-12 {'ok': 3}
+public_restart_holdout 4/12 krackhardt-friendship-0-12 {'ok': 3}
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_sifting_restarts.py:79: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  layout = pipeline.run_pipeline(graph)
+public_restart_holdout 5/12 krackhardt-friendship-1-12 {'ok': 3}
+public_restart_holdout 6/12 krackhardt-friendship-2-12 {'ok': 3}
+public_restart_holdout 7/12 sociopatterns-friendship-0-12 {'ok': 3}
+public_restart_holdout 8/12 sociopatterns-friendship-1-12 {'ok': 3}
+public_restart_holdout 9/12 sociopatterns-friendship-2-12 {'ok': 3}
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_sifting_restarts.py:79: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  layout = pipeline.run_pipeline(graph)
+public_restart_holdout 10/12 email_eu-email-0-12 {'ok': 3}
+public_restart_holdout 11/12 email_eu-email-1-12 {'ok': 3}
+public_restart_holdout 12/12 email_eu-email-2-12 {'ok': 3}

@@ -1,0 +1,6 @@
+square_diagnosis 1/4 dag-90-2-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_diagnosis 2/4 dag-90-4-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_diagnosis 3/4 watts_strogatz-90-4-323 {'wall_timeout': 1}
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/torus_study/stages.py:96: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  value = fn(*args, **kwargs)
+square_diagnosis 4/4 watts_strogatz-120-2-323 {'ok': 7, 'license_size_limit': 1}

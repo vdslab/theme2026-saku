@@ -1,0 +1,4 @@
+large_graphviz 1/4 cycle-500-2-0 {'wall_timeout': 1, 'ok': 2}
+large_graphviz 2/4 cycle-1000-2-0 {'wall_timeout': 1, 'ok': 2}
+large_graphviz 3/4 watts_strogatz-500-2-0 {'ok': 4}
+large_graphviz 4/4 watts_strogatz-1000-2-0 {'wall_timeout': 1, 'ok': 2}

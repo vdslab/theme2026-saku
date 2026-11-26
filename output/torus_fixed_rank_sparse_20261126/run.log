@@ -1,0 +1,6 @@
+fixed_rank_sparse 1/6 fixed-ring-100-5-2 {'ok': 3}
+fixed_rank_sparse 2/6 fixed-ring-100-10-2 {'ok': 3}
+fixed_rank_sparse 3/6 fixed-ring-500-5-2 {'wall_timeout': 1, 'ok': 1}
+fixed_rank_sparse 4/6 fixed-ring-500-10-2 {'wall_timeout': 2}
+fixed_rank_sparse 5/6 fixed-ring-1000-5-2 {'wall_timeout': 2}
+fixed_rank_sparse 6/6 fixed-ring-1000-10-2 {'wall_timeout': 2}

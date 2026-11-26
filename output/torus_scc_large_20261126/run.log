@@ -1,0 +1,8 @@
+scc_large 1/8 scc_chain-12-2-0 {'ok': 10}
+scc_large 2/8 scc_chain-12-4-0 {'ok': 10}
+scc_large 3/8 scc_chain-36-2-0 {'ok': 16}
+scc_large 4/8 scc_chain-36-4-0 {'ok': 15, 'wall_timeout': 1}
+scc_large 5/8 scc_chain-500-2-0 {'ok': 11, 'wall_timeout': 2}
+scc_large 6/8 scc_chain-500-4-0 {'ok': 11, 'wall_timeout': 2}
+scc_large 7/8 scc_chain-1000-2-0 {'ok': 11, 'wall_timeout': 2}
+scc_large 8/8 scc_chain-1000-4-0 {'ok': 11, 'wall_timeout': 2}

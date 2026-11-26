@@ -1,0 +1,78 @@
+
+Fontconfig error: No writable cache directories
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+
+Fontconfig error: No writable cache directories
+	/opt/homebrew/var/cache/fontconfig
+	/Users/mitch/.cache/fontconfig
+	/Users/mitch/.fontconfig
+Matplotlib is building the font cache; this may take a moment.
+Matplotlib is building the font cache; this may take a moment.
+public_holdout 1/24 krackhardt-advice-0-12 {'ok': 2}
+public_holdout 2/24 krackhardt-advice-0-16 {'wall_timeout': 1, 'ok': 1}
+public_holdout 3/24 krackhardt-advice-1-12 {'ok': 2}
+public_holdout 4/24 krackhardt-advice-1-16 {'wall_timeout': 1, 'ok': 1}
+public_holdout 5/24 krackhardt-advice-2-12 {'ok': 2}
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/torus_study/stages.py:96: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  value = fn(*args, **kwargs)
+public_holdout 6/24 krackhardt-advice-2-16 {'wall_timeout': 1, 'ok': 1}
+public_holdout 7/24 krackhardt-friendship-0-12 {'ok': 2}
+public_holdout 8/24 krackhardt-friendship-0-16 {'ok': 2}
+public_holdout 9/24 krackhardt-friendship-1-12 {'ok': 2}
+public_holdout 10/24 krackhardt-friendship-1-16 {'ok': 2}
+public_holdout 11/24 krackhardt-friendship-2-12 {'ok': 2}
+public_holdout 12/24 krackhardt-friendship-2-16 {'ok': 2}
+public_holdout 13/24 sociopatterns-friendship-0-12 {'ok': 2}
+public_holdout 14/24 sociopatterns-friendship-0-16 {'ok': 2}
+public_holdout 15/24 sociopatterns-friendship-1-12 {'ok': 2}
+public_holdout 16/24 sociopatterns-friendship-1-16 {'ok': 2}
+public_holdout 17/24 sociopatterns-friendship-2-12 {'ok': 2}
+public_holdout 18/24 sociopatterns-friendship-2-16 {'ok': 2}
+public_holdout 19/24 email_eu-email-0-12 {'ok': 2}
+public_holdout 20/24 email_eu-email-0-16 {'ok': 2}
+public_holdout 21/24 email_eu-email-1-12 {'ok': 2}
+public_holdout 22/24 email_eu-email-1-16 {'ok': 2}
+public_holdout 23/24 email_eu-email-2-12 {'ok': 2}
+public_holdout 24/24 email_eu-email-2-16 {'ok': 2}
