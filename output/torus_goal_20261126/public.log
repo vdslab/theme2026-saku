@@ -1,0 +1,11 @@
+public 1/11 sampson-time-1 {'ok': 3}
+public 2/11 sampson-time-2 {'ok': 3}
+public 3/11 sampson-time-3 {'ok': 3}
+public 4/11 UKfaculty-induced-0 {'wall_timeout': 1, 'ok': 2}
+public 5/11 UKfaculty-induced-1 {'wall_timeout': 1, 'ok': 2}
+public 6/11 UKfaculty-induced-2 {'ok': 3}
+public 7/11 UKfaculty-induced-3 {'ok': 3}
+public 8/11 macaque-induced-0 {'wall_timeout': 1, 'ok': 2}
+public 9/11 macaque-induced-1 {'ok': 3}
+public 10/11 macaque-induced-2 {'wall_timeout': 1, 'ok': 2}
+public 11/11 macaque-induced-3 {'ok': 3}

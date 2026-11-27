@@ -79,7 +79,7 @@ def page(root):
 <p><strong>辺の向きが円環に沿う条件で利点が再現した。</strong> 同じ骨格で向きだけを変えると、Graphviz dotに対する交差差は平均−3.00から＋7.05に変わった。実在の有向ネットワークは、再試行を含めて比較できた10条件すべてでトーラスの交差が多かった。</p>
 <p><strong>境界処理ではDP単独の候補を残す価値がある。</strong> 追加の28件で通過線分が2件改善した。長辺と複数巻きを含む人工ストレスでは、通過線分数を最小化すると通過元辺数が最小にならない例を2件確認した。</p>
 <p><strong>同じ配置情報で座標だけを変えた場合、交差数は不変だった。</strong> 独立計数と層順・巻き数による計数は144条件で一致した。汎用計測器の微差は今後の座標比較の根拠から外す。</p>
-<p>下表の15グループを実行した。フルライセンスの接続確認も行った。参加者実験は提示・計時・記録・採点の準備と動作確認まで実施した。</p>
+<p>下表の15グループを実行した。フルライセンスの接続確認も行った。</p>
 '''+inventory+f'<details><summary>生データ・入力・設定を開く</summary>{inventory_links}</details>')
 
     orient_items=[(english,pair(data["topology"],"torus","dot","geometric_crossings",
@@ -273,23 +273,18 @@ def page(root):
     +table("周期の表現を変える前後の交差",("条件","入力","元の幾何交差と一致","層順の計数と一致"),geom_rows)+'''
 <p>ダミー挿入は全反復で出力が完全に一致し、800頂点では中央値が約1.58倍高速だった。幾何交差は人工36例の両変換で保存した。座標が数値的な境界近傍にある場合は、第7節の独立計数を優先する。</p>''')
 
-    human=section("readability","10. 読み取りの参加者実験",'''
-<p>前回作成した24問×3条件を、実際に提示・計時できるオフライン画面にした。匿名IDと担当者の割り当てたフォーム番号を入力し、画像表示後の回答と画面切替の有無をCSVに記録する。採点器は中断した参加者を除く設定を追加し、既知の確認用回答で検証した。</p>
-<p class="caution">参加者の回答CSVは入手できていない。したがって、人が境界をまたぐ辺や経路をどれだけ早く正確に読めるかの実測値はない。</p>
-<p><a href="readability/index.html">実験提示画面</a> · <a href="readability/build.json">刺激の検証記録</a> · <a href="../../documents/experiment_validation.md">実施・採点手順</a></p>''')
-
     blocks=(overview,topology_block,public_block,budget_block,rank_block,winding_block,boundary_block,
-            coord_block,scaling_block,validation_block,human)
+            coord_block,scaling_block,validation_block)
     names=(("overview","追試一覧"),("topology","辺方向"),("public","実データ"),("budget","時計予算"),
            ("ranks","層割当"),("winding","巻き数・探索"),("seams","境界"),("coordinates","座標"),
-           ("scaling","規模"),("validation","検査"),("readability","読み取り"))
+           ("scaling","規模"),("validation","検査"))
     nav="".join(f'<li><a href="#{anchor}">{name}</a></li>' for anchor,name in names)
     return f"""<!DOCTYPE html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>トーラス階層グラフ描画の追試結果</title><style>{STYLE}</style></head>
 <body><a class="skip" href="#main">本文へ移動</a>
 <header><div class="date">2026.11.20</div><h1>トーラス階層グラフ描画の追試結果</h1>
-<p>前回の所見を検証する15の計算グループと、参加者実験に向けた提示・計時・採点の準備。</p></header>
+<p>15の計算グループで前回の所見を検証した。</p></header>
 <nav aria-label="目次"><ul>{nav}</ul></nav><main id="main">{"".join(blocks)}</main>
 <footer><p><a href="../torus_experiment_20261120/index.html">前回報告書</a> · <a href="../../documents/experiment_validation.md">追試の手順</a> · <a href="wls_probe/rows.jsonl">ライセンス確認記録</a></p></footer>
 </body></html>"""

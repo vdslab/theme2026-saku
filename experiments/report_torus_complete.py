@@ -98,8 +98,8 @@ def citations():
         ("Jünger・Mutzel・Spisla（2019）", "共通の前段で座標方式を比較し、幅、辺長、時間のトレードオフを評価。周期を固定した座標比較に対応。", "https://jgaa.info/index.php/jgaa/article/download/paper500/2456/2263"),
         ("Di Battista ほか（2000）", "公開入力と生成DAGで複数の描画方式を比較し、交差・曲がり・面積で優劣が変わることを示した。今回の全体評価を多指標にした。", "https://doi.org/10.1142/S0218195900000358"),
         ("Bachmaier ほか（2012）", "最後の層から最初の層に戻る循環階層を描画し、閉路を一方向に追える例を示した。今回の円筒対照と逆行辺計数に対応。", "https://www.kurims.kyoto-u.ac.jp/EMIS/journals/JGAA/accepted/2012/BachmaierBrandenburgBrunnerFulop2012.16.2.pdf"),
-        ("Lionakis ほか（2022）", "階層図を計算指標と参加者の到達可能性・最短路課題で評価。幾何指標と人の成績を別に測る設計に対応。", "https://arxiv.org/html/2209.04522"),
-        ("Chen ほか（2020）", "トーラスの周辺文脈とパン操作によるリンク・経路読解を評価。固定した中央配置に周辺タイルを加える実験を設計した。", "https://ialab.it.monash.edu/~dwyer/papers/DoughNets.pdf"),
+        ("Lionakis ほか（2022）", "階層図を計算指標と参加者の到達可能性・最短路課題で評価。", "https://arxiv.org/html/2209.04522"),
+        ("Chen ほか（2020）", "トーラスの周辺文脈とパン操作によるリンク・経路読解を評価。", "https://ialab.it.monash.edu/~dwyer/papers/DoughNets.pdf"),
     )
     items = "".join(f'<li><strong>{author}</strong>。{explanation} {link(url, "一次資料")}</li>'
                     for author, explanation, url in reference)
@@ -235,7 +235,7 @@ def implementation_review():
         ("計時の境界", "CLIでは交差削減にダミー挿入が入り、ソルバー内時間と壁時計が混在する。壁時計を基準に工程と求解時間を別記する。", "pipeline.py"),
         ("比較実装の放射型", "24秒で6/12件のみ完了。回転・挿入候補ごとに全交差を計数する箇所が高速化候補。", None),
         ("検証入力と方式選択", "既定の生成器は辺を円環沿いに向ける。DAG、SCC固定の方向対照、元の向きの実データを残して方式選択を検証する。", None),
-        ("周辺タイルの既定表示", "小標本で画像の容量が増加。読解への効果を判断するには、同じ配置を見せる参加者比較が必要。", "drawing/output.py"),
+        ("周辺タイルの既定表示", "小標本で画像の容量が増加。", "drawing/output.py"),
     )
     rows = []
     for title, explanation, path in items:
@@ -271,7 +271,7 @@ def build(output):
 <div class="card"><strong>実在有向データでは交差が増えた</strong><p>再試行を含め比較できた10条件すべてでdotより多かった。残る1条件は層探索中に停止した。</p></div>
 <div class="card"><strong>境界の選び方は改善できる</strong><p>DPは固定埋め込みの線分最少値と一致。UNWINDなしの候補も残すと交差を変えずに通過線分を減らせる例があった。</p></div>
 </div>
-<p>トーラスは辺の向きを階層の進行に保つうえで有用だった。交差、境界を通る辺、曲がり、計算時間には別々の制約がある。参加者の読解成績とフルライセンス環境での規模限界は未測定。</p>
+<p>トーラスは辺の向きを階層の進行に保つうえで有用だった。交差、境界を通る辺、曲がり、計算時間には別々の制約がある。フルライセンス環境での規模限界は未測定。</p>
 """)
     method = section("methods", "方法と既往研究", """
 <p>比較対象は現行トーラス、平面杉山、放射型、Graphviz <code>dot</code>。内部対照の円筒条件ではトーラスの層割当を使い、層内方向の巻き数を0に固定した。パイプラインは層割当、ダミー挿入、層内順の初期化、sifting、回転・共通巻きの除去・切れ目選択、座標割当、周期境界での描画で構成する。</p>
@@ -319,12 +319,9 @@ def build(output):
 <p>共通24秒の再比較ではトーラス、dot、平面杉山が12/12件、放射型が6/12件完走。放射型の品質差は完走組の結果である。WLSはホスト名解決で止まり、フルライセンスでの既定法の規模は未測定。</p>
 """ + initial.details("scaling") + validation.details("scaling")
     + '<p class="key-source">' + link(f"../{VALIDATION}/wls_escalated/rows.jsonl", "WLSの再確認記録") + "</p>")
-    drawing = section("drawing", "7. 周期描画と読み取り", """
+    drawing = section("drawing", "7. 周期描画", """
 <p>最初の境界分割7例と交差判定4例が期待値と一致した。境界を同時にまたぐ角、複数巻き、矢印が最終端に一つ付くことを含む。追試の人工36例では、層切れ目の回転と全体の平行移動でも交差計数が保存された。画像4組では周辺を表示すると容量中央値が約34 KBから92 KBに増えた。</p>
-<p>参加者向けには、平面、トーラス中央のみ、トーラス＋周辺タイルの3条件で同じ問いを作った。24問・72画像を3フォームに配り、方向判定と最短有向経路の長さを質問する。主比較は境界を実際にまたぐ最短経路の正答率。回答時間、正答、画面切替を記録し、採点を動作確認した。実参加者のデータはなく、読みやすさは未評価。</p>
-""" + initial.details("drawing") + validation.details("validation", "追加の境界不変性と長辺挿入の全結果")
-    + initial.details("readability") + validation.details("readability", "提示・計時・採点の確認")
-    + '<p class="key-source">' + link(f"../{VALIDATION}/readability/index.html", "参加者向け提示画面") + "</p>")
+""" + initial.details("drawing") + validation.details("validation", "追加の境界不変性と長辺挿入の全結果"))
     review = section("review", "8. 実装上の問題と修正順", """
 <p>まず層割当の終了処理と二分探索、2層交差を修正する。続いて切れ目の候補選択、座標・描画・計測の基本領域の整合を直す。その後に交差削減の差分計数を計測し、同じ入力で既定の探索予算と座標方式を再評価する。</p>
 <p>確認済みの挙動と、その証拠に基づく修正候補を下表に記録した。今回の統合と監査で描画のアルゴリズムは変更していない。</p>
@@ -334,8 +331,8 @@ def build(output):
     + " · " + link("audits/settings.json", "再現監査の設定") + "</p>")
     conclusion = section("conclusion", "9. 結論と適用範囲", """
 <p><strong>支持されたこと。</strong> 円環沿いの方向に対する交差削減、平面杉山比での逆行辺減少、二方向の周期を使う内部効果、切れ目DPの線分最適性、索引化したダミー挿入での同一出力が、計算実験で確認できた。</p>
-<p><strong>条件に依存すること。</strong> 元の向きでの公開ネットワークでは交差が増加した。曲がり、辺長、境界通過は目的関数や周期によって別々に変わる。参加者が辿りやすいかを判定するには、交差・境界指標に加えて人のデータが必要になる。</p>
-<p><strong>推定の限界。</strong> 公開の有向標本は3集合で、時点・誘導部分グラフ間に重複がある。放射型では欠測が多く、幾何交差は中心線の近似に依存する。WLSが未接続で、規模の大きい既定法、通常の5回設定での120頂点、参加者の読解効果は未確定である。</p>
+<p><strong>条件に依存すること。</strong> 元の向きでの公開ネットワークでは交差が増加した。曲がり、辺長、境界通過は目的関数や周期によって別々に変わる。</p>
+<p><strong>推定の限界。</strong> 公開の有向標本は3集合で、時点・誘導部分グラフ間に重複がある。放射型では欠測が多く、幾何交差は中心線の近似に依存する。WLSが未接続で、規模の大きい既定法と通常の5回設定での120頂点は未検証である。</p>
 """)
     sources = section("data", "付録　実験条件・生データ・再現手順", """
 <p>結果は2026年11月20日（日本時間）の測定を基にした。主な環境はPython 3.13.0、Gurobi 13.0.0、Graphviz 16.1.1。グループによってソルバー・worker上限と並行数が異なる。各設定のソースSHAと版を照合できる。行数には、同じグラフの条件、前処理、打ち切りを含む。</p>
@@ -343,7 +340,7 @@ def build(output):
     + initial.details("methods", "初回の実行条件と集計方法")
     + initial.details("followup", "初回所見を受けた3件の追加実験")
     + validation.details("overview", "追試15グループの実験台帳")
-    + f'<p class="key-source">{link(f"../{INITIAL}/index.html", "初回HTML")} · {link(f"../{VALIDATION}/index.html", "追試HTML")} · {link("../../documents/experiment_validation.md", "追試の再実行と採点手順")} · {link(f"../{INITIAL}/benchmark_sources/provenance.json", "初回の公開データ出典")} · {link(f"../{VALIDATION}/sources/provenance.json", "追試の公開データ出典")}</p>'
+    + f'<p class="key-source">{link(f"../{INITIAL}/index.html", "初回HTML")} · {link(f"../{VALIDATION}/index.html", "追試HTML")} · {link("../../documents/experiment_validation.md", "追試の再実行手順")} · {link(f"../{INITIAL}/benchmark_sources/provenance.json", "初回の公開データ出典")} · {link(f"../{VALIDATION}/sources/provenance.json", "追試の公開データ出典")}</p>'
     + """<h3>統合版の再生成</h3>
 <p>実験リポジトリのルートから実行する。上のCSV・JSONLの再利用で本文を生成できる。再現監査を測り直す場合は、先に監査スクリプトを実行する。</p>
 <pre><code>MPLBACKEND=Agg MPLCONFIGDIR=/tmp/torus-study-mpl PYTHONHASHSEED=0 PYTHONPATH=src \
@@ -355,7 +352,7 @@ MPLCONFIGDIR=/tmp/torus-study-mpl ./theme2026-saku/bin/python \
     navigation = (
         ("summary", "要旨"), ("methods", "方法・文献"), ("framework", "全体比較"),
         ("leveling", "層割当"), ("subdivision", "長辺の分割"), ("crossing", "交差・境界"),
-        ("coordinates", "座標"), ("runtime", "性能"), ("drawing", "描画・読解"),
+        ("coordinates", "座標"), ("runtime", "性能"), ("drawing", "描画"),
         ("review", "実装修正"), ("conclusion", "結論"), ("data", "生データ"),
     )
     nav = "".join(f"<li>{link('#' + anchor, title)}</li>" for anchor, title in navigation)

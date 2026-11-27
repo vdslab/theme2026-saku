@@ -1,0 +1,2 @@
+square_pipeline 1/2 dag-120-2-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 2/2 watts_strogatz-120-2-322 {'ok': 7, 'license_size_limit': 1}

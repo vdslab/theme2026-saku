@@ -36,12 +36,13 @@ def reduce_crossings(
     boundaries = defaultdict(list)
     for edge in edge_list:
         boundaries[node_layers[edge[0]]].append(edge)
+    # Section V-D contracts a singleton first level to the center. Its
+    # segments are straight spokes, with zero crossings and no parting.
+    if order and len(order[min(order)]) == 1:
+        boundaries.pop(min(order), None)
     inner_boundaries = {layer: [edge for edge in boundary if _is_inner(edge)]
                         for layer, boundary in boundaries.items()}
     winding = dict.fromkeys(edge_list, 0)
-    best = _copy_order(order)
-    best_winding = winding.copy()
-
     def score_boundary(layer):
         positions = {node: index for level in (layer, layer + 1)
                      for index, node in enumerate(order[level])}
@@ -51,6 +52,11 @@ def reduce_crossings(
         )
 
     scores = {layer: score_boundary(layer) for layer in boundaries}
+    if any(inner for inner, _ in scores.values()):
+        _order_dummy_chains(order, inner_boundaries)
+        scores = {layer: score_boundary(layer) for layer in boundaries}
+    best = _copy_order(order)
+    best_winding = winding.copy()
     best_score = (sum(inner for inner, _ in scores.values()),
                   sum(total for _, total in scores.values()))
     seen = set()
@@ -84,19 +90,35 @@ def reduce_crossings(
             if current < best_score:
                 best, best_winding, best_score = _copy_order(order), winding.copy(), current
 
-    # Algorithm 2 changes the ray and offsets together, preserving crossings.
+    # Algorithm 2 averages the signed span. Use the span of Eq. (4) in our
+    # counterclockwise angles: a clockwise rotation reduces it by r/n.
     for layer, boundary in sorted(boundaries.items()):
-        fixed, free = best[layer], best[layer + 1]
-        fixed_pos = {node: i for i, node in enumerate(fixed)}
-        free_pos = {node: i for i, node in enumerate(free)}
-        span = sum(Fraction(fixed_pos[u], len(fixed)) - Fraction(free_pos[v], len(free))
-                   + best_winding[u, v] for u, v in boundary)
-        rotation = floor(span * len(free) / len(boundary) + Fraction(1, 2))
-        rotate_level(best, best_winding, layer + 1, rotation,
-                     boundary, boundaries.get(layer + 1, ()))
+        balance_level_rotation(best, best_winding, layer + 1, boundary, boundaries.get(layer + 1, ()))
 
     frozen = {layer: tuple(nodes) for layer, nodes in best.items()}
     return RadialEmbedding(frozen, best_winding, best_score[1])
+
+
+def _order_dummy_chains(order, inner_boundaries):
+    """Seed a conflict-free order for callers supplying reordered dummy nodes."""
+    predecessors = {}
+    successors = set()
+    for boundary in inner_boundaries.values():
+        for u, v in boundary:
+            if u in successors or v in predecessors:
+                raise ValueError("inner segments must form vertex-disjoint dummy chains")
+            successors.add(u)
+            predecessors[v] = u
+
+    chain_order = {}
+    for layer, nodes in order.items():
+        for node in nodes:
+            if isinstance(node, DummyNode):
+                chain_order[node] = (
+                    chain_order[predecessors[node]] if node in predecessors else len(chain_order)
+                )
+        dummies = iter(sorted((node for node in nodes if node in chain_order), key=chain_order.__getitem__))
+        order[layer] = [next(dummies) if node in chain_order else node for node in nodes]
 
 
 def rotate_level(order, winding, layer, steps, incoming, outgoing):
@@ -112,6 +134,17 @@ def rotate_level(order, winding, layer, steps, incoming, outgoing):
         winding[edge] -= turns + (edge[1] in moved)
     for edge in outgoing:
         winding[edge] += turns + (edge[0] in moved)
+
+
+def balance_level_rotation(order, winding, level, incoming, outgoing):
+    """Rotate by the nearest position to the mean signed incoming span."""
+    fixed, free = order[level - 1], order[level]
+    fixed_pos = {node: i for i, node in enumerate(fixed)}
+    free_pos = {node: i for i, node in enumerate(free)}
+    span = sum(Fraction(free_pos[v], len(free)) - Fraction(fixed_pos[u], len(fixed))
+               + winding[u, v] for u, v in incoming)
+    rotation = floor(span * len(free) / len(incoming) + Fraction(1, 2))
+    rotate_level(order, winding, level, rotation, incoming, outgoing)
 
 
 def _is_inner(edge):
@@ -149,7 +182,7 @@ def _sift_boundary(fixed, free, edges, winding):
         best_change = change = 0
         parting = 0
 
-        for position in range(len(free) - 1):
+        for position in range(max(1, len(free) - 1)):
             while parting < 2 * len(moving):
                 edge = moving[parting % len(moving)]
                 before = sum(crossings(edge, other) for other in edges if other != edge)
@@ -210,7 +243,7 @@ def count_crossings(
     """Count radial crossings, with zero offsets for an initial order."""
 
     normalized = {layer: tuple(nodes) for layer, nodes in order.items()}
-    edge_list = tuple(edges)
+    edge_list = tuple(dict.fromkeys(edges))
     node_layers = validate_proper_hierarchy(normalized, edge_list)
     if winding is None:
         winding = dict.fromkeys(edge_list, 0)

@@ -129,8 +129,9 @@ def alternate(left, right):
                for i, (angle, side) in enumerate(order))
 
 
-def crossing_metrics(routes, bounds):
+def crossing_metrics(routes, bounds, *, multiplicities=None):
     """Count transverse events, including at dummy nodes and on the cut."""
+    copies = multiplicities or {}
     endpoints = defaultdict(lambda: defaultdict(set))
     events = defaultdict(lambda: defaultdict(set))
     overlaps = set()
@@ -176,7 +177,7 @@ def crossing_metrics(routes, bounds):
                 contributions[other_edge].update(endpoints.get(key, {}).get(other_edge, ()))
                 contributions[other_edge].update(rays(point, c, d))
         active.append(segment)
-    pairs, crossings, touches = set(), 0, 0
+    pairs, crossings, touches, centerline_crossings = set(), 0, 0, 0
     route_endpoints = {
         route.edge: {point_key(route.pieces[0][0]), point_key(route.pieces[-1][-1])}
         for route in routes if route.pieces
@@ -185,13 +186,25 @@ def crossing_metrics(routes, bounds):
         for (edge, a), (other, b) in combinations(contributions.items(), 2):
             if point in route_endpoints[edge] and point in route_endpoints[other] and set(edge) & set(other):
                 continue
+            weight = copies.get(edge, 1) * copies.get(other, 1)
             if alternate(a, b):
-                crossings += 1
+                centerline_crossings += 1
+                crossings += weight
                 pairs.add(tuple(sorted((edge, other))))
             else:
-                touches += 1
-    return {"geometric_crossings": crossings, "crossing_edge_pairs": len(pairs),
-            "contact_events": touches, "overlapping_edge_pairs": len(overlaps)}
+                touches += weight
+
+    def original_pair_count(pairs):
+        return sum(copies.get(edge, 1) * copies.get(other, 1) for edge, other in pairs)
+
+    shared_pairs = sum(count * (count - 1) // 2 for count in copies.values())
+    result = {
+        "geometric_crossings": crossings, "crossing_edge_pairs": original_pair_count(pairs),
+        "contact_events": touches, "overlapping_edge_pairs": original_pair_count(overlaps) + shared_pairs,
+    }
+    if multiplicities is not None:
+        result["geometric_crossings_on_layout_edges"] = centerline_crossings
+    return result
 
 
 def route_metrics(routes, bounds=None, *, bends=True, geometry=True):

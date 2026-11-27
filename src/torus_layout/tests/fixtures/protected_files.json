@@ -1,7 +1,7 @@
 {
   ".gitignore": "cf682ab878788daf3896b6f254723acbc63ea8f945ecfe91c092c934ee08f12d",
   ".vscode/settings.json": "067366711310442397cd2d306861469f4e173ae601ebd84dd47a796e892e8e46",
-  "AGENTS.md": "e39650c7f1c96ed1cc358a7927c3df82b9a163e24b10db1906cb58d6b6aad09e",
+  "AGENTS.md": "d897eee16644a5cd058c9ffe70cb436da33d7f7a4c939ee3e81babb2a368c088",
   "experiments/tests/test_torus_sweep_experiment.py": "6543fd435e9b53f7c54494f85c991c2969cab2d198a336013905bc098e9e71eb",
   "src/generator/__init__.py": "504c8b07847831c0e5e631ef1c9d083504f10d30ed4b2ca9477b6f228f2249b4",
   "src/generator/cyclic.py": "0b99bd80854935a1a0ddda2dff17be5a41369b186140ecb6b54795eca5334960",

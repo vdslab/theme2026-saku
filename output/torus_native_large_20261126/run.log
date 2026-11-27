@@ -1,0 +1,16 @@
+1 dag-500-2-0 ok
+2 dag-500-4-0 ok
+3 dag-1000-2-0 ok
+4 dag-1000-4-0 ok
+5 random-500-2-0 ok
+6 random-500-4-0 ok
+7 random-1000-2-0 ok
+8 random-1000-4-0 ok
+9 scc_chain-500-2-0 ok
+10 scc_chain-500-4-0 ok
+11 scc_chain-1000-2-0 ok
+12 scc_chain-1000-4-0 ok
+13 watts_strogatz-500-2-0 ok
+14 watts_strogatz-500-4-0 ok
+15 watts_strogatz-1000-2-0 ok
+16 watts_strogatz-1000-4-0 ok

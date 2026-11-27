@@ -1,0 +1,8 @@
+dag_square_cut 1/8 dag-12-2-0 {'ok': 6}
+dag_square_cut 2/8 dag-12-4-0 {'ok': 6}
+dag_square_cut 3/8 dag-36-2-0 {'ok': 6}
+dag_square_cut 4/8 dag-36-4-0 {'ok': 5, 'wall_timeout': 1}
+dag_square_cut 5/8 dag-500-2-0 {'ok': 3, 'wall_timeout': 1}
+dag_square_cut 6/8 dag-500-4-0 {'ok': 3, 'wall_timeout': 1}
+dag_square_cut 7/8 dag-1000-2-0 {'ok': 3, 'wall_timeout': 1}
+dag_square_cut 8/8 dag-1000-4-0 {'ok': 2, 'wall_timeout': 2}

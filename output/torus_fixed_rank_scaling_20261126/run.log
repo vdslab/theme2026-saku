@@ -1,0 +1,12 @@
+fixed_rank_scaling 1/12 fixed-ring-100-5-1 {'ok': 1}
+fixed_rank_scaling 2/12 fixed-ring-100-5-2 {'ok': 1}
+fixed_rank_scaling 3/12 fixed-ring-100-10-1 {'ok': 1}
+fixed_rank_scaling 4/12 fixed-ring-100-10-2 {'ok': 1}
+fixed_rank_scaling 5/12 fixed-ring-500-5-1 {'ok': 1}
+fixed_rank_scaling 6/12 fixed-ring-500-5-2 {'wall_timeout': 1}
+fixed_rank_scaling 7/12 fixed-ring-500-10-1 {'ok': 1}
+fixed_rank_scaling 8/12 fixed-ring-500-10-2 {'wall_timeout': 1}
+fixed_rank_scaling 9/12 fixed-ring-1000-5-1 {'ok': 1}
+fixed_rank_scaling 10/12 fixed-ring-1000-5-2 {'wall_timeout': 1}
+fixed_rank_scaling 11/12 fixed-ring-1000-10-1 {'ok': 1}
+fixed_rank_scaling 12/12 fixed-ring-1000-10-2 {'wall_timeout': 1}

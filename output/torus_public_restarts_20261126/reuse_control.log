@@ -1,0 +1,2 @@
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/evaluate_sifting_restarts.py:82: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  layout = pipeline.run_pipeline(graph)

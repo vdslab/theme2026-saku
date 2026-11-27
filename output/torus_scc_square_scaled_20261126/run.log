@@ -1,0 +1,8 @@
+scc_square_scaled 1/8 scc_chain-12-2-0 {'ok': 12}
+scc_square_scaled 2/8 scc_chain-12-4-0 {'ok': 12}
+scc_square_scaled 3/8 scc_chain-36-2-0 {'ok': 18}
+scc_square_scaled 4/8 scc_chain-36-4-0 {'ok': 17, 'wall_timeout': 1}
+scc_square_scaled 5/8 scc_chain-500-2-0 {'ok': 13, 'wall_timeout': 2}
+scc_square_scaled 6/8 scc_chain-500-4-0 {'ok': 13, 'wall_timeout': 2}
+scc_square_scaled 7/8 scc_chain-1000-2-0 {'ok': 13, 'wall_timeout': 2}
+scc_square_scaled 8/8 scc_chain-1000-4-0 {'ok': 13, 'wall_timeout': 2}

@@ -1,0 +1,18 @@
+wrap_bounds 1/16 cycle-12-2-0 {'ok': 6}
+wrap_bounds 2/16 cycle-12-4-0 {'ok': 6}
+wrap_bounds 3/16 cycle-36-2-0 {'ok': 6}
+wrap_bounds 4/16 cycle-36-4-0 {'ok': 5, 'wall_timeout': 1}
+wrap_bounds 5/16 cycle-500-2-0 {'ok': 4, 'wall_timeout': 1}
+wrap_bounds 6/16 cycle-500-4-0 {'ok': 3, 'wall_timeout': 2}
+wrap_bounds 7/16 cycle-1000-2-0 {'ok': 3, 'wall_timeout': 2}
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/torus_study/stages.py:96: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  value = fn(*args, **kwargs)
+wrap_bounds 8/16 cycle-1000-4-0 {'ok': 3, 'wall_timeout': 2}
+wrap_bounds 9/16 watts_strogatz-12-2-0 {'ok': 6}
+wrap_bounds 10/16 watts_strogatz-12-4-0 {'ok': 6}
+wrap_bounds 11/16 watts_strogatz-36-2-0 {'ok': 6}
+wrap_bounds 12/16 watts_strogatz-36-4-0 {'ok': 6}
+wrap_bounds 13/16 watts_strogatz-500-2-0 {'ok': 4, 'wall_timeout': 1}
+wrap_bounds 14/16 watts_strogatz-500-4-0 {'ok': 3, 'wall_timeout': 2}
+wrap_bounds 15/16 watts_strogatz-1000-2-0 {'ok': 3, 'wall_timeout': 2}
+wrap_bounds 16/16 watts_strogatz-1000-4-0 {'ok': 2, 'wall_timeout': 1}

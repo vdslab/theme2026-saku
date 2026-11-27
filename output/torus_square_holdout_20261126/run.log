@@ -1,0 +1,16 @@
+square_holdout 1/16 dag-90-2-322 {'ok': 5, 'license_size_limit': 1}
+square_holdout 2/16 dag-90-2-323 {'ok': 5, 'license_size_limit': 1}
+square_holdout 3/16 dag-90-4-322 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_holdout 4/16 dag-90-4-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_holdout 5/16 dag-120-2-322 {'ok': 5, 'license_size_limit': 1}
+square_holdout 6/16 dag-120-2-323 {'ok': 5, 'license_size_limit': 1}
+square_holdout 7/16 dag-120-4-322 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_holdout 8/16 dag-120-4-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_holdout 9/16 watts_strogatz-90-2-322 {'ok': 5, 'license_size_limit': 1}
+square_holdout 10/16 watts_strogatz-90-2-323 {'ok': 5, 'license_size_limit': 1}
+square_holdout 11/16 watts_strogatz-90-4-322 {'ok': 5, 'license_size_limit': 1}
+square_holdout 12/16 watts_strogatz-90-4-323 {'ok': 5, 'license_size_limit': 1}
+square_holdout 13/16 watts_strogatz-120-2-322 {'ok': 5, 'license_size_limit': 1}
+square_holdout 14/16 watts_strogatz-120-2-323 {'ok': 3, 'license_size_limit': 1, 'error': 2}
+square_holdout 15/16 watts_strogatz-120-4-322 {'wall_timeout': 1}
+square_holdout 16/16 watts_strogatz-120-4-323 {'wall_timeout': 1}

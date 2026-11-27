@@ -1,0 +1,12 @@
+square_scaling 1/12 dag-12-2-321 {'ok': 5}
+square_scaling 2/12 dag-18-2-321 {'ok': 5}
+square_scaling 3/12 dag-36-2-321 {'ok': 5}
+square_scaling 4/12 dag-60-2-321 {'ok': 5}
+square_scaling 5/12 dag-90-2-321 {'ok': 4, 'license_size_limit': 1}
+square_scaling 6/12 dag-120-2-321 {'ok': 4, 'license_size_limit': 1}
+square_scaling 7/12 watts_strogatz-12-2-321 {'ok': 5}
+square_scaling 8/12 watts_strogatz-18-2-321 {'ok': 5}
+square_scaling 9/12 watts_strogatz-36-2-321 {'ok': 5}
+square_scaling 10/12 watts_strogatz-60-2-321 {'ok': 5}
+square_scaling 11/12 watts_strogatz-90-2-321 {'ok': 4, 'license_size_limit': 1}
+square_scaling 12/12 watts_strogatz-120-2-321 {'ok': 4, 'license_size_limit': 1}

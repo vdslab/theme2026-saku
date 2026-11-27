@@ -214,8 +214,8 @@
         <article id="surrounding-tiles" class="item">
           <h3>周辺タイルは画像容量を増やす</h3>
           <p class="claim">4組の画像でファイルサイズ中央値は約34 KBから92 KBへ増えた。CLIでは周辺タイルが既定で表示される。描画時間と読解成績への効果は未確定。</p>
-          <dl><dt>見直し</dt><dd>画像容量・出力時間と、周辺タイルがある場合の読解成績をそれぞれ測って既定表示を判断する。</dd><dt>確認</dt><dd>中央の配置と縮尺を固定し、境界をまたぐ最短経路の正答率と回答時間を比較する。</dd></dl>
-          <p class="evidence"><a href="../../src/torus_layout/drawing/output.py">周辺タイルの画像出力</a> · <a href="../torus_experiment_20261120/drawing/results.csv">画像の出力結果</a> · <a href="../torus_validation_20261120/readability/index.html">参加者向け提示画面</a></p>
+          <dl><dt>見直し</dt><dd>画像容量と出力時間を測って既定表示を判断する。</dd><dt>確認</dt><dd>中央の配置と縮尺を固定し、周辺タイルの有無で画像容量と出力時間を比較する。</dd></dl>
+          <p class="evidence"><a href="../../src/torus_layout/drawing/output.py">周辺タイルの画像出力</a> · <a href="../torus_experiment_20261120/drawing/results.csv">画像の出力結果</a></p>
         </article>
       </div>
     </section>

@@ -1,0 +1,4 @@
+large_geometry 1/4 cycle-500-2-0 {'wall_timeout': 3, 'ok': 6}
+large_geometry 2/4 cycle-1000-2-0 {'wall_timeout': 4, 'ok': 4}
+large_geometry 3/4 watts_strogatz-500-2-0 {'ok': 7, 'wall_timeout': 2}
+large_geometry 4/4 watts_strogatz-1000-2-0 {'wall_timeout': 3, 'ok': 6}

@@ -1,0 +1,5 @@
+1 boundary-fixtures ok
+2 dag-10-2-0 ok
+3 random-10-2-0 ok
+4 scc_chain-10-2-0 ok
+5 watts_strogatz-10-2-0 ok

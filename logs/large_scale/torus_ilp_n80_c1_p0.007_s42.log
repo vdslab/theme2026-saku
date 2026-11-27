@@ -1,0 +1,51 @@
+
+Gurobi 13.0.0 (mac64[arm]) logging started Wed May 13 14:06:15 2026
+
+Set parameter LogFile to value "logs/large_scale/torus_ilp_n80_c1_p0.007_s42.log"
+Set parameter OutputFlag to value 1
+Set parameter LogToConsole to value 1
+Set parameter DisplayInterval to value 5
+Set parameter TimeLimit to value 1800
+Set parameter Presolve to value 2
+Set parameter MIPFocus to value 1
+Set parameter Cuts to value 2
+Set parameter Heuristics to value 0.1
+Set parameter MIPGap to value 0.05
+Gurobi Optimizer version 13.0.0 build v13.0.0rc1 (mac64[arm] - Darwin 25.2.0 25C56)
+
+CPU model: Apple M3 Pro
+Thread count: 11 physical cores, 11 logical processors, using up to 11 threads
+
+Non-default parameters:
+TimeLimit  1800
+MIPGap  0.05
+Heuristics  0.1
+MIPFocus  1
+Cuts  2
+Presolve  2
+
+Academic license 2755955 - for non-commercial use only - registered to ch___@g.nihon-u.ac.jp
+Optimize a model with 690 rows, 9841 columns and 20900 nonzeros (Min)
+Model fingerprint: 0x00db3215
+Model has 9761 linear objective coefficients
+Variable types: 0 continuous, 9841 integer (9760 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 8e+01]
+  Objective range  [1e+00, 6e+03]
+  Bounds range     [1e+00, 8e+01]
+  RHS range        [1e+00, 8e+01]
+Presolve removed 244 rows and 0 columns
+Presolve time: 0.07s
+Presolved: 446 rows, 9841 columns, 20046 nonzeros
+Variable types: 0 continuous, 9841 integer (9760 binary)
+Found heuristic solution: objective 221278.00000
+
+Root relaxation: interrupted, 0 iterations, 0.00 seconds (0.01 work units)
+
+Explored 1 nodes (0 simplex iterations) in 0.08 seconds (0.18 work units)
+Thread count was 11 (of 11 available processors)
+
+Solution count 1: 221278 
+
+Solve interrupted
+Best objective 2.212780000000e+05, best bound 1.000000000000e+02, gap 99.9548%

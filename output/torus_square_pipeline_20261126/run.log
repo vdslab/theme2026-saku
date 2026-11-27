@@ -1,0 +1,18 @@
+square_pipeline 1/16 dag-90-2-322 {'ok': 5, 'license_size_limit': 1, 'wall_timeout': 1}
+square_pipeline 2/16 dag-90-2-323 {'ok': 7, 'license_size_limit': 1}
+square_pipeline 3/16 dag-90-4-322 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 4/16 dag-90-4-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 5/16 dag-120-2-322 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 6/16 dag-120-2-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 7/16 dag-120-4-322 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 8/16 dag-120-4-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 9/16 watts_strogatz-90-2-322 {'ok': 7, 'license_size_limit': 1}
+square_pipeline 10/16 watts_strogatz-90-2-323 {'ok': 7, 'license_size_limit': 1}
+/Users/mitch/develop/vdslab/theme2026-saku/experiments/torus_study/stages.py:96: UserWarning: 同時境界最適化の切れ目では分割なしBKの層内順序制約が循環したため、ダミー同士の境界通過が0本になる従来方式を適用しました。
+  value = fn(*args, **kwargs)
+square_pipeline 11/16 watts_strogatz-90-4-322 {'ok': 5, 'license_size_limit': 1, 'wall_timeout': 1}
+square_pipeline 12/16 watts_strogatz-90-4-323 {'ok': 3, 'license_size_limit': 1, 'wall_timeout': 2}
+square_pipeline 13/16 watts_strogatz-120-2-322 {'ok': 7, 'license_size_limit': 1}
+square_pipeline 14/16 watts_strogatz-120-2-323 {'ok': 7, 'license_size_limit': 1}
+square_pipeline 15/16 watts_strogatz-120-4-322 {'wall_timeout': 1}
+square_pipeline 16/16 watts_strogatz-120-4-323 {'wall_timeout': 1}

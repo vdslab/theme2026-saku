@@ -1,0 +1,8 @@
+dag_large 1/8 dag-12-2-0 {'ok': 4}
+dag_large 2/8 dag-12-4-0 {'ok': 4}
+dag_large 3/8 dag-36-2-0 {'ok': 4}
+dag_large 4/8 dag-36-4-0 {'ok': 3, 'wall_timeout': 1}
+dag_large 5/8 dag-500-2-0 {'ok': 2, 'wall_timeout': 1}
+dag_large 6/8 dag-500-4-0 {'ok': 1, 'wall_timeout': 2}
+dag_large 7/8 dag-1000-2-0 {'ok': 2, 'wall_timeout': 1}
+dag_large 8/8 dag-1000-4-0 {'ok': 1, 'wall_timeout': 2}

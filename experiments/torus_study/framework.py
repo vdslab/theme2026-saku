@@ -4,7 +4,7 @@ from collections import Counter
 from contextlib import ExitStack
 from functools import wraps
 import json
-from math import hypot
+from math import atan, hypot, radians, tau
 from pathlib import Path
 import resource
 import subprocess
@@ -23,9 +23,9 @@ from sugiyama_layout.layer_assignment import assign_layers
 from radial_layout import coordinate_assignment as radial_coordinates
 from radial_layout import crossing_reduction as radial_crossing
 from radial_layout.layer_assignment import assign_layers as assign_radial_layers
-from radial_layout.drawing import _sample_chain
+from radial_layout.drawing import _sample_chain, _sampling_steps
 
-from .geometry import planar_route, route_metrics, torus_routes
+from .geometry import crossing_metrics, planar_route, route_metrics, torus_routes
 from .stages import assignment_metrics, attempt_time, initialize, sift, subdivision_metrics
 
 
@@ -77,8 +77,8 @@ def torus(graph, config=None, *, scaling=False):
     return {**metrics, **completed_metrics(routes, bounds)}, (routes, bounds)
 
 
-def completed_metrics(routes, bounds=None, *, bends=True):
-    metrics = route_metrics(routes, bounds, bends=bends)
+def completed_metrics(routes, bounds=None, *, bends=True, geometry=True):
+    metrics = route_metrics(routes, bounds, bends=bends, geometry=geometry)
     if bounds is None:
         width, height = metrics["centerline_bbox_width"], metrics["centerline_bbox_height"]
     else:
@@ -89,6 +89,30 @@ def completed_metrics(routes, bounds=None, *, bends=True):
         metrics["max_length_per_frame_diagonal"] = metrics["max_edge_length"] / diagonal
         metrics["frame_aspect"] = width / height if height > 0 else None
     return metrics
+
+
+def radial_drawing_metrics(centerlines, multiplicities, chains, coordinates):
+    metrics = crossing_metrics(centerlines.values(), None, multiplicities=multiplicities)
+    bends = 0
+    max_bends = 0
+    max_span = 0.0
+    for edge, chain in chains.items():
+        previous_tangent = None
+        edge_bends = 0
+        for u, v in zip(chain, chain[1:]):
+            inner, start = coordinates.polar[u]
+            outer, end = coordinates.polar[v]
+            span = end - start + tau * coordinates.winding[u, v] if inner else 0.0
+            # Tangent angles relative to the outward radial direction at
+            # either end, from the derivative of the spiral in Eq. (4).
+            slope = span / (outer - inner)
+            if previous_tangent is not None and abs(atan(inner * slope) - previous_tangent) > radians(1):
+                edge_bends += 1
+            previous_tangent = atan(outer * slope)
+            max_span = max(max_span, abs(span) / tau)
+        bends += edge_bends * multiplicities[edge]
+        max_bends = max(max_bends, edge_bends)
+    return {**metrics, "bends": bends, "max_bends_per_edge": max_bends, "max_segment_turns": max_span}
 
 
 def repository_baseline(graph, radial=False, *, condense=False):
@@ -110,15 +134,27 @@ def repository_baseline(graph, radial=False, *, condense=False):
         return acyclic, layout_edges, proper, embedding, positions
 
     (acyclic, layout_edges, proper, embedding, positions), elapsed = attempt_time(layout)
+    metrics = {}
+    centerlines = {}
+    multiplicities = Counter()
+    if radial:
+        sampling_steps = _sampling_steps(positions.polar, positions.winding)
+        centerlines = {
+            edge: planar_route(edge, _sample_chain(chain, positions.polar, positions.winding, sampling_steps))
+            for edge, chain in proper.chains.items()
+        }
     routes = []
     for edge in acyclic.edges if condense else graph.edges:
         reverse = edge in acyclic.reversed_edges
-        chain = proper.chains[edge[::-1] if reverse else edge]
+        layout_edge = edge[::-1] if reverse else edge
         if radial:
-            points = _sample_chain(chain, positions.polar, positions.winding)
+            multiplicities[layout_edge] += 1
+            points = centerlines[layout_edge].points
         else:
-            points = [positions[u] for u in chain]
+            points = [positions[u] for u in proper.chains[layout_edge]]
         routes.append(planar_route(edge, points[::-1] if reverse else points))
+    if radial:
+        metrics = radial_drawing_metrics(centerlines, multiplicities, proper.chains, positions)
     return {
         "reference_method": "bachmaier_2007_sifting" if radial else "sugiyama_1981_bc_pr",
         "cycle_preprocessing": "scc_condensation" if condense else "eades_lin_smyth",
@@ -129,7 +165,8 @@ def repository_baseline(graph, radial=False, *, condense=False):
         "layout_seconds": elapsed, "layers": len(proper.layers),
         "dummy_nodes": len(proper.dummy_nodes), "proper_edges": len(proper.edges),
         "reverse_direction_edges": len(acyclic.reversed_edges),
-        **completed_metrics(routes, bends=not radial),
+        **completed_metrics(routes, bends=not radial, geometry=not radial),
+        **metrics,
     }, (routes, None)
 
 

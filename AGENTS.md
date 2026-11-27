@@ -16,3 +16,4 @@
 - The root `.env` contains the Gurobi configuration used by the application.
   Do not print or copy its secret values.
 
+- コミットメッセージの件名は `prefix: 日本語で変更内容` の形式にする。種類に応じて `dev`（機能開発）、`fix`（不具合修正）、`refactor`（内部構造の整理）、`docs`（文書変更）などの英小文字の接頭辞を選ぶ。例 `fix: 放射型描画の螺旋配線と評価指標を修正`。
