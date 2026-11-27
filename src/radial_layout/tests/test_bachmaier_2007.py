@@ -1,8 +1,12 @@
 import math
 
-from radial_layout import assign_coordinates, count_crossings, insert_dummy_nodes, reduce_crossings
+import matplotlib.pyplot as plt
+
+from radial_layout import (
+    DummyNode, assign_coordinates, count_crossings, insert_dummy_nodes, reduce_crossings,
+)
 from radial_layout.crossing_reduction import RadialEmbedding, rotate_level
-from radial_layout.drawing import _sample_chain
+from radial_layout.drawing import _sample_chain, create_radial_figure
 
 
 def test_clockwise_rotation_preserves_both_boundaries():
@@ -51,11 +55,61 @@ def test_center_edges_are_straight_even_when_offset_was_nonzero():
     points = _sample_chain(("center", "a"), coords.polar, coords.winding)
     x, y = coords.cartesian["a"]
     assert coords.cartesian["center"] == (0, 0)
+    assert coords.winding["center", "a"] == 0
     assert all(math.isclose(px * y - py * x, 0, abs_tol=1e-12) for px, py in points)
 
 
-def test_postprocessing_uses_algorithm_two_rotation_direction():
+def test_postprocessing_reduces_the_signed_span_of_the_drawn_spiral():
     layers = {0: ("a", "b", "c"), 1: ("x", "y", "z")}
     embedding = reduce_crossings(layers, (("a", "y"),))
-    assert embedding.order[1] == ("z", "x", "y")
+    target_turn = embedding.order[1].index("y") / len(layers[1])
+    assert target_turn + embedding.winding["a", "y"] == 0
     assert embedding.crossings == 0
+
+
+def test_center_spokes_have_zero_offset_after_sifting():
+    layers = {0: ("root",), 1: ("a", "b", "c"), 2: ("x", "y", "z")}
+    spokes = (("root", "a"), ("root", "b"), ("root", "c"))
+    edges = spokes + (("a", "z"), ("b", "y"), ("c", "x"))
+    embedding = reduce_crossings(layers, edges)
+    assert all(embedding.winding[edge] == 0 for edge in spokes)
+    assert embedding.crossings == count_crossings(embedding.order, edges, embedding.winding)
+
+
+def test_reordered_dummy_chains_keep_sifting_result_drawable():
+    inner = tuple(DummyNode(i, 1) for i in range(3))
+    outer = tuple(DummyNode(i, 2) for i in range(3))
+    edges = tuple(zip(inner, outer))
+    layers = {1: inner, 2: outer[::-1]}
+    assert count_crossings(layers, edges) == 3
+    embedding = reduce_crossings(layers, edges)
+    coordinates = assign_coordinates(embedding)
+    assert embedding.crossings == 0
+    assert all(coordinates.polar[u][1] == coordinates.polar[v][1] for u, v in edges)
+
+
+def test_long_spiral_chords_stay_in_the_band_and_move_outwards():
+    polar = {"a": (20.0, 1.0), "b": (21.0, 2.0)}
+    points = _sample_chain(("a", "b"), polar, {("a", "b"): 3})
+    for a, b in zip(points, points[1:]):
+        # The derivative of the squared radius of the chord is increasing.
+        assert sum(x * (y - x) for x, y in zip(a, b)) > 0
+
+
+def test_crowded_ring_markers_fit_a_fixed_canvas():
+    nodes = tuple(range(30))
+    coords = assign_coordinates({0: nodes})
+    fig = create_radial_figure(
+        nodes, (), coords.cartesian, coords.polar, coords.radii, {}, {}, frozenset(),
+        figsize=(4, 4),
+    )
+    try:
+        fig.canvas.draw()
+        axis, = fig.axes
+        markers, = axis.collections
+        centers = axis.transData.transform([coords.cartesian[n] for n in nodes])
+        neighbor_distance = min(math.dist(p, q) for p, q in zip(centers, centers[1:]))
+        diameter = (math.sqrt(markers.get_sizes()[0]) + markers.get_linewidths()[0]) * fig.dpi / 72
+        assert diameter < neighbor_distance
+    finally:
+        plt.close(fig)
